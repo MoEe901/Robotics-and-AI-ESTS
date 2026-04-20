@@ -1,0 +1,47 @@
+rules_version = '2';
+
+// Keep request.auth.token.email in sync with NEXT_PUBLIC_ADMIN_EMAILS (comma list is app-side only;
+// rules must list each allowed admin email, or use custom claims for production.)
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email == "admin123@gmail.com";
+    }
+
+    function eventVisibleToPublic() {
+      return !('isActive' in resource.data) || resource.data.isActive == true;
+    }
+
+    match /teamMembers/{docId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /events/{docId} {
+      allow read: if eventVisibleToPublic() || isAdmin();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /pageSections/{docId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /teamConfig/{docId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Server route POST /api/rsvp uses unauthenticated Firestore writes (client SDK on server).
+    match /rsvps/{docId} {
+      allow read: if isAdmin();
+      allow create: if true;
+      allow update, delete: if isAdmin();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
