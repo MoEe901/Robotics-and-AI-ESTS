@@ -103,7 +103,7 @@ export function FaqSection({ config }: FaqSectionProps) {
   }
 
   return (
-    <section id="faq" className="mx-auto w-[min(94%,860px)] py-2">
+    <section id="faq" className="mx-auto w-[min(94%,860px)] scroll-mt-28 py-2">
       <div className="rounded-3xl border border-white/10 bg-white/[0.03] px-5 py-10 md:px-10 md:py-14">
         <header className="mx-auto mb-12 max-w-2xl text-center md:mb-16">
           <p className="mb-4 inline-flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.22em] text-white/50">

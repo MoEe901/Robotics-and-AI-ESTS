@@ -10,7 +10,8 @@ service cloud.firestore {
     }
 
     function eventVisibleToPublic() {
-      return !('isActive' in resource.data) || resource.data.isActive == true;
+      // Keep query authorization predictable: public events must be explicitly active.
+      return ('isActive' in resource.data) && resource.data.isActive == true;
     }
 
     match /teamMembers/{docId} {

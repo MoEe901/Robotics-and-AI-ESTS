@@ -1,6 +1,5 @@
 "use client";
 
-import { Bebas_Neue, DM_Sans } from "next/font/google";
 import { ArrowRight, Check, Clock, Mail, MapPin, Phone } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useMemo, useState } from "react";
@@ -11,18 +10,6 @@ import type {
   ApplySocialPlatform,
 } from "@/lib/firebase/types";
 import { DEFAULT_APPLY_CONFIG } from "@/lib/content/apply-defaults";
-
-const fontDisplay = Bebas_Neue({
-  weight: "400",
-  subsets: ["latin"],
-  display: "swap",
-});
-
-const fontSans = DM_Sans({
-  weight: ["300", "400", "500"],
-  subsets: ["latin"],
-  display: "swap",
-});
 
 const TONE_ICON: Record<ApplyContactRow["tone"], string> = {
   blue: "bg-sky-500/10 text-sky-400",
@@ -105,20 +92,20 @@ function CharterLink({
   href: string;
 }) {
   const inner = href.startsWith("/") ? (
-    <Link href={href} className="text-sky-400 no-underline hover:underline">
+    <Link href={href} className="text-cyan-400 no-underline hover:underline">
       {linkText}
     </Link>
   ) : (
     <a
       href={href}
-      className="text-sky-400 no-underline hover:underline"
+      className="text-cyan-400 no-underline hover:underline"
       {...(href.startsWith("http") ? { target: "_blank", rel: "noopener noreferrer" } : {})}
     >
       {linkText}
     </a>
   );
   return (
-    <p className="text-[11.5px] font-light text-[#6b6a80]">
+    <p className="text-[11.5px] font-light text-slate-500">
       {prefix.trim()} {inner}
     </p>
   );
@@ -205,7 +192,7 @@ export function ApplySection({ config }: ApplySectionProps) {
   return (
     <section
       id="apply"
-      className={`apply-home-scope relative isolate min-h-[720px] overflow-hidden bg-[#09090f] py-16 text-[#f0eff5] md:py-20 ${fontSans.className}`}
+      className="apply-home-scope relative isolate min-h-[720px] scroll-mt-28 overflow-hidden bg-[#07080f] py-16 text-[#e2e8f0] md:py-20"
     >
       <style>{`
         @keyframes apply-drift {
@@ -238,19 +225,19 @@ export function ApplySection({ config }: ApplySectionProps) {
 
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden>
         <div
-          className="apply-orb absolute -left-[150px] -top-[200px] size-[600px] rounded-full bg-[#4f8ef7] opacity-[0.18] blur-[100px]"
+          className="apply-orb absolute -left-[150px] -top-[200px] size-[600px] rounded-full bg-violet-600 opacity-[0.16] blur-[100px]"
           aria-hidden
         />
         <div
-          className="apply-orb apply-orb-2 absolute -right-[200px] top-[100px] size-[500px] rounded-full bg-[#a78bfa] opacity-[0.18] blur-[100px]"
+          className="apply-orb apply-orb-2 absolute -right-[200px] top-[100px] size-[500px] rounded-full bg-cyan-500 opacity-[0.12] blur-[100px]"
           aria-hidden
         />
         <div
-          className="apply-orb apply-orb-3 absolute bottom-[-100px] left-[30%] size-[400px] rounded-full bg-[#f056a0] opacity-[0.18] blur-[100px]"
+          className="apply-orb apply-orb-3 absolute bottom-[-100px] left-[30%] size-[400px] rounded-full bg-fuchsia-500 opacity-[0.12] blur-[100px]"
           aria-hidden
         />
         <div
-          className="absolute bottom-0 left-1/2 h-[60vh] w-[200vw] origin-bottom [mask-image:linear-gradient(to_top,rgba(0,0,0,0.6)_0%,transparent_80%)] [transform:translateX(-50%)_perspective(600px)_rotateX(65deg)] bg-[length:60px_60px] [background-image:linear-gradient(rgba(79,142,247,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(79,142,247,0.08)_1px,transparent_1px)]"
+          className="absolute bottom-0 left-1/2 h-[60vh] w-[200vw] origin-bottom [mask-image:linear-gradient(to_top,rgba(0,0,0,0.6)_0%,transparent_80%)] [transform:translateX(-50%)_perspective(600px)_rotateX(65deg)] bg-[length:50px_50px] [background-image:linear-gradient(rgba(124,58,237,0.07)_1px,transparent_1px),linear-gradient(90deg,rgba(124,58,237,0.07)_1px,transparent_1px)]"
           aria-hidden
         />
       </div>
@@ -260,45 +247,39 @@ export function ApplySection({ config }: ApplySectionProps) {
       />
 
       <div className="relative z-[2] mx-auto flex min-h-0 w-full max-w-[1100px] flex-col items-center px-5 md:px-6">
-        <p className="apply-fade-1 mb-5 inline-flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.22em] text-[#6b6a80]">
-          <span className="apply-dot-blink size-1.5 rounded-full bg-[#4f8ef7]" />
+        <p className="apply-fade-1 font-jetbrains mb-5 inline-flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.22em] text-slate-500">
+          <span className="apply-dot-blink size-1.5 rounded-full bg-cyan-400" />
           {c.topLabel}
         </p>
 
-        <h2
-          className={`apply-fade-2 mb-5 text-center ${fontDisplay.className} text-[clamp(3.75rem,10vw,7.5rem)] leading-[0.9] tracking-[0.02em]`}
-        >
-          <span className="block text-[#f0eff5]">{c.heroLine1}</span>
-          <span className="block bg-gradient-to-br from-[#4f8ef7] via-[#a78bfa] to-[#f056a0] bg-clip-text text-transparent">
-            {c.heroLine2}
-          </span>
+        <h2 className="apply-fade-2 font-syne mb-5 text-center text-[clamp(3rem,9vw,5.5rem)] font-extrabold leading-[0.92] tracking-[-0.02em]">
+          <span className="block text-white">{c.heroLine1}</span>
+          <span className="hero-title-grad block">{c.heroLine2}</span>
         </h2>
 
-        <p className="apply-fade-3 mb-14 max-w-[480px] text-center text-[15px] font-light leading-[1.7] text-[#6b6a80]">
+        <p className="apply-fade-3 mb-14 max-w-[480px] text-center text-[15px] font-light leading-[1.85] text-slate-400">
           {c.heroSub}
         </p>
 
-        <div className="apply-fade-4 grid w-full max-w-[980px] overflow-hidden rounded-[28px] border border-white/[0.07] bg-[rgba(13,13,24,0.8)] shadow-[0_40px_120px_rgba(0,0,0,0.5),inset_0_0_0_1px_rgba(255,255,255,0.04)] backdrop-blur-[24px] md:grid-cols-[minmax(0,340px)_1fr]">
-          <div className="relative flex min-h-0 flex-col border-b border-white/[0.07] bg-white/[0.02] px-8 py-10 md:border-b-0 md:border-r md:px-10 md:py-12">
+        <div className="apply-fade-4 grid w-full max-w-[980px] overflow-hidden rounded-3xl border border-violet-500/15 bg-[#0d0f1a] shadow-[0_40px_100px_rgba(124,58,237,0.12)] backdrop-blur-[20px] md:grid-cols-[minmax(0,340px)_1fr]">
+          <div className="relative flex min-h-0 flex-col border-b border-violet-500/[0.08] bg-[#0d0f1a] px-8 py-10 md:border-b-0 md:border-r md:px-10 md:py-12">
             <div
-              className="pointer-events-none absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-[#4f8ef7] via-[#a78bfa] to-[#f056a0]"
+              className="pointer-events-none absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-violet-600 via-fuchsia-500 to-cyan-400"
               aria-hidden
             />
             <div
-              className="pointer-events-none absolute -bottom-20 -left-20 size-[280px] rounded-full bg-[radial-gradient(circle,rgba(79,142,247,0.12)_0%,transparent_70%)]"
+              className="pointer-events-none absolute -bottom-20 -left-20 size-[280px] rounded-full bg-[radial-gradient(circle,rgba(124,58,237,0.14)_0%,transparent_70%)]"
               aria-hidden
             />
 
-            <span className="relative z-[1] mb-5 inline-flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-[0.2em] text-[#4f8ef7]">
-              <span className="apply-badge-dot size-1.5 rounded-full bg-[#4f8ef7]" />
+            <span className="relative z-[1] font-jetbrains mb-5 inline-flex items-center gap-1.5 text-[9px] font-medium uppercase tracking-[0.25em] text-cyan-400">
+              <span className="apply-badge-dot size-1.5 rounded-full bg-cyan-400" />
               {c.infoBadge}
             </span>
-            <h3
-              className={`relative z-[1] mb-4 text-[38px] leading-none tracking-[0.02em] text-[#f0eff5] ${fontDisplay.className}`}
-            >
+            <h3 className="relative z-[1] font-syne mb-4 text-[1.4rem] font-extrabold leading-tight tracking-tight text-white md:text-[1.55rem]">
               {c.infoTitle}
             </h3>
-            <p className="relative z-[1] mb-10 text-[13px] font-light leading-[1.7] text-[#6b6a80]">
+            <p className="relative z-[1] mb-10 text-[13px] font-light leading-[1.8] text-slate-500">
               {c.infoDesc}
             </p>
 
@@ -308,7 +289,7 @@ export function ApplySection({ config }: ApplySectionProps) {
                 return (
                   <div
                     key={`${row.label}-${row.value.slice(0, 24)}`}
-                    className="flex gap-3.5 rounded-xl border border-white/[0.07] bg-white/[0.02] px-4 py-3.5 transition-colors hover:border-white/[0.12] hover:bg-white/[0.04]"
+                    className="flex gap-3.5 rounded-xl border border-violet-500/10 bg-violet-500/[0.03] px-4 py-3.5 transition-colors hover:border-violet-500/25 hover:bg-violet-500/[0.06]"
                   >
                     <div
                       className={`flex size-9 shrink-0 items-center justify-center rounded-[10px] ${TONE_ICON[row.tone]}`}
@@ -316,10 +297,10 @@ export function ApplySection({ config }: ApplySectionProps) {
                       <Icon className="size-4" strokeWidth={1.8} />
                     </div>
                     <div className="min-w-0">
-                      <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#6b6a80]">
+                      <p className="font-jetbrains mb-0.5 text-[10px] font-medium uppercase tracking-[0.1em] text-slate-500">
                         {row.label}
                       </p>
-                      <p className="text-[13px] font-normal leading-snug text-[#f0eff5]">
+                      <p className="text-[13px] font-normal leading-snug text-slate-300">
                         {renderMultiline(row.value)}
                       </p>
                     </div>
@@ -337,7 +318,7 @@ export function ApplySection({ config }: ApplySectionProps) {
                     target="_blank"
                     rel="noopener noreferrer"
                     title={s.platform}
-                    className="flex size-[38px] items-center justify-center rounded-[10px] border border-white/[0.07] bg-white/[0.03] text-[#6b6a80] transition hover:-translate-y-0.5 hover:border-sky-400/30 hover:bg-sky-500/10 hover:text-sky-400"
+                    className="flex size-[38px] items-center justify-center rounded-[10px] border border-violet-500/15 bg-white/[0.03] text-slate-500 transition hover:-translate-y-0.5 hover:border-cyan-400/35 hover:bg-cyan-400/10 hover:text-cyan-400"
                   >
                     <SocialGlyph platform={s.platform} className="size-[15px]" />
                   </a>
@@ -350,25 +331,23 @@ export function ApplySection({ config }: ApplySectionProps) {
             {!success ? (
               <>
                 <div className="mb-8">
-                  <h3
-                    className={`mb-1.5 text-[28px] tracking-[0.04em] text-[#f0eff5] ${fontDisplay.className}`}
-                  >
+                  <h3 className="font-syne mb-1.5 text-[1.35rem] font-extrabold tracking-tight text-white md:text-[1.5rem]">
                     {c.formTitle}
                   </h3>
-                  <p className="text-[12.5px] font-light text-[#6b6a80]">{c.formSubtitle}</p>
+                  <p className="text-[12.5px] font-light text-slate-500">{c.formSubtitle}</p>
                 </div>
 
-                <div className="mb-8 h-0.5 overflow-hidden rounded-full bg-white/[0.07]">
+                <div className="mb-8 h-0.5 overflow-hidden rounded-full bg-violet-500/10">
                   <div
-                    className="h-full rounded-full bg-gradient-to-r from-[#4f8ef7] to-[#a78bfa] transition-[width] duration-500 [transition-timing-function:cubic-bezier(0.22,1,0.36,1)]"
+                    className="h-full rounded-full bg-gradient-to-r from-violet-600 to-cyan-400 transition-[width] duration-500 [transition-timing-function:cubic-bezier(0.22,1,0.36,1)]"
                     style={{ width: `${progressPct}%` }}
                   />
                 </div>
 
                 <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
                   <label className="flex flex-col gap-1.5">
-                    <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#6b6a80]">
-                      {c.firstNameLabel} <span className="text-[#f056a0]">*</span>
+                    <span className="font-jetbrains text-[10px] font-medium uppercase tracking-[0.1em] text-slate-500">
+                      {c.firstNameLabel} <span className="text-fuchsia-400">*</span>
                     </span>
                     <input
                       type="text"
@@ -376,12 +355,12 @@ export function ApplySection({ config }: ApplySectionProps) {
                       onChange={(e) => setFirstName(e.target.value)}
                       placeholder={c.placeholders.firstName}
                       autoComplete="given-name"
-                      className="w-full rounded-[10px] border border-white/[0.07] bg-white/[0.04] px-3.5 py-2.5 text-[13.5px] text-[#f0eff5] outline-none transition placeholder:text-[#6b6a80]/60 focus:border-sky-400/50 focus:bg-sky-500/[0.05] focus:shadow-[0_0_0_3px_rgba(79,142,247,0.08)]"
+                      className="w-full rounded-[10px] border border-violet-500/15 bg-white/[0.03] px-3.5 py-2.5 text-[13.5px] text-slate-200 outline-none transition placeholder:text-slate-600 focus:border-violet-400/50 focus:shadow-[0_0_0_3px_rgba(124,58,237,0.12)]"
                     />
                   </label>
                   <label className="flex flex-col gap-1.5">
-                    <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#6b6a80]">
-                      {c.lastNameLabel} <span className="text-[#f056a0]">*</span>
+                    <span className="font-jetbrains text-[10px] font-medium uppercase tracking-[0.1em] text-slate-500">
+                      {c.lastNameLabel} <span className="text-fuchsia-400">*</span>
                     </span>
                     <input
                       type="text"
@@ -389,50 +368,50 @@ export function ApplySection({ config }: ApplySectionProps) {
                       onChange={(e) => setLastName(e.target.value)}
                       placeholder={c.placeholders.lastName}
                       autoComplete="family-name"
-                      className="w-full rounded-[10px] border border-white/[0.07] bg-white/[0.04] px-3.5 py-2.5 text-[13.5px] text-[#f0eff5] outline-none transition placeholder:text-[#6b6a80]/60 focus:border-sky-400/50 focus:bg-sky-500/[0.05] focus:shadow-[0_0_0_3px_rgba(79,142,247,0.08)]"
+                      className="w-full rounded-[10px] border border-violet-500/15 bg-white/[0.03] px-3.5 py-2.5 text-[13.5px] text-slate-200 outline-none transition placeholder:text-slate-600 focus:border-violet-400/50 focus:shadow-[0_0_0_3px_rgba(124,58,237,0.12)]"
                     />
                   </label>
                   <label className="flex flex-col gap-1.5">
-                    <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#6b6a80]">
-                      {c.yearLabel} <span className="text-[#f056a0]">*</span>
+                    <span className="font-jetbrains text-[10px] font-medium uppercase tracking-[0.1em] text-slate-500">
+                      {c.yearLabel} <span className="text-fuchsia-400">*</span>
                     </span>
                     <select
                       value={educationYear}
                       onChange={(e) => setEducationYear(e.target.value)}
-                      className="w-full rounded-[10px] border border-white/[0.07] bg-white/[0.04] px-3.5 py-2.5 text-[13.5px] text-[#f0eff5] outline-none transition focus:border-sky-400/50 focus:bg-sky-500/[0.05] focus:shadow-[0_0_0_3px_rgba(79,142,247,0.08)]"
+                      className="w-full rounded-[10px] border border-violet-500/15 bg-white/[0.03] px-3.5 py-2.5 text-[13.5px] text-slate-200 outline-none transition focus:border-violet-400/50 focus:shadow-[0_0_0_3px_rgba(124,58,237,0.12)]"
                     >
                       <option value="" disabled>
                         Select your year
                       </option>
                       {years.map((y) => (
-                        <option key={y} value={y} className="bg-[#111119]">
+                        <option key={y} value={y} className="bg-[#0d0f1a]">
                           {y}
                         </option>
                       ))}
                     </select>
                   </label>
                   <label className="flex flex-col gap-1.5">
-                    <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#6b6a80]">
-                      {c.departmentLabel} <span className="text-[#f056a0]">*</span>
+                    <span className="font-jetbrains text-[10px] font-medium uppercase tracking-[0.1em] text-slate-500">
+                      {c.departmentLabel} <span className="text-fuchsia-400">*</span>
                     </span>
                     <select
                       value={department}
                       onChange={(e) => setDepartment(e.target.value)}
-                      className="w-full rounded-[10px] border border-white/[0.07] bg-white/[0.04] px-3.5 py-2.5 text-[13.5px] text-[#f0eff5] outline-none transition focus:border-sky-400/50 focus:bg-sky-500/[0.05] focus:shadow-[0_0_0_3px_rgba(79,142,247,0.08)]"
+                      className="w-full rounded-[10px] border border-violet-500/15 bg-white/[0.03] px-3.5 py-2.5 text-[13.5px] text-slate-200 outline-none transition focus:border-violet-400/50 focus:shadow-[0_0_0_3px_rgba(124,58,237,0.12)]"
                     >
                       <option value="" disabled>
                         Select your department
                       </option>
                       {depts.map((d) => (
-                        <option key={d} value={d} className="bg-[#111119]">
+                        <option key={d} value={d} className="bg-[#0d0f1a]">
                           {d}
                         </option>
                       ))}
                     </select>
                   </label>
                   <label className="flex flex-col gap-1.5">
-                    <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#6b6a80]">
-                      {c.emailLabel} <span className="text-[#f056a0]">*</span>
+                    <span className="font-jetbrains text-[10px] font-medium uppercase tracking-[0.1em] text-slate-500">
+                      {c.emailLabel} <span className="text-fuchsia-400">*</span>
                     </span>
                     <input
                       type="email"
@@ -440,12 +419,12 @@ export function ApplySection({ config }: ApplySectionProps) {
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder={c.placeholders.email}
                       autoComplete="email"
-                      className="w-full rounded-[10px] border border-white/[0.07] bg-white/[0.04] px-3.5 py-2.5 text-[13.5px] text-[#f0eff5] outline-none transition placeholder:text-[#6b6a80]/60 focus:border-sky-400/50 focus:bg-sky-500/[0.05] focus:shadow-[0_0_0_3px_rgba(79,142,247,0.08)]"
+                      className="w-full rounded-[10px] border border-violet-500/15 bg-white/[0.03] px-3.5 py-2.5 text-[13.5px] text-slate-200 outline-none transition placeholder:text-slate-600 focus:border-violet-400/50 focus:shadow-[0_0_0_3px_rgba(124,58,237,0.12)]"
                     />
                   </label>
                   <label className="flex flex-col gap-1.5">
-                    <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#6b6a80]">
-                      {c.phoneLabel} <span className="text-[#f056a0]">*</span>
+                    <span className="font-jetbrains text-[10px] font-medium uppercase tracking-[0.1em] text-slate-500">
+                      {c.phoneLabel} <span className="text-fuchsia-400">*</span>
                     </span>
                     <input
                       type="tel"
@@ -453,13 +432,13 @@ export function ApplySection({ config }: ApplySectionProps) {
                       onChange={(e) => setPhone(e.target.value)}
                       placeholder={c.placeholders.phone}
                       autoComplete="tel"
-                      className="w-full rounded-[10px] border border-white/[0.07] bg-white/[0.04] px-3.5 py-2.5 text-[13.5px] text-[#f0eff5] outline-none transition placeholder:text-[#6b6a80]/60 focus:border-sky-400/50 focus:bg-sky-500/[0.05] focus:shadow-[0_0_0_3px_rgba(79,142,247,0.08)]"
+                      className="w-full rounded-[10px] border border-violet-500/15 bg-white/[0.03] px-3.5 py-2.5 text-[13.5px] text-slate-200 outline-none transition placeholder:text-slate-600 focus:border-violet-400/50 focus:shadow-[0_0_0_3px_rgba(124,58,237,0.12)]"
                     />
                   </label>
                   <label className="col-span-1 flex flex-col gap-1.5 sm:col-span-2">
-                    <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#6b6a80]">
+                    <span className="font-jetbrains text-[10px] font-medium uppercase tracking-[0.1em] text-slate-500">
                       {c.messageLabel}{" "}
-                      <span className="font-light normal-case tracking-normal text-[#6b6a80]">
+                      <span className="font-light normal-case tracking-normal text-slate-600">
                         (Optional)
                       </span>
                     </span>
@@ -468,7 +447,7 @@ export function ApplySection({ config }: ApplySectionProps) {
                       onChange={(e) => setMessage(e.target.value)}
                       placeholder={c.placeholders.message}
                       rows={4}
-                      className="min-h-[90px] w-full resize-none rounded-[10px] border border-white/[0.07] bg-white/[0.04] px-3.5 py-2.5 text-[13.5px] leading-relaxed text-[#f0eff5] outline-none transition placeholder:text-[#6b6a80]/60 focus:border-sky-400/50 focus:bg-sky-500/[0.05] focus:shadow-[0_0_0_3px_rgba(79,142,247,0.08)]"
+                      className="min-h-[90px] w-full resize-none rounded-[10px] border border-violet-500/15 bg-white/[0.03] px-3.5 py-2.5 text-[13.5px] leading-relaxed text-slate-200 outline-none transition placeholder:text-slate-600 focus:border-violet-400/50 focus:shadow-[0_0_0_3px_rgba(124,58,237,0.12)]"
                     />
                   </label>
                 </div>
@@ -483,7 +462,7 @@ export function ApplySection({ config }: ApplySectionProps) {
                     type="button"
                     disabled={submitting}
                     onClick={() => void handleSubmit()}
-                    className="inline-flex shrink-0 items-center justify-center gap-2.5 rounded-xl border-0 bg-gradient-to-br from-[#4f8ef7] to-[#a78bfa] px-7 py-3.5 text-sm font-medium text-white shadow-[0_4px_24px_rgba(79,142,247,0.25)] transition hover:-translate-y-0.5 hover:opacity-90 hover:shadow-[0_8px_32px_rgba(79,142,247,0.35)] disabled:pointer-events-none disabled:opacity-50"
+                    className="font-jetbrains inline-flex shrink-0 items-center justify-center gap-2.5 rounded-full border-0 bg-gradient-to-br from-violet-600 to-cyan-500 px-8 py-3.5 text-[12px] font-medium uppercase tracking-[0.08em] text-white shadow-[0_0_25px_rgba(124,58,237,0.4)] transition hover:-translate-y-0.5 hover:shadow-[0_0_40px_rgba(124,58,237,0.55)] disabled:pointer-events-none disabled:opacity-50"
                   >
                     {submitting ? "Sending…" : c.submitButtonLabel}
                     <ArrowRight className="size-4" strokeWidth={2} />
@@ -501,10 +480,10 @@ export function ApplySection({ config }: ApplySectionProps) {
                 >
                   <Check className="size-7" strokeWidth={2} />
                 </div>
-                <p className={`text-[32px] tracking-[0.04em] text-[#f0eff5] ${fontDisplay.className}`}>
+                <p className="font-syne text-[28px] font-extrabold tracking-tight text-white md:text-[32px]">
                   {c.successTitle}
                 </p>
-                <p className="max-w-[300px] text-sm font-light leading-relaxed text-[#6b6a80]">
+                <p className="max-w-[300px] text-sm font-light leading-relaxed text-slate-500">
                   {c.successMessage}
                 </p>
               </div>

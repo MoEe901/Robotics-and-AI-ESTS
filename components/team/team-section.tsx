@@ -11,7 +11,10 @@ type TeamSectionProps = {
 
 export function TeamSection({ title, members }: TeamSectionProps) {
   return (
-    <section id="team" className="mx-auto w-[min(94%,1100px)] rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-xl transition-all duration-[400ms] ease-in-out md:p-10">
+    <section
+      id="team"
+      className="mx-auto w-[min(94%,1100px)] scroll-mt-28 rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-xl transition-all duration-[400ms] ease-in-out md:p-10"
+    >
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h2 className="text-2xl font-semibold tracking-tight">{title}</h2>

@@ -110,7 +110,7 @@ export function ProcessStepsSection({ config }: ProcessStepsSectionProps) {
     <section
       ref={rootRef}
       id="process"
-      className="relative mx-auto w-[min(94%,1000px)] py-2"
+      className="relative mx-auto w-[min(94%,1000px)] scroll-mt-28 py-2"
     >
       <div className="rounded-3xl border border-white/10 bg-white/[0.03] px-5 py-10 md:px-10 md:py-14">
         <header className="mx-auto mb-14 max-w-2xl text-center md:mb-20">

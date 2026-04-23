@@ -36,6 +36,11 @@ import {
   type FaqCategory,
   type FaqItemColor,
   type ApplySectionConfig,
+  DEFAULT_FOOTER_CONFIG,
+  type FooterConfig,
+  type FooterNavItem,
+  type FooterSocialLink,
+  type FooterSocialPlatform,
 } from "@/lib/firebase/types";
 import { DEFAULT_PROCESS_STEPS_CONFIG } from "@/lib/content/process-steps-defaults";
 import { DEFAULT_FAQ_CONFIG } from "@/lib/content/faq-defaults";
@@ -323,7 +328,7 @@ export async function fetchPublishedEventBySlugOrId(segment: string): Promise<Ev
       if (item && item.isActive !== false) return item;
     }
     const snap = await getDocs(
-      query(collection(db(), "events"), where("slug", "==", key), limit(10)),
+      query(collection(db(), "events"), where("slug", "==", key), where("isActive", "==", true), limit(10)),
     );
     for (const d of snap.docs) {
       const item = mapEventDocToItem(d.id, d.data() as EventDoc);
@@ -346,7 +351,7 @@ export function subscribeToPublishedEventBySlugOrId(
 ): Unsubscribe {
   const key = decodeURIComponent(segment);
   const dref = doc(db(), "events", key);
-  const q = query(collection(db(), "events"), where("slug", "==", key), limit(1));
+  const q = query(collection(db(), "events"), where("slug", "==", key), where("isActive", "==", true), limit(1));
 
   let docReady = false;
   let queryReady = false;
@@ -413,7 +418,12 @@ export function subscribeToEvents(
   callback: (events: EventItem[]) => void,
   onError?: (error: Error) => void,
 ): Unsubscribe {
-  const q = query(collection(db(), "events"), orderBy("order", "asc"), limit(24));
+  const q = query(
+    collection(db(), "events"),
+    where("isActive", "==", true),
+    orderBy("order", "asc"),
+    limit(24),
+  );
   return onSnapshot(
     q,
     (snapshot) => {
@@ -829,6 +839,66 @@ export function subscribeToApplyConfig(
     },
     (error) => {
       console.error("[Firestore] subscribeToApplyConfig failed", error);
+      onError?.(error);
+    },
+  );
+}
+
+function parseFooterFromFirestore(raw: Record<string, unknown>): FooterConfig {
+  const str = (key: keyof FooterConfig, fallback: string) => {
+    const v = raw[key as string];
+    return typeof v === "string" && v.trim() ? (v as string).trim() : fallback;
+  };
+
+  const rawNav = Array.isArray(raw.footerNav) ? raw.footerNav : [];
+  const footerNav: FooterNavItem[] = [];
+  for (const row of rawNav) {
+    if (!row || typeof row !== "object") continue;
+    const o = row as Record<string, unknown>;
+    const label = typeof o.label === "string" ? o.label.trim() : "";
+    const href = typeof o.href === "string" ? o.href.trim() : "";
+    if (label && href) footerNav.push({ label, href });
+  }
+
+  const rawSocial = Array.isArray(raw.socialLinks) ? raw.socialLinks : [];
+  const socialLinks: FooterSocialLink[] = [];
+  const validPlatforms: FooterSocialPlatform[] = ["instagram", "linkedin", "youtube", "github"];
+  for (const row of rawSocial) {
+    if (!row || typeof row !== "object") continue;
+    const o = row as Record<string, unknown>;
+    const platform = typeof o.platform === "string" ? o.platform.trim() : "";
+    const url = typeof o.url === "string" ? o.url.trim() : "";
+    if (!platform || !url) continue;
+    if (!validPlatforms.includes(platform as FooterSocialPlatform)) continue;
+    socialLinks.push({ platform: platform as FooterSocialPlatform, url });
+  }
+
+  return {
+    tagline: str("tagline", DEFAULT_FOOTER_CONFIG.tagline),
+    footerNav: footerNav.length ? footerNav : [...DEFAULT_FOOTER_CONFIG.footerNav],
+    socialLinks: socialLinks.length ? socialLinks : [...DEFAULT_FOOTER_CONFIG.socialLinks],
+    contactLocation: str("contactLocation", DEFAULT_FOOTER_CONFIG.contactLocation),
+    contactEmail: str("contactEmail", DEFAULT_FOOTER_CONFIG.contactEmail),
+    copyrightText: str("copyrightText", DEFAULT_FOOTER_CONFIG.copyrightText),
+    versionLine: str("versionLine", DEFAULT_FOOTER_CONFIG.versionLine),
+  };
+}
+
+export function subscribeToFooterConfig(
+  callback: (config: FooterConfig) => void,
+  onError?: (error: Error) => void,
+): Unsubscribe {
+  return onSnapshot(
+    doc(db(), "siteConfig", "footer"),
+    (snapshot) => {
+      if (!snapshot.exists()) {
+        callback({ ...DEFAULT_FOOTER_CONFIG });
+        return;
+      }
+      callback(parseFooterFromFirestore(snapshot.data() as Record<string, unknown>));
+    },
+    (error) => {
+      console.error("[Firestore] subscribeToFooterConfig failed", error);
       onError?.(error);
     },
   );

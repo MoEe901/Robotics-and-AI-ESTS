@@ -3,8 +3,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+
 import { subscribeToFooterConfig } from "@/lib/firebase/realtime";
-import { DEFAULT_FOOTER_CONFIG, type FooterConfig, type FooterSocialPlatform } from "@/lib/firebase/types";
+import {
+  DEFAULT_FOOTER_CONFIG,
+  type FooterConfig,
+  type FooterSocialPlatform,
+} from "@/lib/firebase/types";
 
 const SOCIAL_ICONS: Record<FooterSocialPlatform, React.ReactNode> = {
   instagram: (
@@ -34,133 +39,146 @@ const SOCIAL_ICONS: Record<FooterSocialPlatform, React.ReactNode> = {
   ),
 };
 
+/** In-page anchors aligned with homepage section ids. */
+const INFO_LINKS = [
+  { label: "Know Us", href: "/#know" },
+  { label: "Cellules", href: "/#cellules" },
+  { label: "Team", href: "/#team" },
+  { label: "FAQ", href: "/#faq" },
+] as const;
+
+const CONNECT_LINKS = [
+  { label: "Apply Now", href: "/#apply" },
+  { label: "Contact Us", href: "/#apply" },
+] as const;
+
 export function Footer() {
   const [config, setConfig] = useState<FooterConfig>(DEFAULT_FOOTER_CONFIG);
-  const year = new Date().getFullYear();
+  const y = new Date().getFullYear();
 
   useEffect(() => {
     return subscribeToFooterConfig((cfg) => setConfig(cfg));
   }, []);
 
   return (
-    <footer className="relative mt-24 border-t [border-color:var(--surface-border)] [background:var(--background)]">
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-500/40 to-transparent" />
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-blue-500/[0.03] to-transparent" />
-
-      <div className="relative mx-auto w-[min(94%,1100px)] py-14">
-        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.5fr_1fr_1fr_1fr]">
-
+    <footer className="relative mt-24 overflow-hidden border-t border-violet-500/20 bg-[#07060f] text-slate-200 shadow-[inset_0_1px_0_rgba(34,211,238,0.12)]">
+      <div
+        className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-400/50 to-transparent"
+        aria-hidden
+      />
+      <div
+        className="pointer-events-none absolute -left-24 top-1/2 h-64 w-64 -translate-y-1/2 rounded-full bg-violet-600/15 blur-3xl"
+        aria-hidden
+      />
+      <div
+        className="pointer-events-none absolute -right-24 bottom-0 h-56 w-56 rounded-full bg-cyan-500/10 blur-3xl"
+        aria-hidden
+      />
+      <div className="relative mx-auto max-w-[1200px] px-6 py-14 sm:px-10 lg:px-16">
+        <div className="grid gap-12 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr] lg:gap-16">
           {/* Brand */}
-          <div className="space-y-5">
-            <Link href="/" className="inline-flex items-center gap-3">
+          <div className="space-y-4">
+            <Link href="/" className="inline-flex items-center gap-2.5">
+              <span className="size-2 shrink-0 rounded-full bg-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.55)]" />
               <Image
-                src="/assets/logos/logo.webp"
-                alt="Robotics & AI Club"
-                width={34}
-                height={34}
+                src="/assets/logos/logo-optimized.svg"
+                alt="Club logo"
+                width={28}
+                height={28}
+                className="size-7 shrink-0"
               />
-              <span className="text-sm font-semibold tracking-tight [color:var(--foreground)]">
-                Robotics & AI Club
-              </span>
+              <span className="font-syne font-extrabold tracking-tight text-white">Robotics & AI Club</span>
             </Link>
-            <p className="max-w-[260px] text-sm leading-relaxed [color:var(--foreground-muted)]">
-              {config.tagline}
-            </p>
-            <div className="flex items-center gap-2.5">
+            <p className="max-w-sm text-[13px] font-light leading-[1.9] text-slate-400/80">{config.tagline}</p>
+          </div>
+
+          {/* Club — from Firestore (defaults match reference). */}
+          <div>
+            <h4 className="mb-5 font-mono text-[10px] font-medium uppercase tracking-[0.25em] text-violet-400/70">
+              Club
+            </h4>
+            <ul className="flex flex-col gap-2.5">
+              {config.footerNav.map((item) => (
+                <li key={`${item.label}-${item.href}`}>
+                  <Link
+                    href={item.href}
+                    className="text-[13px] text-slate-400/55 transition-colors duration-200 hover:text-cyan-400"
+                  >
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Info */}
+          <div>
+            <h4 className="mb-5 font-mono text-[10px] font-medium uppercase tracking-[0.25em] text-violet-400/70">
+              Info
+            </h4>
+            <ul className="flex flex-col gap-2.5">
+              {INFO_LINKS.map((item) => (
+                <li key={item.href}>
+                  <Link
+                    href={item.href}
+                    className="text-[13px] text-slate-400/55 transition-colors duration-200 hover:text-cyan-400"
+                  >
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Connect */}
+          <div>
+            <h4 className="mb-5 font-mono text-[10px] font-medium uppercase tracking-[0.25em] text-violet-400/70">
+              Connect
+            </h4>
+            <ul className="mb-6 flex flex-col gap-2.5">
+              {CONNECT_LINKS.map((item) => (
+                <li key={item.label}>
+                  <Link
+                    href={item.href}
+                    className="text-[13px] text-slate-400/55 transition-colors duration-200 hover:text-cyan-400"
+                  >
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+            <div className="flex flex-wrap gap-2">
               {config.socialLinks.map((s) => (
                 <a
-                  key={s.platform}
+                  key={s.platform + s.url}
                   href={s.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  aria-label={s.platform.charAt(0).toUpperCase() + s.platform.slice(1)}
-                  className="flex size-9 items-center justify-center rounded-full border transition-all duration-300 [border-color:var(--surface-border)] [color:var(--foreground-muted)] hover:scale-105 hover:[border-color:rgba(79,142,247,0.45)] hover:[color:#4f8ef7] hover:[background:rgba(79,142,247,0.08)]"
+                  aria-label={
+                    s.platform === "instagram"
+                      ? "Instagram"
+                      : s.platform === "linkedin"
+                        ? "LinkedIn"
+                        : s.platform === "youtube"
+                          ? "YouTube"
+                          : "GitHub"
+                  }
+                  className="flex size-9 items-center justify-center rounded-full border border-violet-500/20 text-slate-400/70 transition-all duration-200 hover:border-cyan-400/35 hover:text-cyan-400"
                 >
                   {SOCIAL_ICONS[s.platform]}
                 </a>
               ))}
             </div>
           </div>
-
-          {/* Navigation */}
-          <div className="space-y-4">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] [color:var(--foreground-subtle)]">
-              Navigation
-            </p>
-            <nav className="flex flex-col gap-2.5">
-              {config.footerNav.map((item) => (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  className="text-sm transition-colors duration-200 [color:var(--foreground-muted)] hover:[color:var(--foreground)]"
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </nav>
-          </div>
-
-          {/* Contact */}
-          <div className="space-y-4">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] [color:var(--foreground-subtle)]">
-              Contact
-            </p>
-            <div className="flex flex-col gap-3 text-sm [color:var(--foreground-muted)]">
-              {config.contactLocation && (
-                <div className="flex items-start gap-2.5">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} className="mt-0.5 size-4 shrink-0 text-blue-400">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                  <span style={{ whiteSpace: "pre-line" }}>{config.contactLocation}</span>
-                </div>
-              )}
-              {config.contactEmail && (
-                <div className="flex items-center gap-2.5">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} className="size-4 shrink-0 text-blue-400">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                  </svg>
-                  <a
-                    href={`mailto:${config.contactEmail}`}
-                    className="transition-colors hover:[color:var(--foreground)]"
-                  >
-                    {config.contactEmail}
-                  </a>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Join CTA */}
-          <div className="space-y-4">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] [color:var(--foreground-subtle)]">
-              Get Involved
-            </p>
-            <p className="text-sm leading-relaxed [color:var(--foreground-muted)]">
-              Ready to build the future? Join our community of innovators.
-            </p>
-            <Link
-              href="/#apply"
-              className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 px-5 py-2.5 text-xs font-semibold text-white shadow-[0_4px_20px_rgba(79,142,247,0.3)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_8px_28px_rgba(79,142,247,0.45)]"
-            >
-              Apply Now
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="size-3.5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-              </svg>
-            </Link>
-          </div>
         </div>
+      </div>
 
-        {/* Divider */}
-        <div className="mt-12 border-t pt-8 [border-color:var(--surface-border)]">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-xs [color:var(--foreground-subtle)]">
-              © {year} {config.copyrightText}
-            </p>
-            <p className="text-xs [color:var(--foreground-subtle)]">
-              Built with passion by the Club Tech Team
-            </p>
-          </div>
+      <div className="relative border-t border-violet-500/15 bg-black/30 px-6 py-5 sm:px-10 lg:px-16">
+        <div className="mx-auto flex max-w-[1200px] flex-col items-center justify-between gap-2 font-mono text-[10px] uppercase tracking-[0.12em] text-slate-500/70 sm:flex-row sm:gap-0">
+          <span>
+            © {y - 1}–{y} {config.copyrightText}
+          </span>
+          <span>{config.versionLine}</span>
         </div>
       </div>
     </footer>

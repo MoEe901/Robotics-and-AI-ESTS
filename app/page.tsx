@@ -1,13 +1,23 @@
-import { HeroSection } from "@/components/hero/hero-section";
-import { Navbar } from "@/components/layout/navbar";
 import { HomeRealtimeSections } from "@/components/content/home-realtime-sections";
+import { HeroSection } from "@/components/hero/hero-section";
+import { Footer } from "@/components/layout/footer";
+import { Navbar } from "@/components/layout/navbar";
 
 export default function Home() {
   return (
     <div className="relative overflow-x-hidden [background:var(--background)] [color:var(--foreground)]">
-      <Navbar />
-      <HeroSection />
-      <HomeRealtimeSections />
+      <div className="futurized-violet-grid" aria-hidden />
+      <div className="futurized-scanlines" aria-hidden />
+      <div className="futurized-corner futurized-corner-tl hidden sm:block" aria-hidden />
+      <div className="futurized-corner futurized-corner-tr hidden sm:block" aria-hidden />
+      <div className="futurized-corner futurized-corner-bl hidden sm:block" aria-hidden />
+      <div className="futurized-corner futurized-corner-br hidden sm:block" aria-hidden />
+      <div className="relative z-[2]">
+        <Navbar />
+        <HeroSection />
+        <HomeRealtimeSections />
+        <Footer />
+      </div>
     </div>
   );
 }

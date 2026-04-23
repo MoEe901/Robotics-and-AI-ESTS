@@ -2,8 +2,19 @@ import {
   EventsCarousel,
   type EventCarouselItem,
 } from "@/components/events/events-carousel";
-import { FileText, Megaphone, Palette, Users, Video, Wallet } from "lucide-react";
+import {
+  FileText,
+  Megaphone,
+  Palette,
+  Rocket,
+  Settings2,
+  Target,
+  Users,
+  Video,
+  Wallet,
+} from "lucide-react";
 import { PartnersMarquee } from "@/components/content/partners-marquee";
+import { RevealSection } from "@/components/motion/reveal-section";
 import { ApplySection } from "@/components/content/apply-section";
 import { FaqSection } from "@/components/content/faq-section";
 import { ProcessStepsSection } from "@/components/content/process-steps-section";
@@ -21,8 +32,7 @@ import type {
 } from "@/lib/firebase/types";
 import type { TeamMemberListItem } from "@/lib/team/types";
 
-const sectionClass =
-  "mx-auto w-[min(94%,1100px)] rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-xl transition-all duration-[400ms] ease-in-out md:p-10";
+const knowUsIcons = [Target, Settings2, Rocket] as const;
 
 const knowUsDefaults = [
   {
@@ -238,136 +248,190 @@ export function HomeSections({
   };
 
   return (
-    <main className="space-y-8 pb-20">
-      <section id="events" className="mx-auto w-[min(94%,1100px)] space-y-6">
-        <h2 className="text-2xl font-semibold tracking-tight">{eventsTitle}</h2>
-        <div className="rounded-3xl border border-white/10 bg-white/[0.03] py-2">
+    <main className="perspective-page space-y-8 pb-20">
+      <RevealSection
+        id="events"
+        className="mx-auto w-[min(94%,1200px)] scroll-mt-28 space-y-6 px-4 sm:px-6 lg:px-8"
+        delay={0}
+      >
+        <span className="font-jetbrains mb-2 block text-[10px] uppercase tracking-[0.3em] text-cyan-400">
+          {"// Upcoming & Past"}
+        </span>
+        <h2 className="font-syne text-[clamp(2rem,4vw,3.2rem)] font-extrabold leading-[1.05] tracking-tight text-white">
+          {(() => {
+            const parts = eventsTitle.trim().split(/\s+/);
+            if (parts.length === 1) {
+              return <span className="hero-title-grad">{parts[0]}</span>;
+            }
+            return (
+              <>
+                <span className="text-white">{parts.slice(0, -1).join(" ")} </span>
+                <span className="hero-title-grad">{parts[parts.length - 1]}</span>
+              </>
+            );
+          })()}
+        </h2>
+        <div className="card-lift-3d rounded-[20px] border border-violet-500/15 bg-[#111422]/80 py-2 shadow-[0_20px_60px_rgba(124,58,237,0.08)]">
           <EventsCarousel items={carouselItems} />
         </div>
-      </section>
+      </RevealSection>
 
-      <section id="certificates" className="mx-auto w-[min(94%,1100px)] py-2">
-        <h2 className="text-2xl font-semibold tracking-tight">
-          {sectionTitle("certificates", "Know us")}
+      <RevealSection
+        id="know"
+        className="mx-auto w-full max-w-[1200px] scroll-mt-28 bg-[#0d0f1a] px-4 py-16 sm:px-10 sm:py-20 lg:px-16"
+        delay={0.05}
+      >
+        <span className="font-jetbrains mb-2 block text-[10px] uppercase tracking-[0.3em] text-cyan-400">
+          {"// Club Fundamentals"}
+        </span>
+        <h2 className="font-syne text-[clamp(2rem,4vw,3.2rem)] font-extrabold leading-[1.05] tracking-tight text-white">
+          Know <span className="hero-title-grad">Us</span>
         </h2>
-        <p className="mt-3 max-w-3xl text-white/75">
+        <p className="mt-4 max-w-[550px] text-[0.95rem] font-light leading-[1.9] text-slate-400">
           {knowUsConfig?.intro?.trim()
             ? knowUsConfig.intro.trim()
-            : "A quick overview of the club fundamentals so new members understand our direction, culture, and learning model."}
+            : "A quick overview so new members understand our direction, culture, and learning model."}
         </p>
-        <div className="mt-6 grid gap-4 md:grid-cols-3">
-          {(knowUsConfig?.cards?.length ? knowUsConfig.cards : knowUsDefaults).map((item) => (
-            <article
-              key={item.title}
-              className="rounded-2xl bg-transparent p-0"
-            >
-              <h3 className="text-base font-semibold tracking-tight text-white">{item.title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-white/70">{item.description}</p>
-            </article>
-          ))}
+        <div className="mt-10 grid gap-px bg-violet-500/10 md:grid-cols-3">
+          {(knowUsConfig?.cards?.length ? knowUsConfig.cards : knowUsDefaults).map((item, idx) => {
+            const KnowIcon = knowUsIcons[idx % knowUsIcons.length]!;
+            return (
+              <article
+                key={item.title}
+                className="card-lift-3d bg-[#0d0f1a] p-8 transition-colors hover:bg-violet-500/[0.04] md:p-10"
+              >
+                <div className="mb-5 flex size-11 items-center justify-center rounded-xl border border-violet-500/20 bg-violet-500/[0.08] text-violet-200">
+                  <KnowIcon className="size-5" strokeWidth={1.75} />
+                </div>
+                <h3 className="font-syne text-base font-bold text-white">{item.title}</h3>
+                <p className="mt-2 text-[0.83rem] font-light leading-[1.85] text-slate-400">{item.description}</p>
+              </article>
+            );
+          })}
         </div>
-      </section>
+      </RevealSection>
 
       {partnerLogos.length ? (
-        <section id="partners" className="mx-auto w-[min(94%,1100px)] space-y-5 py-2">
-          <h2 className="text-2xl font-semibold tracking-tight">{partnerTitle}</h2>
+        <RevealSection
+          id="partners"
+          className="mx-auto w-[min(94%,1200px)] scroll-mt-28 space-y-5 px-4 py-2 sm:px-6 lg:px-8"
+          delay={0.08}
+        >
+          <span className="font-jetbrains mb-2 block text-[10px] uppercase tracking-[0.3em] text-cyan-400">
+            {"// Partners"}
+          </span>
+          <h2 className="font-syne text-[clamp(2rem,4vw,3.2rem)] font-extrabold leading-[1.05] tracking-tight text-white">
+            {partnerTitle}
+          </h2>
           <PartnersMarquee
             logos={partnerLogos}
             gapPx={partnerGapPx}
             durationSec={partnerDurationSec}
             logoBasis={partnerBasis}
           />
-        </section>
+        </RevealSection>
       ) : null}
 
-      <section id="why-join" className="mx-auto w-[min(94%,1100px)] py-2">
-        <div className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03]">
-          <div className="grid gap-[1px] bg-white/10 lg:grid-cols-[340px_1fr]">
-            <article className="relative overflow-hidden bg-[#0e0e16] p-7 md:p-9">
-              <div className="pointer-events-none absolute -bottom-20 -right-20 size-72 rounded-full bg-blue-400/20 blur-3xl animate-pulse" />
-              <div className="pointer-events-none absolute right-6 top-8 size-44 rounded-full bg-pink-400/15 blur-3xl animate-pulse" />
+      <RevealSection
+        id="why-join"
+        className="mx-auto w-[min(94%,1200px)] scroll-mt-28 px-4 py-2 sm:px-6 lg:px-8"
+        delay={0.1}
+      >
+        <span className="font-jetbrains mb-2 block text-[10px] uppercase tracking-[0.3em] text-cyan-400">
+          {"// Build the future"}
+        </span>
+        <div className="overflow-hidden rounded-3xl border border-violet-500/10 bg-violet-500/[0.02]">
+          <div className="grid gap-px bg-violet-500/10 lg:grid-cols-[minmax(280px,360px)_1fr]">
+            <article className="relative overflow-hidden bg-[#0d0f1a] p-7 md:p-9">
+              <div className="pointer-events-none absolute -bottom-20 -right-20 size-72 rounded-full bg-violet-600/15 blur-3xl" />
+              <div className="pointer-events-none absolute right-6 top-8 size-44 rounded-full bg-cyan-500/10 blur-3xl" />
 
               <div className="relative z-10">
-                <p className="inline-flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.22em] text-white/55">
-                  <span className="size-1.5 rounded-full bg-blue-400" />
+                <p className="font-jetbrains inline-flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.22em] text-slate-500">
+                  <span className="size-1.5 rounded-full bg-cyan-400" />
                   {whyJoin.smallHeading}
                 </p>
-                <h2 className="mt-5 text-5xl font-semibold leading-[0.93] tracking-tight text-white md:text-6xl">
+                <h2 className="font-syne mt-5 text-4xl font-extrabold leading-[1.05] tracking-tight text-white md:text-5xl">
                   {whyJoin.title}
                 </h2>
-                <p className="mt-6 text-[15px] leading-[1.72] text-white/60">{whyJoin.description}</p>
+                <p className="mt-6 text-[15px] font-light leading-[1.85] text-slate-400">{whyJoin.description}</p>
               </div>
 
               <div className="relative z-10 mt-8 space-y-3">
-                <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3">
-                  <div className="inline-flex size-8 items-center justify-center rounded-lg bg-blue-400/15 text-blue-400">
+                <div className="flex items-center gap-3 rounded-xl border border-violet-500/10 bg-violet-500/[0.03] px-4 py-3 transition hover:translate-x-1.5 hover:border-violet-500/30 hover:bg-violet-500/[0.07]">
+                  <div className="inline-flex size-8 items-center justify-center rounded-lg bg-cyan-400/10 text-cyan-400">
                     <Users className="size-4" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-white">Hands-on Learning</p>
-                    <p className="text-xs text-white/55">Real projects, real impact</p>
+                    <p className="text-sm font-semibold text-white">Hands-on Learning</p>
+                    <p className="text-xs text-slate-500">Real projects, real impact</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3">
-                  <div className="inline-flex size-8 items-center justify-center rounded-lg bg-pink-400/15 text-pink-400">
+                <div className="flex items-center gap-3 rounded-xl border border-violet-500/10 bg-violet-500/[0.03] px-4 py-3 transition hover:translate-x-1.5 hover:border-violet-500/30 hover:bg-violet-500/[0.07]">
+                  <div className="inline-flex size-8 items-center justify-center rounded-lg bg-fuchsia-500/10 text-fuchsia-300">
                     <Megaphone className="size-4" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-white">6 Specialized Cellules</p>
-                    <p className="text-xs text-white/55">Design · Media · Tech · More</p>
+                    <p className="text-sm font-semibold text-white">6 Specialized Cellules</p>
+                    <p className="text-xs text-slate-500">Design · Media · Tech · More</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3">
-                  <div className="inline-flex size-8 items-center justify-center rounded-lg bg-emerald-400/15 text-emerald-400">
+                <div className="flex items-center gap-3 rounded-xl border border-violet-500/10 bg-violet-500/[0.03] px-4 py-3 transition hover:translate-x-1.5 hover:border-violet-500/30 hover:bg-violet-500/[0.07]">
+                  <div className="inline-flex size-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-400">
                     <FileText className="size-4" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-white">Open to Everyone</p>
-                    <p className="text-xs text-white/55">Beginner or expert — you belong</p>
+                    <p className="text-sm font-semibold text-white">Open to Everyone</p>
+                    <p className="text-xs text-slate-500">Beginner or expert — you belong</p>
                   </div>
                 </div>
               </div>
             </article>
 
-            <div className="grid gap-[1px] bg-white/10 sm:grid-cols-2">
+            <div className="grid gap-px bg-violet-500/10 sm:grid-cols-2">
               {whyJoin.cards.map((card, idx) => (
                 <article
                   key={card.title}
-                  className="group relative overflow-hidden bg-[#111119] p-6 md:p-8"
+                  className="card-lift-3d group relative overflow-hidden bg-[#0d0f1a] p-6 transition-colors hover:bg-violet-500/[0.05] md:p-8"
                 >
-                  <div className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 bg-gradient-to-br from-blue-400/10 via-transparent to-pink-400/10" />
-                  <p className="absolute right-5 top-4 text-5xl font-semibold tracking-tight text-white/[0.06] transition-colors duration-300 group-hover:text-white/[0.1]">
+                  <p className="font-jetbrains pointer-events-none absolute right-5 top-4 text-4xl font-medium text-violet-500/[0.12] md:text-5xl">
                     {String(idx + 1).padStart(2, "0")}
                   </p>
-                  <div className="relative z-10">
-                    <div className="mb-5 h-0.5 w-0 rounded-full bg-blue-400 transition-all duration-300 group-hover:w-10" />
-                    <h3 className="text-lg font-medium tracking-tight text-white">{card.title}</h3>
-                    <p className="mt-3 text-sm leading-[1.7] text-white/60">{card.description}</p>
+                  <div className="relative z-10 mt-6">
+                    <h3 className="font-syne text-[0.95rem] font-bold text-white">{card.title}</h3>
+                    <p className="mt-3 text-[0.78rem] font-light leading-[1.8] text-slate-400">{card.description}</p>
                   </div>
                 </article>
               ))}
             </div>
           </div>
         </div>
-      </section>
+      </RevealSection>
 
-      <section id="cellules" className="mx-auto w-[min(94%,1100px)] py-2">
-        <div className="rounded-3xl border border-white/10 bg-white/[0.03] px-5 py-8 md:px-8 md:py-10">
-          <header className="mx-auto max-w-3xl text-center">
-            <p className="inline-flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.2em] text-white/55">
-              <span className="h-px w-6 bg-white/20" />
+      <RevealSection
+        id="cellules"
+        className="mx-auto w-[min(94%,1200px)] scroll-mt-28 px-4 py-2 sm:px-6 lg:px-8"
+        delay={0.12}
+      >
+        <span className="font-jetbrains mb-2 block text-[10px] uppercase tracking-[0.3em] text-cyan-400">
+          {"// Structure"}
+        </span>
+        <div className="overflow-hidden rounded-3xl border border-violet-500/10 bg-violet-500/[0.02]">
+          <header className="border-b border-violet-500/[0.08] px-5 py-10 text-center md:px-8 md:py-12">
+            <p className="font-jetbrains inline-flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.2em] text-slate-500">
+              <span className="h-px w-6 bg-violet-500/25" />
               {cellules.eyebrow}
-              <span className="h-px w-6 bg-white/20" />
+              <span className="h-px w-6 bg-violet-500/25" />
             </p>
-            <h2 className="mt-4 text-5xl font-semibold tracking-tight text-white md:text-7xl">
+            <h2 className="font-syne mt-4 text-4xl font-extrabold tracking-tight text-white md:text-6xl">
               {cellules.title}
             </h2>
-            <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-white/65 md:text-base">
+            <p className="mx-auto mt-4 max-w-2xl text-sm font-light leading-relaxed text-slate-400 md:text-base">
               {cellules.subtitle}
             </p>
           </header>
 
-          <div className="mt-8 grid gap-[2px] overflow-hidden rounded-2xl border border-white/10 bg-white/10 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-px bg-violet-500/10 sm:grid-cols-2 lg:grid-cols-3">
             {cellules.cards.map((card, idx) => {
               const base = cellulesCards[idx % cellulesCards.length]!;
               const iconKey = (card.iconKey ?? "").trim().toLowerCase() as keyof typeof celluleIcons;
@@ -375,49 +439,57 @@ export function HomeSections({
               return (
                 <article
                   key={card.title}
-                  className="group relative overflow-hidden bg-[#111118] p-6 md:p-7"
+                  className="card-lift-3d group relative overflow-hidden bg-[#0d0f1a] p-6 transition-colors hover:bg-violet-500/[0.04] md:p-8"
                 >
-                  <div
-                    className={`absolute inset-0 bg-gradient-to-br ${base.accent} opacity-0 transition-opacity duration-300 group-hover:opacity-100`}
+                  <span
+                    className="pointer-events-none absolute left-0 top-0 h-0 w-[3px] bg-gradient-to-b from-violet-600 to-cyan-500 transition-all duration-500 group-hover:h-full"
+                    aria-hidden
                   />
-                  <p className="absolute right-6 top-5 text-5xl font-semibold tracking-tight text-white/[0.06] transition-colors duration-300 group-hover:text-white/[0.1]">
+                  <p className="font-jetbrains mb-3 text-3xl font-medium text-violet-500/[0.12] md:text-4xl">
                     {String(idx + 1).padStart(2, "0")}
                   </p>
                   <div className="relative z-10">
-                    <div className="mb-5 inline-flex size-11 items-center justify-center rounded-xl bg-white/5">
+                    <div className="mb-4 inline-flex text-[1.35rem] text-white/90">
                       {card.iconImageUrl?.trim() ? (
                         <>
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
                             src={card.iconImageUrl}
                             alt={`${card.title} icon`}
-                            className="size-5 object-contain"
+                            className="size-6 object-contain"
                           />
                         </>
                       ) : (
-                        <Icon className={`size-5 ${base.iconClass}`} />
+                        <Icon className={`size-6 ${base.iconClass}`} strokeWidth={1.75} />
                       )}
                     </div>
-                    <div
-                      className={`mb-4 h-0.5 w-0 rounded-full transition-all duration-300 group-hover:w-9 ${base.lineClass}`}
-                    />
-                    <h3 className="text-lg font-medium tracking-tight text-white">{card.title}</h3>
-                    <p className="mt-2 text-sm leading-relaxed text-white/65">{card.description}</p>
+                    <h3 className="font-syne text-[0.95rem] font-bold text-white">{card.title}</h3>
+                    <p className="mt-2 text-[0.78rem] font-light leading-[1.8] text-slate-400">
+                      {card.description}
+                    </p>
                   </div>
                 </article>
               );
             })}
           </div>
         </div>
-      </section>
+      </RevealSection>
 
-      <ProcessStepsSection config={processStepsConfig} />
+      <RevealSection className="mx-auto w-[min(94%,1100px)] py-2" delay={0.14}>
+        <ProcessStepsSection config={processStepsConfig} />
+      </RevealSection>
 
-      <TeamSection title={teamTitle} members={teamMembers} />
+      <RevealSection className="mx-auto w-[min(94%,1100px)] py-2" delay={0.16}>
+        <TeamSection title={teamTitle} members={teamMembers} />
+      </RevealSection>
 
-      <FaqSection config={faqConfig} />
+      <RevealSection className="mx-auto w-[min(94%,1100px)] py-2" delay={0.18}>
+        <FaqSection config={faqConfig} />
+      </RevealSection>
 
-      <ApplySection config={applyConfig} />
+      <RevealSection className="mx-auto w-[min(94%,1100px)] py-2" delay={0.2}>
+        <ApplySection config={applyConfig} />
+      </RevealSection>
     </main>
   );
 }

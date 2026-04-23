@@ -1,6 +1,5 @@
 "use client";
 
-import { Bebas_Neue, DM_Sans } from "next/font/google";
 import { BarChart3, Calendar, ClipboardList, Code2, Zap } from "lucide-react";
 import Link from "next/link";
 import { motion, useScroll, useTransform } from "framer-motion";
@@ -9,18 +8,6 @@ import { useRef, useState } from "react";
 import { HeroParticleCanvas } from "@/components/hero/hero-particle-canvas";
 import { siteConfig } from "@/lib/site-config";
 import { cn } from "@/lib/utils";
-
-const fontDisplay = Bebas_Neue({
-  weight: "400",
-  subsets: ["latin"],
-  display: "swap",
-});
-
-const fontSans = DM_Sans({
-  weight: ["300", "400", "500"],
-  subsets: ["latin"],
-  display: "swap",
-});
 
 const NOISE_BG =
   "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")";
@@ -42,12 +29,8 @@ export function HeroSection() {
     <section
       id="home"
       ref={sectionRef}
-      className={cn(
-        "relative min-h-screen overflow-hidden bg-[#05050c] text-[#f2f1f8]",
-        fontSans.className,
-      )}
+      className="relative min-h-screen overflow-hidden bg-[#07080f] text-[#e2e8f0]"
     >
-      {/* Video under particles + vignette (see public/assets/video after compress script) */}
       {showHeroVideo ? (
         <>
           <video
@@ -70,7 +53,7 @@ export function HeroSection() {
             )}
           </video>
           <div
-            className="pointer-events-none absolute inset-0 z-[1] bg-[#05050c]/55"
+            className="pointer-events-none absolute inset-0 z-[1] bg-[#07080f]/60"
             aria-hidden
           />
         </>
@@ -78,24 +61,21 @@ export function HeroSection() {
 
       <HeroParticleCanvas />
 
-      {/* Vignette */}
       <div
         className="pointer-events-none absolute inset-0 z-[3]"
         style={{
           background:
-            "radial-gradient(ellipse at 20% 50%, rgba(79,142,247,0.07) 0%, transparent 55%), radial-gradient(ellipse at 80% 30%, rgba(167,139,250,0.06) 0%, transparent 50%), radial-gradient(ellipse at 50% 90%, rgba(240,86,160,0.04) 0%, transparent 45%)",
+            "radial-gradient(ellipse at 20% 50%, rgba(124,58,237,0.08) 0%, transparent 55%), radial-gradient(ellipse at 80% 30%, rgba(6,182,212,0.06) 0%, transparent 50%), radial-gradient(ellipse at 50% 90%, rgba(244,114,182,0.04) 0%, transparent 45%)",
         }}
         aria-hidden
       />
 
-      {/* Noise */}
       <div
-        className="pointer-events-none absolute inset-0 z-[4] opacity-[0.025]"
+        className="pointer-events-none absolute inset-0 z-[4] opacity-[0.03]"
         style={{ backgroundImage: NOISE_BG }}
         aria-hidden
       />
 
-      {/* Soft blend into page background (removes hard cut at hero / next section) */}
       <div
         className="pointer-events-none absolute inset-x-0 bottom-0 z-[5] h-[clamp(120px,28vh,380px)]"
         style={{
@@ -110,13 +90,9 @@ export function HeroSection() {
           from { opacity: 0; transform: translateY(20px); }
           to { opacity: 1; transform: translateY(0); }
         }
-        @keyframes heroGradShift {
-          0%, 100% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-        }
         @keyframes heroLivePulse {
-          0%, 100% { box-shadow: 0 0 0 0 rgba(62,207,142,0.5); }
-          50% { box-shadow: 0 0 0 5px rgba(62,207,142,0); }
+          0%, 100% { box-shadow: 0 0 0 0 rgba(6,182,212,0.45); }
+          50% { box-shadow: 0 0 0 5px rgba(6,182,212,0); }
         }
         @keyframes heroCardFloat {
           0%, 100% { transform: translateY(0); }
@@ -134,53 +110,50 @@ export function HeroSection() {
           from { opacity: 0; transform: translateX(28px); }
           to { opacity: 1; transform: translateX(0); }
         }
-        .hero-gradient-title {
-          background: linear-gradient(135deg, #4f8ef7 0%, #a78bfa 50%, #f056a0 100%);
-          background-size: 200% 200%;
-          -webkit-background-clip: text;
-          background-clip: text;
-          -webkit-text-fill-color: transparent;
-          animation: heroGradShift 5s ease-in-out infinite;
-        }
       `}</style>
 
-      {/* Main column */}
-      <div className="relative z-[30] mx-auto flex min-h-screen max-w-[1200px] flex-col justify-center px-6 pb-28 pt-[7.5rem] sm:px-9 lg:px-16 lg:pb-24 lg:pt-[7.5rem]">
-        <motion.div style={{ opacity: contentOpacity, y: contentY }} className="relative max-w-[760px]">
-          {/* Eyebrow */}
+      <div className="relative z-[30] mx-auto flex min-h-screen max-w-[1300px] flex-col justify-center px-4 pb-8 pt-[6.5rem] sm:px-6 sm:pt-[7.25rem] md:px-9 lg:px-16 lg:pb-12 lg:pt-[7.5rem]">
+        <motion.div
+          style={{ opacity: contentOpacity, y: contentY }}
+          className="relative max-w-[980px] min-[1060px]:max-w-[1050px]"
+        >
           <div
-            className="mb-7 flex flex-wrap items-center gap-4 sm:mb-8"
+            className="mb-6 flex flex-wrap items-center gap-3 sm:mb-8 sm:gap-4"
             style={{ animation: "heroFadeUp 0.7s ease both 0.15s" }}
           >
-            <div className="inline-flex items-center gap-2 rounded-full border border-sky-400/30 bg-sky-500/[0.08] px-3.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-sky-400">
+            <div className="font-jetbrains inline-flex items-center gap-1.5 rounded-full border border-cyan-400/30 bg-cyan-400/[0.1] px-2.5 py-1 text-[9px] font-medium uppercase tracking-[0.16em] text-cyan-400 sm:gap-2 sm:px-3.5 sm:py-1.5 sm:text-[10px] sm:tracking-[0.2em]">
               <span
-                className="size-1.5 shrink-0 rounded-full bg-emerald-400"
+                className="size-1.5 shrink-0 rounded-full bg-cyan-400"
                 style={{ animation: "heroLivePulse 1.5s ease-in-out infinite" }}
               />
               University Tech Community
             </div>
-            <span className="hidden h-4 w-px shrink-0 bg-white/[0.12] sm:block" />
-            <span className="text-[11px] uppercase tracking-[0.1em] text-[#6a6882]">
+            <span className="hidden h-4 w-px shrink-0 bg-white/[0.08] sm:block" />
+            <span className="font-jetbrains text-[10px] uppercase tracking-[0.16em] text-slate-400/80 sm:text-[11px] sm:tracking-[0.2em]">
               EST Safi · Morocco
             </span>
           </div>
 
-          {/* Title */}
-          <h1 className={cn("leading-[0.88] tracking-[0.01em]", fontDisplay.className)}>
+          <h1
+            className={cn(
+              "font-syne leading-[0.9] tracking-[-0.02em]",
+              "text-[clamp(2.1rem,17vw,7.5rem)] font-extrabold",
+            )}
+          >
             <span
-              className="block text-[clamp(4rem,11vw,8.75rem)] text-[#f2f1f8]"
+              className="block text-white uppercase tracking-[0.035em] sm:tracking-[0.05em]"
               style={{ animation: "heroFadeUp 0.8s ease both 0.28s" }}
             >
               Welcome to the
             </span>
-            <span
-              className="block overflow-hidden text-[clamp(4rem,11vw,8.75rem)] leading-[0.88]"
-              style={{ animation: "heroFadeUp 0.8s ease both 0.34s" }}
-            >
-              <span className="hero-gradient-title block">Robotics & AI</span>
+            <span className="block leading-[0.9]" style={{ animation: "heroFadeUp 0.8s ease both 0.34s" }}>
+              <span className="hero-title-grad block uppercase tracking-[-0.02em]">
+                <span className="block whitespace-nowrap">Robotics</span>
+                <span className="block whitespace-nowrap">&amp; AI</span>
+              </span>
             </span>
             <span
-              className="block text-[clamp(4rem,11vw,8.75rem)] text-[#f2f1f8]"
+              className="block text-white uppercase tracking-[0.035em] sm:tracking-[0.05em]"
               style={{ animation: "heroFadeUp 0.8s ease both 0.4s" }}
             >
               Club.
@@ -188,179 +161,194 @@ export function HeroSection() {
           </h1>
 
           <p
-            className="mt-8 max-w-[520px] text-[17px] font-light leading-[1.75] text-[#f2f1f8]/60 lg:mt-7"
+            className="mt-6 max-w-[min(96vw,520px)] text-[clamp(1rem,3.4vw,1.05rem)] font-light leading-[1.65] text-slate-400/90 sm:mt-7 sm:leading-[1.8] lg:mt-7 lg:leading-[1.85]"
             style={{ animation: "heroFadeUp 0.8s ease both 0.42s" }}
           >
             A community of builders, dreamers, and innovators transforming ideas into intelligent
             machines. Join us and shape the future of technology — starting today.
           </p>
 
-          {/* CTAs */}
           <div
-            className="mt-10 flex flex-wrap items-center gap-3 sm:gap-4"
+            className="mt-8 flex flex-col items-stretch gap-2.5 sm:mt-10 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4"
             style={{ animation: "heroFadeUp 0.8s ease both 0.48s" }}
           >
             <Link
               href="/#apply"
-              className="inline-flex items-center gap-2.5 rounded-[14px] bg-[#4f8ef7] px-8 py-[15px] text-[15px] font-medium text-white shadow-[0_8px_32px_rgba(79,142,247,0.3)] transition hover:-translate-y-[3px] hover:opacity-95 hover:shadow-[0_14px_44px_rgba(79,142,247,0.38)]"
+              className="font-jetbrains inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-gradient-to-br from-violet-600 to-cyan-500 px-6 py-3.5 text-[12px] font-medium uppercase tracking-[0.08em] text-white shadow-[0_0_25px_rgba(124,58,237,0.4)] transition hover:-translate-y-0.5 hover:shadow-[0_0_45px_rgba(124,58,237,0.55)] sm:min-h-0 sm:w-auto sm:justify-start sm:px-8"
             >
               <ClipboardList className="size-4 shrink-0" strokeWidth={2} />
               {siteConfig.ctas.primary}
             </Link>
             <Link
               href="/#events"
-              className="inline-flex items-center gap-2.5 rounded-[14px] border border-white/[0.12] bg-white/[0.05] px-7 py-[15px] text-[15px] font-normal text-[#f2f1f8] transition hover:-translate-y-0.5 hover:bg-white/[0.09]"
+              className="font-jetbrains inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full border border-white/[0.15] bg-transparent px-6 py-3.5 text-[12px] font-medium uppercase tracking-[0.08em] text-slate-300 transition hover:border-violet-500/50 hover:text-white sm:min-h-0 sm:w-auto sm:justify-start sm:px-7"
             >
               <Calendar className="size-4 shrink-0" strokeWidth={2} />
               {siteConfig.ctas.secondary}
             </Link>
           </div>
+        </motion.div>
 
-          {/* Stats */}
+        <motion.div
+          style={{ opacity: contentOpacity, y: contentY }}
+          className="relative z-[30] mt-10 w-[min(100vw,100%)] max-w-none sm:mt-14"
+        >
           <div
-            className="mt-14 max-w-[680px] overflow-hidden rounded-2xl border border-white/[0.12] bg-[#0a0a16]/60 backdrop-blur-[16px] max-[680px]:flex-wrap sm:mt-[4.5rem]"
+            className="relative left-1/2 flex w-screen max-w-none -translate-x-1/2 overflow-hidden border-y border-violet-500/10 bg-violet-500/[0.02]"
             style={{ animation: "heroFadeUp 0.8s ease both 0.54s" }}
           >
-            <div className="flex max-[680px]:flex-wrap">
-              {[
-                { v: "200+", l: "Members", c: "text-sky-400" },
-                { v: "6", l: "Cellules", c: "text-violet-300" },
-                { v: "14", l: "Projects", c: "text-emerald-400" },
-                { v: "8+", l: "Awards", c: "text-fuchsia-400" },
-              ].map((stat, i) => (
-                <div
-                  key={stat.l}
-                  className={cn(
-                    "flex min-w-[50%] flex-1 flex-col gap-1 px-6 py-5 transition hover:bg-white/[0.02] max-[680px]:border-b max-[680px]:border-white/[0.06] sm:min-w-0 sm:border-r sm:border-white/[0.06] sm:border-b-0",
-                    i === 1 ? "max-[680px]:border-r max-[680px]:border-white/[0.06]" : "",
-                    i === 3 ? "border-r-0 max-[680px]:border-b-0 max-[680px]:border-r-0" : "",
-                  )}
-                >
-                  <span className={cn(fontDisplay.className, "text-4xl tracking-[0.04em]", stat.c)}>
-                    {stat.v}
-                  </span>
-                  <span className="text-[11px] font-light uppercase tracking-[0.06em] text-[#6a6882]">
-                    {stat.l}
-                  </span>
-                </div>
-              ))}
-            </div>
+            {[
+              { v: "200+", l: "Members", c: "text-violet-500" },
+              { v: "6", l: "Cellules", c: "text-cyan-400" },
+              { v: "14", l: "Projects", c: "text-emerald-400" },
+              { v: "8+", l: "Awards", c: "text-fuchsia-400" },
+            ].map((stat, i) => (
+              <div
+                key={stat.l}
+                className={cn(
+                  "group relative flex min-w-[50%] flex-1 flex-col items-center gap-1 border-r border-violet-500/[0.08] px-3 py-7 text-center transition-colors last:border-r-0 hover:bg-violet-500/[0.04] sm:min-w-0 sm:px-4 sm:py-10 max-[639px]:border-b max-[639px]:border-violet-500/[0.08] max-[639px]:py-7",
+                  i === 1 ? "max-[639px]:border-r max-[639px]:border-violet-500/[0.08]" : "",
+                  i === 2 ? "max-[639px]:border-b-0" : "",
+                  i === 3 ? "max-[639px]:border-r-0" : "",
+                )}
+              >
+                <span
+                  className="pointer-events-none absolute inset-x-0 top-0 h-0.5 origin-left scale-x-0 bg-gradient-to-r from-violet-600 to-cyan-400 transition-transform duration-500 ease-out group-hover:scale-x-100"
+                  aria-hidden
+                />
+                <span className={cn("font-syne text-[clamp(1.65rem,8vw,2.8rem)] font-extrabold leading-none", stat.c)}>
+                  {stat.v}
+                </span>
+                <span className="font-jetbrains text-[10px] font-medium uppercase tracking-[0.16em] text-slate-500 sm:text-[11px] sm:tracking-[0.25em]">
+                  {stat.l}
+                </span>
+              </div>
+            ))}
           </div>
         </motion.div>
 
-        {/* Floating cards — desktop */}
-        <div className="pointer-events-none absolute right-12 top-1/2 z-[31] hidden min-[1060px]:flex min-[1060px]:-translate-y-1/2 min-[1060px]:flex-col min-[1060px]:gap-3.5 xl:right-16">
+        <div className="pointer-events-none absolute right-12 top-1/2 z-[31] hidden min-[1060px]:flex min-[1060px]:-translate-y-1/2 min-[1060px]:flex-col min-[1060px]:gap-4 xl:right-16">
           <div
-            className="w-[280px] rounded-2xl border border-white/[0.12] bg-[#0a0a16]/75 p-5 backdrop-blur-[20px]"
+            className="w-[300px] rounded-2xl border border-violet-500/20 bg-[rgba(13,15,26,0.85)] p-5 backdrop-blur-[20px] transition hover:-translate-x-1 hover:border-violet-500/40"
             style={{ animation: "heroFadeLeft 1s ease both 0.65s" }}
           >
             <div style={{ animation: "heroCardFloat 6s ease-in-out infinite 1s" }}>
-            <div className="mb-3.5 flex items-center gap-3">
-              <div className="flex size-9 shrink-0 items-center justify-center rounded-[10px] bg-sky-500/15 text-sky-400">
-                <Zap className="size-[17px]" strokeWidth={1.8} />
-              </div>
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#6a6882]">
-                  Live Activity
-                </p>
-                <p className="text-sm font-medium text-[#f2f1f8]">Club Updates</p>
-              </div>
-            </div>
-            <div className="flex flex-col gap-2.5">
-              {[
-                { dot: "#3ecf8e", t: "New workshop announced", time: "2m ago" },
-                { dot: "#4f8ef7", t: "Member joined Design Cellule", time: "1h ago" },
-                { dot: "#a78bfa", t: "Competition results published", time: "3h ago" },
-              ].map((row) => (
-                <div key={row.t} className="flex items-center gap-2.5">
-                  <span className="size-[7px] shrink-0 rounded-full" style={{ background: row.dot }} />
-                  <span className="flex-1 text-[12.5px] font-light text-[#f2f1f8]">{row.t}</span>
-                  <span className="text-[10px] text-[#6a6882]">{row.time}</span>
+              <div className="mb-3 flex items-center gap-3">
+                <div className="flex size-[30px] shrink-0 items-center justify-center rounded-lg bg-violet-500/15 text-violet-300">
+                  <Zap className="size-[17px]" strokeWidth={1.8} />
                 </div>
-              ))}
-            </div>
+                <div className="min-w-0 flex-1">
+                  <p className="font-jetbrains text-[9px] font-medium uppercase tracking-[0.2em] text-slate-500">
+                    Live Activity
+                  </p>
+                  <p className="text-sm font-semibold text-white">Club Updates</p>
+                </div>
+                <span
+                  className="size-[5px] shrink-0 rounded-full bg-emerald-400 shadow-[0_0_6px_#10b981]"
+                  aria-hidden
+                />
+              </div>
+              <div className="flex flex-col">
+                {[
+                  { t: "New workshop announced", time: "2m ago" },
+                  { t: "Member joined Design Cellule", time: "1h ago" },
+                  { t: "Competition results published", time: "3h ago" },
+                ].map((row) => (
+                  <div
+                    key={row.t}
+                    className="flex items-center justify-between gap-2 border-b border-white/[0.04] py-2.5 last:border-b-0"
+                  >
+                    <span className="text-[12px] font-light text-slate-300">{row.t}</span>
+                    <span className="font-jetbrains shrink-0 text-[10px] text-slate-500">{row.time}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
           <div
-            className="w-[280px] rounded-2xl border border-white/[0.12] bg-[#0a0a16]/75 p-5 backdrop-blur-[20px]"
+            className="w-[300px] rounded-2xl border border-violet-500/20 bg-[rgba(13,15,26,0.85)] p-5 backdrop-blur-[20px] transition hover:-translate-x-1 hover:border-violet-500/40"
             style={{ animation: "heroFadeLeft 1s ease both 0.72s" }}
           >
             <div style={{ animation: "heroCardFloat 7s ease-in-out infinite 0.5s" }}>
-            <div className="mb-3.5 flex items-center gap-3">
-              <div className="flex size-9 shrink-0 items-center justify-center rounded-[10px] bg-violet-500/15 text-violet-300">
-                <Code2 className="size-[17px]" strokeWidth={1.8} />
+              <div className="mb-3 flex items-center gap-3">
+                <div className="flex size-[30px] shrink-0 items-center justify-center rounded-lg bg-cyan-400/12 text-cyan-400">
+                  <Code2 className="size-[17px]" strokeWidth={1.8} />
+                </div>
+                <div>
+                  <p className="font-jetbrains text-[9px] font-medium uppercase tracking-[0.2em] text-slate-500">
+                    Tech Stack
+                  </p>
+                  <p className="text-sm font-semibold text-white">What We Build With</p>
+                </div>
               </div>
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#6a6882]">
-                  Tech Stack
-                </p>
-                <p className="text-sm font-medium text-[#f2f1f8]">What We Build With</p>
+              <div className="flex flex-wrap gap-1.5">
+                {[
+                  { cls: "border-cyan-400/25 bg-cyan-400/[0.08] text-cyan-400", label: "Python" },
+                  { cls: "border-violet-500/25 bg-violet-500/[0.08] text-violet-300", label: "ROS2" },
+                  { cls: "border-emerald-500/25 bg-emerald-500/[0.08] text-emerald-400", label: "Arduino" },
+                  { cls: "border-fuchsia-400/25 bg-fuchsia-400/[0.08] text-fuchsia-300", label: "TensorFlow" },
+                  { cls: "border-cyan-400/20 bg-cyan-400/[0.08] text-cyan-400", label: "OpenCV" },
+                  { cls: "border-violet-500/20 bg-violet-500/[0.08] text-violet-300", label: "MATLAB" },
+                ].map((pill) => (
+                  <span
+                    key={pill.label}
+                    className={cn(
+                      "font-jetbrains inline-flex rounded-full border px-2.5 py-1 text-[10px] font-medium",
+                      pill.cls,
+                    )}
+                  >
+                    {pill.label}
+                  </span>
+                ))}
               </div>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {[
-                ["#4f8ef7", "Python"],
-                ["#3ecf8e", "ROS2"],
-                ["#f5a623", "Arduino"],
-                ["#a78bfa", "TensorFlow"],
-                ["#f056a0", "OpenCV"],
-                ["#38bdf8", "MATLAB"],
-              ].map(([color, label]) => (
-                <span
-                  key={label}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.12] bg-white/[0.04] px-3 py-1 text-[11px] text-[#f2f1f8]"
-                >
-                  <span className="size-[5px] rounded-full" style={{ background: color }} />
-                  {label}
-                </span>
-              ))}
-            </div>
             </div>
           </div>
 
           <div
-            className="w-[280px] rounded-2xl border border-white/[0.12] bg-[#0a0a16]/75 p-5 backdrop-blur-[20px]"
+            className="w-[300px] rounded-2xl border border-violet-500/20 bg-[rgba(13,15,26,0.85)] p-5 backdrop-blur-[20px] transition hover:-translate-x-1 hover:border-violet-500/40"
             style={{ animation: "heroFadeLeft 1s ease both 0.78s" }}
           >
             <div style={{ animation: "heroCardFloat 5.5s ease-in-out infinite 1s" }}>
-            <div className="mb-3.5 flex items-center gap-3">
-              <div className="flex size-9 shrink-0 items-center justify-center rounded-[10px] bg-emerald-500/15 text-emerald-400">
-                <BarChart3 className="size-[17px]" strokeWidth={1.8} />
+              <div className="mb-3 flex items-center gap-3">
+                <div className="flex size-[30px] shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-400">
+                  <BarChart3 className="size-[17px]" strokeWidth={1.8} />
+                </div>
+                <div>
+                  <p className="font-jetbrains text-[9px] font-medium uppercase tracking-[0.2em] text-slate-500">
+                    Growth
+                  </p>
+                  <p className="text-sm font-semibold text-white">Members 2025–2026</p>
+                </div>
               </div>
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#6a6882]">
-                  Growth
-                </p>
-                <p className="text-sm font-medium text-[#f2f1f8]">Members 2025–2026</p>
+              <div className="flex h-10 items-end gap-[3px]">
+                {[30, 45, 40, 60, 55, 75, 70, 100].map((h, i) => (
+                  <div
+                    key={i}
+                    className={cn(
+                      "min-w-0 flex-1 rounded-t-[3px] bg-violet-500/25 transition-all",
+                      h === 100 && "bg-gradient-to-t from-violet-600 to-cyan-500",
+                    )}
+                    style={{
+                      height: `${h}%`,
+                      animation: `heroBarGrow 1.2s cubic-bezier(0.22,1,0.36,1) both`,
+                      animationDelay: `${0.8 + i * 0.05}s`,
+                      opacity: h === 100 ? 1 : 0.25 + (h / 100) * 0.35,
+                    }}
+                  />
+                ))}
               </div>
-            </div>
-            <div className="flex h-10 items-end gap-1.5">
-              {[30, 45, 40, 60, 55, 75, 70, 100].map((h, i) => (
-                <div
-                  key={i}
-                  className="min-w-0 flex-1 rounded-t bg-sky-500/40"
-                  style={{
-                    height: `${h}%`,
-                    animation: `heroBarGrow 1.2s cubic-bezier(0.22,1,0.36,1) both`,
-                    animationDelay: `${0.8 + i * 0.05}s`,
-                    opacity: h === 100 ? 1 : 0.25 + (h / 100) * 0.35,
-                  }}
-                />
-              ))}
-            </div>
             </div>
           </div>
         </div>
 
-        {/* Scroll hint */}
         <div
-          className="absolute bottom-8 left-1/2 z-[31] flex -translate-x-1/2 flex-col items-center gap-2 text-[9px] uppercase tracking-[0.18em] text-[#6a6882]"
+          className="absolute bottom-6 left-1/2 z-[31] hidden -translate-x-1/2 flex-col items-center gap-2 font-jetbrains text-[9px] uppercase tracking-[0.18em] text-slate-500 sm:flex"
           style={{ animation: "heroFadeUp 0.8s ease both 1s" }}
         >
           <span>Scroll</span>
           <div
-            className="h-9 w-px bg-gradient-to-b from-[#6a6882] to-transparent"
+            className="h-9 w-px bg-gradient-to-b from-slate-500 to-transparent"
             style={{ animation: "heroScrollLine 2.4s ease-in-out infinite" }}
           />
         </div>

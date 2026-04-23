@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Space_Grotesk } from "next/font/google";
+import { Inter, JetBrains_Mono, Space_Grotesk, Syne } from "next/font/google";
 
 import { FirestoreDebugRawTeamMembers } from "@/components/firebase/firestore-debug-raw";
 import { StartupLoader } from "@/components/layout/startup-loader";
@@ -16,6 +16,18 @@ const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
 });
 
+const syne = Syne({
+  variable: "--font-syne",
+  subsets: ["latin"],
+  weight: ["700", "800"],
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-jetbrains-mono",
+  subsets: ["latin"],
+  weight: ["400", "500"],
+});
+
 export const metadata: Metadata = {
   title: "Robotics & AI Club",
   description:
@@ -30,7 +42,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${spaceGrotesk.variable} relative h-full antialiased`}
+      className={`${inter.variable} ${spaceGrotesk.variable} ${syne.variable} ${jetbrainsMono.variable} relative h-full scroll-smooth antialiased`}
     >
       <body className="relative min-h-full flex flex-col">
         <StartupLoader>

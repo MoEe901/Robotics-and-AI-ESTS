@@ -1,0 +1,43 @@
+"use client";
+
+import { motion, useReducedMotion } from "framer-motion";
+
+import { transitionReveal } from "@/lib/motion";
+import { cn } from "@/lib/utils";
+
+type RevealSectionProps = {
+  children: React.ReactNode;
+  className?: string;
+  id?: string;
+  delay?: number;
+};
+
+/** Scroll-in fade + lift. Wrapper is a `div` so nested `<section>` landmarks stay valid. */
+export function RevealSection({ children, className, id, delay = 0 }: RevealSectionProps) {
+  const reduce = useReducedMotion();
+
+  if (reduce) {
+    return (
+      <div id={id} className={className}>
+        {children}
+      </div>
+    );
+  }
+
+  return (
+    <motion.div
+      id={id}
+      className={cn(className)}
+      initial={{ opacity: 0, y: 32 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.12, margin: "0px 0px -10% 0px" }}
+      transition={{
+        duration: transitionReveal.duration,
+        ease: transitionReveal.ease,
+        delay,
+      }}
+    >
+      {children}
+    </motion.div>
+  );
+}

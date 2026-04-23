@@ -269,3 +269,46 @@ export const DEFAULT_TEAM_VISIBILITY: TeamMemberVisibility = {
   showLinkedIn: true,
   showGitHub: true,
 };
+
+export type FooterSocialPlatform = "instagram" | "linkedin" | "youtube" | "github";
+
+export type FooterSocialLink = {
+  platform: FooterSocialPlatform;
+  url: string;
+};
+
+export type FooterNavItem = {
+  label: string;
+  href: string;
+};
+
+export type FooterConfig = {
+  tagline: string;
+  /** “Club” column links (editable in admin). */
+  footerNav: FooterNavItem[];
+  socialLinks: FooterSocialLink[];
+  contactLocation: string;
+  contactEmail: string;
+  copyrightText: string;
+  /** Right side of the bottom bar (mono). */
+  versionLine: string;
+};
+
+export const DEFAULT_FOOTER_CONFIG: FooterConfig = {
+  tagline:
+    "A university tech community at EST Safi, Morocco. Building the future through robotics, AI, and collaboration.",
+  footerNav: [
+    { label: "Home", href: "/" },
+    { label: "Events", href: "/#events" },
+    { label: "Projects", href: "/#cellules" },
+    { label: "Competitions", href: "/#events" },
+  ],
+  socialLinks: [
+    { platform: "instagram", url: "https://www.instagram.com/" },
+    { platform: "linkedin", url: "https://www.linkedin.com/" },
+  ],
+  contactLocation: "Route Sidi Aissa, R.P. 100 26000 — Safi, Morocco",
+  contactEmail: "roboticsaiclub.est@gmail.com",
+  copyrightText: "Robotics & AI Club · EST Safi, Morocco",
+  versionLine: "All systems operational · v2.0",
+};

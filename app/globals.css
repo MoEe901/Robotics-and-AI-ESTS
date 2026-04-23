@@ -1,13 +1,18 @@
-﻿@import "tailwindcss";
+@import "tailwindcss";
 
 :root {
-  --background: #0c0a09;
-  --foreground: #ffffff;
-  --foreground-muted: rgba(255, 255, 255, 0.78);
-  --surface: rgba(0, 0, 0, 0.45);
-  --surface-strong: rgba(0, 0, 0, 0.85);
-  --surface-hover: rgba(255, 255, 255, 0.1);
-  --surface-border: rgba(255, 255, 255, 0.18);
+  /* Futurized reference: robotics_ai_club_futurized.html */
+  --background: #07080f;
+  --foreground: #e2e8f0;
+  --foreground-muted: rgba(226, 232, 240, 0.55);
+  --surface: rgba(13, 15, 26, 0.75);
+  --surface-strong: rgba(13, 15, 26, 0.92);
+  --surface-hover: rgba(124, 58, 237, 0.1);
+  --surface-border: rgba(124, 58, 237, 0.25);
+  --futurized-bg2: #0d0f1a;
+  --futurized-bg3: #111422;
+  --futurized-violet: #7c3aed;
+  --futurized-cyan: #06b6d4;
   color-scheme: dark;
 }
 
@@ -39,13 +44,112 @@ select option {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-inter);
-  --font-display: var(--font-space-grotesk);
+  --font-display: var(--font-syne);
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-inter), sans-serif;
+}
+
+html[data-theme="dark"] body {
+  font-family: var(--font-space-grotesk), ui-sans-serif, sans-serif;
+}
+
+.font-syne {
+  font-family: var(--font-syne), sans-serif;
+}
+
+.font-jetbrains {
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+}
+
+.hero-title-grad {
+  background: linear-gradient(135deg, #7c3aed, #06b6d4);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 30px rgba(124, 58, 237, 0.45));
+}
+
+.futurized-violet-grid {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(124, 58, 237, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(124, 58, 237, 0.025) 1px, transparent 1px);
+  background-size: 50px 50px;
+}
+
+.futurized-scanlines {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 3px,
+    rgba(0, 0, 0, 0.04) 3px,
+    rgba(0, 0, 0, 0.04) 4px
+  );
+}
+
+.futurized-corner {
+  position: fixed;
+  z-index: 5;
+  width: 60px;
+  height: 60px;
+  pointer-events: none;
+  opacity: 0.45;
+}
+
+.futurized-corner-tl {
+  top: 1.5rem;
+  left: 1.5rem;
+  border-top: 1px solid rgba(6, 182, 212, 0.45);
+  border-left: 1px solid rgba(6, 182, 212, 0.45);
+}
+
+.futurized-corner-tr {
+  top: 1.5rem;
+  right: 1.5rem;
+  border-top: 1px solid rgba(6, 182, 212, 0.45);
+  border-right: 1px solid rgba(6, 182, 212, 0.45);
+}
+
+.futurized-corner-bl {
+  bottom: 1.5rem;
+  left: 1.5rem;
+  border-bottom: 1px solid rgba(6, 182, 212, 0.45);
+  border-left: 1px solid rgba(6, 182, 212, 0.45);
+}
+
+.futurized-corner-br {
+  bottom: 1.5rem;
+  right: 1.5rem;
+  border-bottom: 1px solid rgba(6, 182, 212, 0.45);
+  border-right: 1px solid rgba(6, 182, 212, 0.45);
+}
+
+@keyframes futurized-nav-dot-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 8px rgba(6, 182, 212, 0.85);
+  }
+  50% {
+    box-shadow:
+      0 0 18px rgba(6, 182, 212, 0.95),
+      0 0 30px rgba(6, 182, 212, 0.25);
+  }
+}
+
+.nav-dot-pulse {
+  animation: futurized-nav-dot-pulse 2s ease-in-out infinite;
 }
 
 html[data-theme="light"] body {
@@ -133,7 +237,7 @@ html[data-theme="light"] .to-transparent {
 h1,
 h2,
 h3 {
-  font-family: var(--font-space-grotesk), sans-serif;
+  font-family: var(--font-syne), sans-serif;
 }
 
 .scrollbar-none {
@@ -342,5 +446,35 @@ h3 {
   }
   100% {
     transform: translateX(-50%);
+  }
+}
+
+/* Homepage motion + depth (Framer + CSS). */
+.perspective-page {
+  perspective: 1200px;
+}
+
+.card-lift-3d {
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  transition:
+    transform 0.65s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.65s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.card-lift-3d:hover {
+  transform: translateY(-5px) rotateX(2deg) rotateY(-1deg);
+  box-shadow:
+    0 22px 48px rgba(0, 0, 0, 0.35),
+    0 0 0 1px rgba(124, 58, 237, 0.18);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-lift-3d,
+  .card-lift-3d:hover {
+    transform: none !important;
+    transition-duration: 0.01ms !important;
+    box-shadow: none !important;
   }
 }

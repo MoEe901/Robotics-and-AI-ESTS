@@ -1,11 +1,12 @@
-﻿export const siteConfig = {
+export const siteConfig = {
   name: "Robotics & AI Club",
   description:
     "A community of innovators building the future with robotics and artificial intelligence.",
   navItems: [
     { label: "Home", href: "/" },
     { label: "Events", href: "/#events" },
-    { label: "Know us", href: "/#certificates" },
+    { label: "Know us", href: "/#know" },
+    { label: "Cellules", href: "/#cellules" },
     { label: "Team", href: "/#team" },
     { label: "FAQ", href: "/#faq" },
     { label: "Apply", href: "/#apply" },
