@@ -179,7 +179,7 @@ export function KnowUsConfigClient() {
     let cancelled = false;
     (async () => {
       try {
-        const snap = await getDoc(doc(db(), "siteConfig", "partners"));
+        const snap = await getDoc(doc(db(), "siteContent", "partners"));
         if (snap.exists()) {
           const data = snap.data() as Record<string, unknown>;
           const logosRaw = Array.isArray(data.logos) ? data.logos : [];
@@ -198,7 +198,7 @@ export function KnowUsConfigClient() {
           if (!cancelled) setLogos(nextRows.length ? nextRows : [EMPTY_ROW]);
         }
 
-        const whyJoinSnap = await getDoc(doc(db(), "siteConfig", "whyJoin"));
+        const whyJoinSnap = await getDoc(doc(db(), "siteContent", "whyJoin"));
         if (whyJoinSnap.exists()) {
           const whyJoin = whyJoinSnap.data() as Record<string, unknown>;
           const smallHeading =
@@ -233,7 +233,7 @@ export function KnowUsConfigClient() {
           }
         }
 
-        const cellulesSnap = await getDoc(doc(db(), "siteConfig", "cellules"));
+        const cellulesSnap = await getDoc(doc(db(), "siteContent", "cellules"));
         if (cellulesSnap.exists()) {
           const cellules = cellulesSnap.data() as Record<string, unknown>;
           const eyebrow =
@@ -274,7 +274,7 @@ export function KnowUsConfigClient() {
           }
         }
 
-        const processSnap = await getDoc(doc(db(), "siteConfig", "processSteps"));
+        const processSnap = await getDoc(doc(db(), "siteContent", "processSteps"));
         if (processSnap.exists()) {
           const proc = processSnap.data() as Record<string, unknown>;
           const pe = typeof proc.eyebrow === "string" ? proc.eyebrow.trim() : "";
@@ -370,7 +370,7 @@ export function KnowUsConfigClient() {
       }
 
       await setDoc(
-        doc(db(), "siteConfig", "partners"),
+        doc(db(), "siteContent", "partners"),
         {
           title: "Our Partners & Collaborators All The Time",
           logos: cleaned,
@@ -378,7 +378,7 @@ export function KnowUsConfigClient() {
         { merge: true },
       );
       await setDoc(
-        doc(db(), "siteConfig", "whyJoin"),
+        doc(db(), "siteContent", "whyJoin"),
         {
           smallHeading: safeTrim(whyJoinSmallHeading) || WHY_JOIN_DEFAULT.smallHeading,
           title: safeTrim(whyJoinTitle) || WHY_JOIN_DEFAULT.title,
@@ -388,7 +388,7 @@ export function KnowUsConfigClient() {
         { merge: true },
       );
       await setDoc(
-        doc(db(), "siteConfig", "cellules"),
+        doc(db(), "siteContent", "cellules"),
         {
           eyebrow: safeTrim(cellulesEyebrow) || CELLULES_DEFAULT.eyebrow,
           title: safeTrim(cellulesTitle) || CELLULES_DEFAULT.title,
@@ -398,7 +398,7 @@ export function KnowUsConfigClient() {
         { merge: true },
       );
       await setDoc(
-        doc(db(), "siteConfig", "processSteps"),
+        doc(db(), "siteContent", "processSteps"),
         {
           eyebrow: safeTrim(processEyebrow) || DEFAULT_PROCESS_STEPS_CONFIG.eyebrow,
           titleLine:

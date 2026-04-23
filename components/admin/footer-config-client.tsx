@@ -35,14 +35,22 @@ export function FooterConfigClient() {
     let cancelled = false;
     (async () => {
       try {
-        const snap = await getDoc(doc(db(), "siteConfig", "footer"));
+        const snap = await getDoc(doc(db(), "siteContent", "footer"));
         if (!cancelled && snap.exists()) {
           const r = snap.data() as Record<string, unknown>;
           const str = (key: string, fb: string) =>
             typeof r[key] === "string" && (r[key] as string).trim()
               ? (r[key] as string).trim()
               : fb;
-          const rawNav = Array.isArray(r.footerNav) ? r.footerNav : [];
+          const cols = Array.isArray(r.columns) ? r.columns : [];
+          const clubCol = cols.find((c) => (c as { heading?: string })?.heading === "Club") as
+            | { links?: unknown[] }
+            | undefined;
+          const rawNav = Array.isArray(clubCol?.links)
+            ? clubCol!.links!
+            : Array.isArray(r.footerNav)
+              ? r.footerNav
+              : [];
           const nav = rawNav
             .map((x) => {
               if (!x || typeof x !== "object") return null;
@@ -53,7 +61,7 @@ export function FooterConfigClient() {
               return { label, href };
             })
             .filter((x): x is NavItem => x !== null);
-          const rawSocial = Array.isArray(r.socialLinks) ? r.socialLinks : [];
+          const rawSocial = Array.isArray(r.socials) ? r.socials : Array.isArray(r.socialLinks) ? r.socialLinks : [];
           const socials = rawSocial
             .map((x) => {
               if (!x || typeof x !== "object") return null;
@@ -68,8 +76,8 @@ export function FooterConfigClient() {
           setTagline(str("tagline", DEFAULT_FOOTER_CONFIG.tagline));
           setFooterNav(nav.length ? nav : [...DEFAULT_FOOTER_CONFIG.footerNav]);
           setSocialLinks(socials.length ? socials : [...DEFAULT_FOOTER_CONFIG.socialLinks]);
-          setContactEmail(str("contactEmail", DEFAULT_FOOTER_CONFIG.contactEmail));
-          setContactLocation(str("contactLocation", DEFAULT_FOOTER_CONFIG.contactLocation));
+          setContactEmail(str("email", str("contactEmail", DEFAULT_FOOTER_CONFIG.contactEmail)));
+          setContactLocation(str("address", str("contactLocation", DEFAULT_FOOTER_CONFIG.contactLocation)));
           setCopyrightText(str("copyrightText", DEFAULT_FOOTER_CONFIG.copyrightText));
         }
       } catch (e) {
@@ -95,15 +103,36 @@ export function FooterConfigClient() {
     setError(null);
     setSuccess(null);
     try {
+      const infoLinks = [
+        { label: "Know Us", href: "/#know" },
+        { label: "Cellules", href: "/#cellules" },
+        { label: "Team", href: "/#team" },
+        { label: "FAQ", href: "/#faq" },
+      ];
+      const connectLinks = [
+        { label: "Apply Now", href: "/#apply" },
+        { label: "Contact Us", href: "/#apply" },
+      ];
       await setDoc(
-        doc(db(), "siteConfig", "footer"),
+        doc(db(), "siteContent", "footer"),
         {
           tagline: tagline.trim(),
+          address: contactLocation.trim() || DEFAULT_FOOTER_CONFIG.contactLocation,
+          phone: "",
+          email: contactEmail.trim() || DEFAULT_FOOTER_CONFIG.contactEmail,
+          hours: "",
+          columns: [
+            { heading: "Club", links: cleanedNav },
+            { heading: "Info", links: infoLinks },
+            { heading: "Connect", links: connectLinks },
+          ],
+          socials: cleanedSocial.map((s) => ({ platform: s.platform, url: s.url })),
           footerNav: cleanedNav,
           socialLinks: cleanedSocial,
           contactEmail: contactEmail.trim() || DEFAULT_FOOTER_CONFIG.contactEmail,
           contactLocation: contactLocation.trim() || DEFAULT_FOOTER_CONFIG.contactLocation,
           copyrightText: copyrightText.trim() || DEFAULT_FOOTER_CONFIG.copyrightText,
+          versionLine: DEFAULT_FOOTER_CONFIG.versionLine,
         },
         { merge: true },
       );

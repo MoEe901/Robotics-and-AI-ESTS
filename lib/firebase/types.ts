@@ -30,6 +30,8 @@ export type FirestoreTeamMember = {
   imageUrl: string;
   order: number;
   isActive: boolean;
+  /** When false, hide from public site (admin can still see). */
+  isVisible?: boolean;
   createdAt: Timestamp;
   bio?: string;
   shortBio?: string;
@@ -57,9 +59,13 @@ export type EventDoc = {
   slug?: string;
   description?: string;
   documentary?: string;
+  eventStory?: string;
   location?: string;
+  venue?: string;
   locationMapsUrl?: string;
+  mapsUrl?: string;
   date?: string;
+  dateTba?: boolean;
   attachments?: EventAttachment[];
   gallery?: EventGalleryItem[];
   eventWebsiteUrl?: string;
@@ -89,6 +95,7 @@ export type EventItem = {
   location?: string;
   locationMapsUrl?: string;
   date?: string;
+  dateTba?: boolean;
   attachments?: EventAttachment[];
   gallery?: EventGalleryItem[];
   eventWebsiteUrl?: string;
@@ -118,6 +125,8 @@ export type KnowUsCard = {
 export type KnowUsConfig = {
   intro: string;
   cards: KnowUsCard[];
+  /** Firestore `mainTitle` — optional custom heading for the Know us block. */
+  sectionTitle?: string;
 };
 
 export type PartnerLogo = {
@@ -142,6 +151,8 @@ export type WhyJoinConfig = {
   title: string;
   description: string;
   cards: WhyJoinCard[];
+  /** Optional left-column highlight rows (Firestore `whyJoin.highlights`). */
+  highlights?: Array<{ title: string; subtitle: string }>;
 };
 
 export type CelluleCard = {
@@ -282,9 +293,14 @@ export type FooterNavItem = {
   href: string;
 };
 
+export type FooterColumn = {
+  heading: string;
+  links: FooterNavItem[];
+};
+
 export type FooterConfig = {
   tagline: string;
-  /** “Club” column links (editable in admin). */
+  /** First column links when `footerColumns` is not used. */
   footerNav: FooterNavItem[];
   socialLinks: FooterSocialLink[];
   contactLocation: string;
@@ -292,6 +308,8 @@ export type FooterConfig = {
   copyrightText: string;
   /** Right side of the bottom bar (mono). */
   versionLine: string;
+  /** When set, footer link columns are rendered from Firestore (`siteContent/footer`). */
+  footerColumns?: FooterColumn[];
 };
 
 export const DEFAULT_FOOTER_CONFIG: FooterConfig = {

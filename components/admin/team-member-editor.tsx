@@ -319,6 +319,7 @@ export function TeamMemberEditor({ memberId }: Props) {
       roles: selectedRole.trim() ? [selectedRole.trim()] : [],
       order: orderNum,
       isActive,
+      isVisible: isActive,
       imageUrl: imageUrl.trim(),
       shortBio: shortBio.trim() || "",
       bio: bio.trim() || "",

@@ -5,13 +5,12 @@ import { useSearchParams } from "next/navigation";
 
 import { TeamDirectory } from "@/components/team/team-directory";
 import { useClientMounted } from "@/lib/hooks/use-client-mounted";
-import { subscribeToTeamByYear, subscribeToTeamMembers } from "@/lib/firebase/realtime";
+import { subscribeToTeamByYear } from "@/lib/firebase/realtime";
 import {
   getCurrentAcademicYearLabel,
   isValidAcademicYearLabel,
   normalizeAcademicYearLabel,
 } from "@/lib/team/academic-year";
-import type { TeamMemberProfile } from "@/lib/team/types";
 import { useTeamStore } from "@/store/teamStore";
 
 function normalizeRoleFilter(role: string | null | undefined): string {
@@ -25,13 +24,6 @@ function resolveAcademicYear(yearParam: string | null): string {
   const decoded = decodeURIComponent(yearParam.trim());
   const normalized = normalizeAcademicYearLabel(decoded);
   return isValidAcademicYearLabel(normalized) ? normalized : current;
-}
-
-function filterMembersForYear(
-  members: TeamMemberProfile[],
-  year: string,
-): TeamMemberProfile[] {
-  return members.filter((m) => m.academicYear === year && typeof m.order === "number");
 }
 
 export function TeamPageClient() {
@@ -53,51 +45,25 @@ export function TeamPageClient() {
   const awaitingLive = !loaded && members.length === 0;
 
   useEffect(() => {
-    let unsubscribeFiltered: (() => void) | null = null;
-    let startedFiltered = false;
-
-    const unsubscribeDebug = subscribeToTeamMembers(
-      (rawRows) => {
+    let cancelled = false;
+    const unsub = subscribeToTeamByYear(
+      year,
+      (rows) => {
+        if (cancelled) return;
         if (process.env.NODE_ENV === "development") {
-          const validRaw = filterMembersForYear(rawRows, year);
-          console.log("RAW MEMBERS:", rawRows.length);
-          console.log("VALID MEMBERS (year match):", validRaw.length, "year=", year);
-          const anyDocForYear = rawRows.some((m) => m.academicYear === year);
-          if (anyDocForYear && validRaw.length === 0) {
-            console.warn("FILTER MISMATCH — doc(s) claim this academicYear but client filter dropped them", {
-              year,
-              sample: rawRows.find((m) => m.academicYear === year),
-            });
-          }
+          console.log("TEAM ROWS:", rows.length, { year });
         }
-
-        if (startedFiltered) return;
-        startedFiltered = true;
-        unsubscribeFiltered = subscribeToTeamByYear(
-          year,
-          (rows) => {
-            if (process.env.NODE_ENV === "development") {
-              console.log("TEAM ROWS:", rows.length, { year });
-            }
-
-            setMembers(cacheKey, rows);
-          },
-          {
-            onError: () => {
-              markLoaded(cacheKey);
-            },
-          },
-        );
-        unsubscribeDebug();
+        setMembers(cacheKey, rows);
       },
-      () => {
-        markLoaded(cacheKey);
+      {
+        onError: () => {
+          if (!cancelled) markLoaded(cacheKey);
+        },
       },
     );
-
     return () => {
-      unsubscribeDebug();
-      unsubscribeFiltered?.();
+      cancelled = true;
+      unsub();
     };
   }, [cacheKey, markLoaded, setMembers, year]);
 

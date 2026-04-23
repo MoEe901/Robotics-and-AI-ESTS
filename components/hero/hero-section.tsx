@@ -6,16 +6,22 @@ import { motion, useMotionValue, useScroll, useSpring, useTransform } from "fram
 import { useCallback, useRef, useState } from "react";
 
 import { HeroParticleCanvas } from "@/components/hero/hero-particle-canvas";
+import { DEFAULT_HERO_PUBLIC } from "@/lib/content/site-content-parser";
 import { siteConfig } from "@/lib/site-config";
 import { cn } from "@/lib/utils";
+import { useHomeContentStore } from "@/store/homeContentStore";
 
 const NOISE_BG =
   "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")";
 
 export function HeroSection() {
+  const publicHero = useHomeContentStore((s) => s.publicHero);
+  const hero = publicHero ?? DEFAULT_HERO_PUBLIC;
   const sectionRef = useRef<HTMLElement>(null);
   const [heroVideoFailed, setHeroVideoFailed] = useState(false);
-  const showHeroVideo = !siteConfig.heroVideoDisabled && !heroVideoFailed;
+  const videoSrc = hero.videoUrl?.trim() || siteConfig.heroVideoUrl || null;
+  const showHeroVideo =
+    !siteConfig.heroVideoDisabled && !heroVideoFailed && Boolean(videoSrc || siteConfig.heroVideo.mp4);
 
   const { scrollYProgress } = useScroll({
     target: sectionRef,
@@ -65,8 +71,8 @@ export function HeroSection() {
             aria-hidden
             onError={() => setHeroVideoFailed(true)}
           >
-            {siteConfig.heroVideoUrl ? (
-              <source src={siteConfig.heroVideoUrl} />
+            {videoSrc ? (
+              <source src={videoSrc} />
             ) : (
               <>
                 <source src={siteConfig.heroVideo.webm} type="video/webm" />
@@ -151,11 +157,11 @@ export function HeroSection() {
                 className="size-1.5 shrink-0 rounded-full bg-cyan-400"
                 style={{ animation: "heroLivePulse 1.5s ease-in-out infinite" }}
               />
-              University Tech Community
+              {hero.eyebrow}
             </div>
             <span className="hidden h-4 w-px shrink-0 bg-white/[0.08] sm:block" />
             <span className="font-jetbrains text-[10px] uppercase tracking-[0.16em] text-slate-400/80 sm:text-[11px] sm:tracking-[0.2em]">
-              EST Safi · Morocco
+              {hero.location}
             </span>
           </div>
 
@@ -166,44 +172,29 @@ export function HeroSection() {
               "text-[clamp(1.75rem,9vw,8rem)]",
             )}
           >
-            <span
-              className="block text-white uppercase tracking-[0.035em] sm:tracking-[0.05em]"
-              style={{ animation: "heroFadeUp 0.8s ease both 0.28s" }}
-            >
-              Welcome
-            </span>
-            <span
-              className="block text-white uppercase tracking-[0.035em] sm:tracking-[0.05em]"
-              style={{ animation: "heroFadeUp 0.8s ease both 0.3s" }}
-            >
-              to the
-            </span>
-            <span
-              className="hero-title-grad block uppercase tracking-[-0.02em]"
-              style={{ animation: "heroFadeUp 0.8s ease both 0.34s" }}
-            >
-              Robotics
-            </span>
-            <span
-              className="hero-title-grad block uppercase tracking-[-0.02em]"
-              style={{ animation: "heroFadeUp 0.8s ease both 0.36s" }}
-            >
-              {"& AI"}
-            </span>
-            <span
-              className="block text-white uppercase tracking-[0.035em] sm:tracking-[0.05em]"
-              style={{ animation: "heroFadeUp 0.8s ease both 0.4s" }}
-            >
-              Club.
-            </span>
+            {hero.titleLines.map((line, idx) => {
+              const accent = hero.accentIndices.includes(idx);
+              const delay = 0.28 + idx * 0.02;
+              return (
+                <span
+                  key={`${line}-${idx}`}
+                  className={cn(
+                    "block uppercase tracking-[0.035em] sm:tracking-[0.05em]",
+                    accent ? "hero-title-grad tracking-[-0.02em]" : "text-white",
+                  )}
+                  style={{ animation: `heroFadeUp 0.8s ease both ${delay}s` }}
+                >
+                  {line}
+                </span>
+              );
+            })}
           </h1>
 
           <p
             className="mt-6 max-w-[min(96vw,520px)] text-[clamp(1rem,3.4vw,1.05rem)] font-light leading-[1.65] text-slate-400/90 sm:mt-7 sm:leading-[1.8] lg:mt-7 lg:leading-[1.85]"
             style={{ animation: "heroFadeUp 0.8s ease both 0.42s" }}
           >
-            A community of builders, dreamers, and innovators transforming ideas into intelligent
-            machines. Join us and shape the future of technology — starting today.
+            {hero.description}
           </p>
 
           <div
@@ -211,18 +202,18 @@ export function HeroSection() {
             style={{ animation: "heroFadeUp 0.8s ease both 0.48s" }}
           >
             <Link
-              href="/#apply"
+              href={hero.primaryCta.href || "/#apply"}
               className="btn-shine font-jetbrains inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-gradient-to-br from-violet-600 to-cyan-500 px-6 py-3.5 text-[12px] font-medium uppercase tracking-[0.08em] text-white shadow-[0_0_30px_rgba(124,58,237,0.45)] transition hover:-translate-y-1 hover:shadow-[0_0_55px_rgba(124,58,237,0.65)] sm:min-h-0 sm:w-auto sm:justify-start sm:px-8"
             >
               <ClipboardList className="size-4 shrink-0" strokeWidth={2} />
-              {siteConfig.ctas.primary}
+              {hero.primaryCta.label}
             </Link>
             <Link
-              href="/#events"
+              href={hero.secondaryCta.href || "/#events"}
               className="font-jetbrains inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full border border-white/[0.15] bg-transparent px-6 py-3.5 text-[12px] font-medium uppercase tracking-[0.08em] text-slate-300 transition hover:border-violet-500/50 hover:text-white sm:min-h-0 sm:w-auto sm:justify-start sm:px-7"
             >
               <Calendar className="size-4 shrink-0" strokeWidth={2} />
-              {siteConfig.ctas.secondary}
+              {hero.secondaryCta.label}
             </Link>
           </div>
         </motion.div>
@@ -254,17 +245,13 @@ export function HeroSection() {
                 />
               </div>
               <div className="flex flex-col">
-                {[
-                  { t: "New workshop announced", time: "2m ago" },
-                  { t: "Member joined Design Cellule", time: "1h ago" },
-                  { t: "Competition results published", time: "3h ago" },
-                ].map((row) => (
+                {hero.liveActivity.map((row) => (
                   <div
-                    key={row.t}
+                    key={row.id}
                     className="flex items-center justify-between gap-2 border-b border-white/[0.04] py-2.5 last:border-b-0"
                   >
-                    <span className="text-[12px] font-light text-slate-300">{row.t}</span>
-                    <span className="font-jetbrains shrink-0 text-[10px] text-slate-500">{row.time}</span>
+                    <span className="text-[12px] font-light text-slate-300">{row.title}</span>
+                    <span className="font-jetbrains shrink-0 text-[10px] text-slate-500">{row.timeAgo}</span>
                   </div>
                 ))}
               </div>
@@ -288,24 +275,26 @@ export function HeroSection() {
                 </div>
               </div>
               <div className="flex flex-wrap gap-1.5">
-                {[
-                  { cls: "border-cyan-400/25 bg-cyan-400/[0.08] text-cyan-400", label: "Python" },
-                  { cls: "border-violet-500/25 bg-violet-500/[0.08] text-violet-300", label: "ROS2" },
-                  { cls: "border-emerald-500/25 bg-emerald-500/[0.08] text-emerald-400", label: "Arduino" },
-                  { cls: "border-fuchsia-400/25 bg-fuchsia-400/[0.08] text-fuchsia-300", label: "TensorFlow" },
-                  { cls: "border-cyan-400/20 bg-cyan-400/[0.08] text-cyan-400", label: "OpenCV" },
-                  { cls: "border-violet-500/20 bg-violet-500/[0.08] text-violet-300", label: "MATLAB" },
-                ].map((pill) => (
-                  <span
-                    key={pill.label}
-                    className={cn(
-                      "font-jetbrains inline-flex rounded-full border px-2.5 py-1 text-[10px] font-medium",
-                      pill.cls,
-                    )}
-                  >
-                    {pill.label}
-                  </span>
-                ))}
+                {hero.techStack.map((label, i) => {
+                  const palettes = [
+                    "border-cyan-400/25 bg-cyan-400/[0.08] text-cyan-400",
+                    "border-violet-500/25 bg-violet-500/[0.08] text-violet-300",
+                    "border-emerald-500/25 bg-emerald-500/[0.08] text-emerald-400",
+                    "border-fuchsia-400/25 bg-fuchsia-400/[0.08] text-fuchsia-300",
+                  ];
+                  const cls = palettes[i % palettes.length]!;
+                  return (
+                    <span
+                      key={`${label}-${i}`}
+                      className={cn(
+                        "font-jetbrains inline-flex rounded-full border px-2.5 py-1 text-[10px] font-medium",
+                        cls,
+                      )}
+                    >
+                      {label}
+                    </span>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -323,25 +312,29 @@ export function HeroSection() {
                   <p className="font-jetbrains text-[9px] font-medium uppercase tracking-[0.2em] text-slate-500">
                     Growth
                   </p>
-                  <p className="text-sm font-semibold text-white">Members 2025–2026</p>
+                  <p className="text-sm font-semibold text-white">Club stats</p>
                 </div>
               </div>
               <div className="flex h-10 items-end gap-[3px]">
-                {[30, 45, 40, 60, 55, 75, 70, 100].map((h, i) => (
-                  <div
-                    key={i}
-                    className={cn(
-                      "min-w-0 flex-1 rounded-t-[3px] bg-violet-500/25 transition-all",
-                      h === 100 && "bg-gradient-to-t from-violet-600 to-cyan-500",
-                    )}
-                    style={{
-                      height: `${h}%`,
-                      animation: `heroBarGrow 1.2s cubic-bezier(0.22,1,0.36,1) both`,
-                      animationDelay: `${0.8 + i * 0.05}s`,
-                      opacity: h === 100 ? 1 : 0.25 + (h / 100) * 0.35,
-                    }}
-                  />
-                ))}
+                {hero.growthStats.map((stat, i) => {
+                  const h = Math.min(100, 28 + (i + 1) * 11);
+                  const isLast = i === hero.growthStats.length - 1;
+                  return (
+                    <div
+                      key={stat.label}
+                      className={cn(
+                        "min-w-0 flex-1 rounded-t-[3px] bg-violet-500/25 transition-all",
+                        isLast && "bg-gradient-to-t from-violet-600 to-cyan-500",
+                      )}
+                      style={{
+                        height: `${h}%`,
+                        animation: `heroBarGrow 1.2s cubic-bezier(0.22,1,0.36,1) both`,
+                        animationDelay: `${0.8 + i * 0.05}s`,
+                        opacity: isLast ? 1 : 0.25 + (h / 100) * 0.35,
+                      }}
+                    />
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -357,14 +350,9 @@ export function HeroSection() {
             className="relative left-1/2 grid grid-cols-2 gap-4 sm:flex sm:flex-row w-screen max-w-none -translate-x-1/2 sm:overflow-hidden border-y border-violet-500/10 bg-violet-500/[0.02]"
             style={{ animation: "heroFadeUp 0.8s ease both 0.54s" }}
           >
-            {[
-              { v: "200+", l: "Members", c: "text-violet-500" },
-              { v: "6", l: "Cellules", c: "text-cyan-400" },
-              { v: "14", l: "Projects", c: "text-emerald-400" },
-              { v: "8+", l: "Awards", c: "text-fuchsia-400" },
-            ].map((stat, i) => (
+            {hero.growthStats.map((stat, i) => (
               <div
-                key={stat.l}
+                key={stat.label}
                 className={cn(
                   "group relative flex w-full sm:w-auto min-w-[50%] flex-1 flex-col items-center gap-1 border-r border-violet-500/[0.08] px-3 py-7 text-center transition-colors last:border-r-0 hover:bg-violet-500/[0.04] sm:min-w-0 sm:px-4 sm:py-10 max-[639px]:border-b max-[639px]:border-violet-500/[0.08] max-[639px]:py-7",
                   i === 1 ? "max-[639px]:border-r max-[639px]:border-violet-500/[0.08]" : "",
@@ -376,11 +364,22 @@ export function HeroSection() {
                   className="pointer-events-none absolute inset-x-0 top-0 h-0.5 origin-left scale-x-0 bg-gradient-to-r from-violet-600 to-cyan-400 transition-transform duration-500 ease-out group-hover:scale-x-100"
                   aria-hidden
                 />
-                <span className={cn("font-syne text-[clamp(1.65rem,8vw,2.8rem)] font-extrabold leading-none", stat.c)}>
-                  {stat.v}
+                <span
+                  className={cn(
+                    "font-syne text-[clamp(1.65rem,8vw,2.8rem)] font-extrabold leading-none",
+                    i % 4 === 0
+                      ? "text-violet-500"
+                      : i % 4 === 1
+                        ? "text-cyan-400"
+                        : i % 4 === 2
+                          ? "text-emerald-400"
+                          : "text-fuchsia-400",
+                  )}
+                >
+                  {stat.value}
                 </span>
                 <span className="font-jetbrains text-[10px] font-medium uppercase tracking-[0.16em] text-slate-500 sm:text-[11px] sm:tracking-[0.25em]">
-                  {stat.l}
+                  {stat.label}
                 </span>
               </div>
             ))}

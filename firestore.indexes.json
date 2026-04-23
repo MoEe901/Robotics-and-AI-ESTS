@@ -17,6 +17,33 @@
         { "fieldPath": "isActive", "order": "ASCENDING" },
         { "fieldPath": "order", "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "teamMembers",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "academicYear", "order": "ASCENDING" },
+        { "fieldPath": "isActive", "order": "ASCENDING" },
+        { "fieldPath": "isVisible", "order": "ASCENDING" },
+        { "fieldPath": "order", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "teamMembers",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "slug", "order": "ASCENDING" },
+        { "fieldPath": "isActive", "order": "ASCENDING" },
+        { "fieldPath": "isVisible", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "questions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "isVisible", "order": "ASCENDING" },
+        { "fieldPath": "order", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

@@ -65,7 +65,7 @@ export function HeroConfigClient() {
     let cancelled = false;
     (async () => {
       try {
-        const snap = await getDoc(doc(db(), "siteConfig", "hero"));
+        const snap = await getDoc(doc(db(), "siteContent", "hero"));
         if (!cancelled && snap.exists()) {
           const r = snap.data() as Record<string, unknown>;
           const str = (key: keyof HeroFields) =>
@@ -109,16 +109,39 @@ export function HeroConfigClient() {
     setSuccess(null);
     try {
       await setDoc(
-        doc(db(), "siteConfig", "hero"),
+        doc(db(), "siteContent", "hero"),
         {
           eyebrow: fields.eyebrow.trim() || DEFAULT_HERO_CONFIG.eyebrow,
+          location: "EST Safi · Morocco",
+          titleLines: ["Welcome", "to the", "Robotics", "& AI", "Club."],
+          accentIndices: [2, 3],
+          description: fields.subtitle.trim(),
+          primaryCta: {
+            label: fields.ctaPrimaryText.trim() || DEFAULT_HERO_CONFIG.ctaPrimaryText,
+            href: fields.ctaPrimaryHref.trim() || DEFAULT_HERO_CONFIG.ctaPrimaryHref,
+          },
+          secondaryCta: {
+            label: fields.ctaSecondaryText.trim() || DEFAULT_HERO_CONFIG.ctaSecondaryText,
+            href: fields.ctaSecondaryHref.trim() || DEFAULT_HERO_CONFIG.ctaSecondaryHref,
+          },
+          videoUrl: null,
+          liveActivity: [
+            { id: "1", title: "New workshop announced", timeAgo: "2m ago" },
+            { id: "2", title: "Member joined Design Cellule", timeAgo: "1h ago" },
+            { id: "3", title: "Competition results published", timeAgo: "3h ago" },
+          ],
+          techStack: ["Python", "ROS2", "Arduino", "TensorFlow", "OpenCV", "MATLAB"],
+          growthStats: [
+            { label: "Members", value: "200+" },
+            { label: "Cellules", value: "6" },
+            { label: "Projects", value: "14" },
+            { label: "Awards", value: "8+" },
+          ],
           headlinePrefix: fields.headlinePrefix.trim() || DEFAULT_HERO_CONFIG.headlinePrefix,
           headlineAccent: fields.headlineAccent.trim(),
           subtitle: fields.subtitle.trim(),
-          ctaPrimaryText: fields.ctaPrimaryText.trim() || DEFAULT_HERO_CONFIG.ctaPrimaryText,
-          ctaPrimaryHref: fields.ctaPrimaryHref.trim() || DEFAULT_HERO_CONFIG.ctaPrimaryHref,
-          ctaSecondaryText: fields.ctaSecondaryText.trim() || DEFAULT_HERO_CONFIG.ctaSecondaryText,
-          ctaSecondaryHref: fields.ctaSecondaryHref.trim() || DEFAULT_HERO_CONFIG.ctaSecondaryHref,
+          ctaPrimaryText: fields.ctaPrimaryText.trim(),
+          ctaSecondaryText: fields.ctaSecondaryText.trim(),
         },
         { merge: true },
       );

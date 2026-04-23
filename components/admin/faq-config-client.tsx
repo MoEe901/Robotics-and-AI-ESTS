@@ -1,6 +1,6 @@
 "use client";
 
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { collection, deleteDoc, doc, getDoc, getDocs, setDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
 
 import { db } from "@/lib/firebase";
@@ -66,7 +66,8 @@ export function FaqConfigClient() {
     let cancelled = false;
     (async () => {
       try {
-        const snap = await getDoc(doc(db(), "siteConfig", "faq"));
+        const snap = await getDoc(doc(db(), "faq", "config"));
+        const qSnap = await getDocs(collection(db(), "faq", "config", "questions"));
         if (snap.exists() && !cancelled) {
           const raw = snap.data() as Record<string, unknown>;
           const e = typeof raw.eyebrow === "string" ? raw.eyebrow.trim() : "";
@@ -84,7 +85,12 @@ export function FaqConfigClient() {
               return { id, label };
             })
             .filter((c): c is FaqCategory => Boolean(c));
-          const itRaw = Array.isArray(raw.items) ? raw.items : [];
+          const itRaw =
+            !qSnap.empty
+              ? qSnap.docs.map((d) => ({ id: d.id, ...(d.data() as Record<string, unknown>) }))
+              : Array.isArray(raw.items)
+                ? raw.items
+                : [];
           const parsedItems = itRaw
             .map((row) => {
               if (!row || typeof row !== "object") return null;
@@ -92,9 +98,18 @@ export function FaqConfigClient() {
               const categoryId = typeof o.categoryId === "string" ? slugifyId(o.categoryId) : "";
               const question = typeof o.question === "string" ? o.question.trim() : "";
               const answer = typeof o.answer === "string" ? o.answer.trim() : "";
-              const color = (typeof o.color === "string" ? o.color.trim().toLowerCase() : "blue") as FaqItemColor;
-              const iconKey =
-                typeof o.iconKey === "string" ? o.iconKey.trim().toLowerCase() : "help-circle";
+              const color = (
+                typeof o.accentColor === "string"
+                  ? o.accentColor
+                  : typeof o.color === "string"
+                    ? o.color
+                    : "blue"
+              )
+                .trim()
+                .toLowerCase() as FaqItemColor;
+              const iconKeyRaw =
+                typeof o.icon === "string" ? o.icon : typeof o.iconKey === "string" ? o.iconKey : "help-circle";
+              const iconKey = iconKeyRaw.trim().toLowerCase();
               if (!categoryId || !question || !answer) return null;
               return {
                 categoryId,
@@ -107,8 +122,10 @@ export function FaqConfigClient() {
             .filter((it): it is FaqItem => Boolean(it));
           if (parsedCats.length && parsedItems.length) {
             setEyebrow(e || DEFAULT_FAQ_CONFIG.eyebrow);
-            setTitleLine(tl || DEFAULT_FAQ_CONFIG.titleLine);
-            setTitleAccent(ta || DEFAULT_FAQ_CONFIG.titleAccent);
+            const titleFromDoc = typeof raw.title === "string" ? raw.title.trim() : "";
+            const accentFromDoc = typeof raw.accent === "string" ? raw.accent.trim() : "";
+            setTitleLine(titleFromDoc || tl || DEFAULT_FAQ_CONFIG.titleLine);
+            setTitleAccent(accentFromDoc || ta || DEFAULT_FAQ_CONFIG.titleAccent);
             setSubtitle(st || DEFAULT_FAQ_CONFIG.subtitle);
             setCategories(parsedCats);
             setItems(parsedItems);
@@ -165,14 +182,15 @@ export function FaqConfigClient() {
       }
 
       await setDoc(
-        doc(db(), "siteConfig", "faq"),
+        doc(db(), "faq", "config"),
         {
           eyebrow: safeTrim(eyebrow) || DEFAULT_FAQ_CONFIG.eyebrow,
+          title: titleLine !== "" ? titleLine : DEFAULT_FAQ_CONFIG.titleLine,
+          accent: safeTrim(titleAccent) || DEFAULT_FAQ_CONFIG.titleAccent,
           titleLine: titleLine !== "" ? titleLine : DEFAULT_FAQ_CONFIG.titleLine,
           titleAccent: safeTrim(titleAccent) || DEFAULT_FAQ_CONFIG.titleAccent,
           subtitle: safeTrim(subtitle) || DEFAULT_FAQ_CONFIG.subtitle,
           categories: catsClean,
-          items: itemsClean,
           ctaTitle: safeTrim(ctaTitle) || DEFAULT_FAQ_CONFIG.ctaTitle,
           ctaSubtitle: safeTrim(ctaSubtitle) || DEFAULT_FAQ_CONFIG.ctaSubtitle,
           ctaButtonLabel: safeTrim(ctaButtonLabel) || DEFAULT_FAQ_CONFIG.ctaButtonLabel,
@@ -180,6 +198,24 @@ export function FaqConfigClient() {
         },
         { merge: true },
       );
+
+      const qCol = collection(db(), "faq", "config", "questions");
+      const existing = await getDocs(qCol);
+      for (const d of existing.docs) {
+        await deleteDoc(d.ref);
+      }
+      for (let idx = 0; idx < itemsClean.length; idx++) {
+        const it = itemsClean[idx]!;
+        await setDoc(doc(qCol), {
+          categoryId: it.categoryId,
+          question: it.question,
+          answer: it.answer,
+          accentColor: it.color,
+          icon: it.iconKey,
+          order: idx,
+          isVisible: true,
+        });
+      }
       setSuccess("FAQ saved successfully.");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to save FAQ.");

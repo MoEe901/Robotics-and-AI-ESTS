@@ -1,6 +1,7 @@
 ﻿"use client";
 
-import { siteConfig } from "@/lib/site-config";
+import { DEFAULT_NAVBAR_CONFIG } from "@/lib/firebase/types";
+import { useHomeContentStore } from "@/store/homeContentStore";
 import { AnimatePresence, motion } from "framer-motion";
 import { Menu, Moon, Sun, X } from "lucide-react";
 import Image from "next/image";
@@ -15,6 +16,8 @@ import {
 } from "@/lib/theme/site-theme";
 
 export function Navbar() {
+  const navbarConfig = useHomeContentStore((s) => s.navbarConfig);
+  const nav = navbarConfig ?? DEFAULT_NAVBAR_CONFIG;
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const theme = useSyncExternalStore<SiteThemeMode>(
@@ -38,8 +41,8 @@ export function Navbar() {
     setSiteTheme(next);
   };
 
-  const navLinks = siteConfig.navItems.filter((item) => item.href !== "/#apply");
-  const applyNav = siteConfig.navItems.find((item) => item.href === "/#apply");
+  const navLinks = nav.navItems.filter((item) => item.href !== "/#apply");
+  const applyNav = nav.navItems.find((item) => item.href === "/#apply");
 
   const shellClass =
     theme === "dark"
@@ -79,8 +82,7 @@ export function Navbar() {
               theme === "dark" ? "text-white" : "[color:var(--foreground)]"
             }`}
           >
-            <span className="min-[380px]:hidden">Robotics & AI</span>
-            <span className="hidden min-[380px]:inline">Robotics & AI Club</span>
+            {nav.logoText}
           </span>
         </Link>
 
@@ -113,10 +115,10 @@ export function Navbar() {
           ))}
           {applyNav ? (
             <Link
-              href={applyNav.href}
+              href={nav.ctaHref || applyNav.href}
               className="btn-shine font-jetbrains rounded-full bg-gradient-to-br from-violet-600 to-cyan-500 px-5 py-2 text-[11px] font-medium uppercase tracking-[0.05em] text-white shadow-[0_0_22px_rgba(124,58,237,0.38)] transition hover:-translate-y-px hover:shadow-[0_0_38px_rgba(124,58,237,0.58)]"
             >
-              Apply Now
+              {nav.ctaText}
             </Link>
           ) : null}
         </nav>
@@ -169,11 +171,11 @@ export function Navbar() {
               ))}
               {applyNav ? (
                 <Link
-                  href={applyNav.href}
+                  href={nav.ctaHref || applyNav.href}
                   onClick={() => setOpen(false)}
                   className="btn-shine font-jetbrains mt-1 rounded-xl bg-gradient-to-br from-violet-600 to-cyan-500 px-3 py-2.5 text-center text-xs font-medium uppercase tracking-wide text-white"
                 >
-                  Apply Now
+                  {nav.ctaText}
                 </Link>
               ) : null}
             </nav>

@@ -151,6 +151,7 @@ export function TeamAdminClient() {
         imageUrl: "",
         order: 0,
         isActive: false,
+        isVisible: true,
         createdAt: serverTimestamp(),
         visibility: DEFAULT_TEAM_VISIBILITY,
       });
@@ -166,7 +167,11 @@ export function TeamAdminClient() {
     setTogglingId(rowId);
     setError(null);
     try {
-      await updateDoc(doc(db(), "teamMembers", rowId), { isActive: !current });
+      const nextActive = !current;
+      await updateDoc(doc(db(), "teamMembers", rowId), {
+        isActive: nextActive,
+        isVisible: nextActive,
+      });
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Could not update visibility.");
     } finally {
@@ -181,7 +186,10 @@ export function TeamAdminClient() {
     try {
       const batch = writeBatch(db());
       for (const row of filteredRows) {
-        batch.update(doc(db(), "teamMembers", row.id), { isActive: nextVisible });
+        batch.update(doc(db(), "teamMembers", row.id), {
+          isActive: nextVisible,
+          isVisible: nextVisible,
+        });
       }
       await batch.commit();
     } catch (e: unknown) {

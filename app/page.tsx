@@ -2,6 +2,12 @@ import { HomeRealtimeSections } from "@/components/content/home-realtime-section
 import { HeroSection } from "@/components/hero/hero-section";
 import { Footer } from "@/components/layout/footer";
 import { Navbar } from "@/components/layout/navbar";
+import { buildHomeMetadata } from "@/lib/metadata/home-metadata";
+import type { Metadata } from "next";
+
+export async function generateMetadata(): Promise<Metadata> {
+  return buildHomeMetadata();
+}
 
 export default function Home() {
   return (

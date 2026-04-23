@@ -158,13 +158,14 @@ function buildCarouselItems(events: EventItem[]): EventCarouselItem[] {
   return events.map((event) => ({
     id: event._id,
     title: event.title,
-    dateLabel: event.date
-      ? new Date(event.date).toLocaleDateString(undefined, {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        })
-      : "Date TBA",
+    dateLabel:
+      event.dateTba || !event.date
+        ? "Date TBA"
+        : new Date(event.date).toLocaleDateString(undefined, {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          }),
     imageUrl: event.imageUrl ?? null,
     imageFocusX: event.imageFocusX ?? 50,
     imageFocusY: event.imageFocusY ?? 50,
@@ -184,6 +185,7 @@ type HomeSectionsProps = {
   processStepsConfig: ProcessStepsConfig | null;
   faqConfig: FaqConfig | null;
   applyConfig: ApplySectionConfig | null;
+  eventsEmptyCopy: { title: string; message: string };
 };
 
 function sectionTitle(sectionKey: string, fallback: string) {
@@ -212,6 +214,7 @@ export function HomeSections({
   processStepsConfig,
   faqConfig,
   applyConfig,
+  eventsEmptyCopy,
 }: HomeSectionsProps) {
   const eventsTitle =
     sections.find((item) => item.sectionType === "events")?.title ??
@@ -272,7 +275,11 @@ export function HomeSections({
           })()}
         </h2>
         <div className="card-lift-3d card-lift-3d--controls-safe rounded-[20px] border border-violet-500/15 bg-[#111422]/80 py-2 shadow-[0_20px_60px_rgba(124,58,237,0.08)]">
-          <EventsCarousel items={carouselItems} />
+          <EventsCarousel
+            items={carouselItems}
+            emptyTitle={eventsEmptyCopy.title}
+            emptyMessage={eventsEmptyCopy.message}
+          />
         </div>
       </RevealSection>
 
@@ -285,7 +292,19 @@ export function HomeSections({
           {"// Club Fundamentals"}
         </span>
         <h2 className="font-syne text-[clamp(2rem,4vw,3.2rem)] font-extrabold leading-[1.05] tracking-tight text-white">
-          Know <span className="hero-title-grad">Us</span>
+          {(() => {
+            const t = knowUsConfig?.sectionTitle?.trim() || "Know Us";
+            const parts = t.split(/\s+/);
+            if (parts.length === 1) {
+              return <span className="hero-title-grad">{parts[0]}</span>;
+            }
+            return (
+              <>
+                <span className="text-white">{parts.slice(0, -1).join(" ")} </span>
+                <span className="hero-title-grad">{parts[parts.length - 1]}</span>
+              </>
+            );
+          })()}
         </h2>
         <p className="mt-4 max-w-[550px] text-[0.95rem] font-light leading-[1.9] text-slate-400">
           {knowUsConfig?.intro?.trim()
@@ -358,33 +377,36 @@ export function HomeSections({
               </div>
 
               <div className="relative z-10 mt-8 space-y-3">
-                <div className="flex items-center gap-3 rounded-xl border border-violet-500/10 bg-violet-500/[0.03] px-4 py-3 transition hover:translate-x-1.5 hover:border-violet-500/30 hover:bg-violet-500/[0.07]">
-                  <div className="inline-flex size-8 items-center justify-center rounded-lg bg-cyan-400/10 text-cyan-400">
-                    <Users className="size-4" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-white">Hands-on Learning</p>
-                    <p className="text-xs text-slate-500">Real projects, real impact</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 rounded-xl border border-violet-500/10 bg-violet-500/[0.03] px-4 py-3 transition hover:translate-x-1.5 hover:border-violet-500/30 hover:bg-violet-500/[0.07]">
-                  <div className="inline-flex size-8 items-center justify-center rounded-lg bg-fuchsia-500/10 text-fuchsia-300">
-                    <Megaphone className="size-4" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-white">6 Specialized Cellules</p>
-                    <p className="text-xs text-slate-500">Design · Media · Tech · More</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 rounded-xl border border-violet-500/10 bg-violet-500/[0.03] px-4 py-3 transition hover:translate-x-1.5 hover:border-violet-500/30 hover:bg-violet-500/[0.07]">
-                  <div className="inline-flex size-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-400">
-                    <FileText className="size-4" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-white">Open to Everyone</p>
-                    <p className="text-xs text-slate-500">Beginner or expert — you belong</p>
-                  </div>
-                </div>
+                {(whyJoin.highlights?.length
+                  ? whyJoin.highlights
+                  : [
+                      { title: "Hands-on Learning", subtitle: "Real projects, real impact" },
+                      { title: "6 Specialized Cellules", subtitle: "Design · Media · Tech · More" },
+                      { title: "Open to Everyone", subtitle: "Beginner or expert — you belong" },
+                    ]
+                ).map((h, idx) => {
+                  const Icon = idx % 3 === 0 ? Users : idx % 3 === 1 ? Megaphone : FileText;
+                  const ring =
+                    idx % 3 === 0
+                      ? "bg-cyan-400/10 text-cyan-400"
+                      : idx % 3 === 1
+                        ? "bg-fuchsia-500/10 text-fuchsia-300"
+                        : "bg-emerald-500/10 text-emerald-400";
+                  return (
+                    <div
+                      key={`${h.title}-${idx}`}
+                      className="flex items-center gap-3 rounded-xl border border-violet-500/10 bg-violet-500/[0.03] px-4 py-3 transition hover:translate-x-1.5 hover:border-violet-500/30 hover:bg-violet-500/[0.07]"
+                    >
+                      <div className={`inline-flex size-8 items-center justify-center rounded-lg ${ring}`}>
+                        <Icon className="size-4" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-white">{h.title}</p>
+                        <p className="text-xs text-slate-500">{h.subtitle}</p>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </article>
 

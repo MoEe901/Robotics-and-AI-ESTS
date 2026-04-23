@@ -11,10 +11,13 @@ import type {
   ProcessStepsConfig,
   FaqConfig,
   ApplySectionConfig,
+  FooterConfig,
+  NavbarConfig,
 } from "@/lib/firebase/types";
+import type { PublicHeroContent } from "@/lib/content/site-content-parser";
 import type { TeamMemberListItem } from "@/lib/team/types";
 
-type HomeContentStore = {
+export type HomeContentStore = {
   events: EventItem[];
   teamMembers: TeamMemberListItem[];
   sections: PageSection[];
@@ -25,6 +28,10 @@ type HomeContentStore = {
   processStepsConfig: ProcessStepsConfig | null;
   faqConfig: FaqConfig | null;
   applyConfig: ApplySectionConfig | null;
+  publicHero: PublicHeroContent | null;
+  navbarConfig: NavbarConfig | null;
+  footerConfig: FooterConfig | null;
+  eventsEmptyCopy: { title: string; message: string };
   setEvents: (events: EventItem[]) => void;
   setTeamMembers: (members: TeamMemberListItem[]) => void;
   setSections: (sections: PageSection[]) => void;
@@ -35,6 +42,10 @@ type HomeContentStore = {
   setProcessStepsConfig: (config: ProcessStepsConfig | null) => void;
   setFaqConfig: (config: FaqConfig | null) => void;
   setApplyConfig: (config: ApplySectionConfig | null) => void;
+  setPublicHero: (hero: PublicHeroContent | null) => void;
+  setNavbarConfig: (config: NavbarConfig | null) => void;
+  setFooterConfig: (config: FooterConfig | null) => void;
+  setEventsEmptyCopy: (copy: { title: string; message: string }) => void;
 };
 
 type PersistedHomeContentState = Partial<
@@ -50,6 +61,10 @@ type PersistedHomeContentState = Partial<
     | "setProcessStepsConfig"
     | "setFaqConfig"
     | "setApplyConfig"
+    | "setPublicHero"
+    | "setNavbarConfig"
+    | "setFooterConfig"
+    | "setEventsEmptyCopy"
   >
 >;
 
@@ -66,6 +81,10 @@ export const useHomeContentStore = create<HomeContentStore>()(
       processStepsConfig: null,
       faqConfig: null,
       applyConfig: null,
+      publicHero: null,
+      navbarConfig: null,
+      footerConfig: null,
+      eventsEmptyCopy: { title: "No events scheduled yet.", message: "" },
       setEvents: (events) => set({ events }),
       setTeamMembers: (teamMembers) => set({ teamMembers }),
       setSections: (sections) => set({ sections }),
@@ -76,6 +95,10 @@ export const useHomeContentStore = create<HomeContentStore>()(
       setProcessStepsConfig: (processStepsConfig) => set({ processStepsConfig }),
       setFaqConfig: (faqConfig) => set({ faqConfig }),
       setApplyConfig: (applyConfig) => set({ applyConfig }),
+      setPublicHero: (publicHero) => set({ publicHero }),
+      setNavbarConfig: (navbarConfig) => set({ navbarConfig }),
+      setFooterConfig: (footerConfig) => set({ footerConfig }),
+      setEventsEmptyCopy: (eventsEmptyCopy) => set({ eventsEmptyCopy }),
     }),
     {
       name: "home-content-cache",
@@ -96,21 +119,18 @@ export const useHomeContentStore = create<HomeContentStore>()(
           processStepsConfig: state.processStepsConfig ?? null,
           faqConfig: state.faqConfig ?? null,
           applyConfig: state.applyConfig ?? null,
+          publicHero: null,
+          navbarConfig: null,
+          footerConfig: null,
+          eventsEmptyCopy: { title: "No events scheduled yet.", message: "" },
         };
       },
       partialize: (s) => ({
         events: s.events,
         teamMembers: s.teamMembers,
         sections: s.sections,
-        knowUsConfig: s.knowUsConfig,
-        partnersConfig: s.partnersConfig,
-        whyJoinConfig: s.whyJoinConfig,
-        cellulesConfig: s.cellulesConfig,
-        processStepsConfig: s.processStepsConfig,
-        faqConfig: s.faqConfig,
-        applyConfig: s.applyConfig,
       }),
-      version: 4,
+      version: 5,
     },
   ),
 );

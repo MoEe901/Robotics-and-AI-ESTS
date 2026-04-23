@@ -1,6 +1,6 @@
 "use client";
 
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { collection, doc, getDocs, setDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
 
 import { db } from "@/lib/firebase";
@@ -11,6 +11,7 @@ import type {
   ApplySocialLink,
   ApplySocialPlatform,
 } from "@/lib/firebase/types";
+import { mergeApplyCollectionDocs } from "@/lib/content/apply-docs-merge";
 import { DEFAULT_APPLY_CONFIG, mergeApplyFromFirestore } from "@/lib/content/apply-defaults";
 
 function safeTrim(value: unknown): string {
@@ -86,9 +87,14 @@ export function ApplyConfigClient() {
     let cancelled = false;
     (async () => {
       try {
-        const snap = await getDoc(doc(db(), "siteConfig", "apply"));
-        if (snap.exists() && !cancelled) {
-          const merged = mergeApplyFromFirestore(snap.data() as Record<string, unknown>);
+        const snap = await getDocs(collection(db(), "apply"));
+        if (!snap.empty && !cancelled) {
+          const byId: Record<string, Record<string, unknown>> = {};
+          snap.forEach((d) => {
+            byId[d.id] = d.data() as Record<string, unknown>;
+          });
+          const merged =
+            Object.keys(byId).length > 0 ? mergeApplyCollectionDocs(byId) : mergeApplyFromFirestore({});
           setTopLabel(merged.topLabel);
           setHeroLine1(merged.heroLine1);
           setHeroLine2(merged.heroLine2);
@@ -161,45 +167,85 @@ export function ApplyConfigClient() {
         .slice(0, 8);
       if (!rowsClean.length) throw new Error("Add at least one contact row.");
 
-      await setDoc(
-        doc(db(), "siteConfig", "apply"),
-        {
-          topLabel: safeTrim(topLabel) || DEFAULT_APPLY_CONFIG.topLabel,
-          heroLine1: safeTrim(heroLine1) || DEFAULT_APPLY_CONFIG.heroLine1,
-          heroLine2: safeTrim(heroLine2) || DEFAULT_APPLY_CONFIG.heroLine2,
-          heroSub: safeTrim(heroSub) || DEFAULT_APPLY_CONFIG.heroSub,
-          infoBadge: safeTrim(infoBadge) || DEFAULT_APPLY_CONFIG.infoBadge,
-          infoTitle: safeTrim(infoTitle) || DEFAULT_APPLY_CONFIG.infoTitle,
-          infoDesc: safeTrim(infoDesc) || DEFAULT_APPLY_CONFIG.infoDesc,
-          contactRows: rowsClean,
-          socialLinks: normalizeSocials(socialLinks),
-          formTitle: safeTrim(formTitle) || DEFAULT_APPLY_CONFIG.formTitle,
-          formSubtitle: safeTrim(formSubtitle) || DEFAULT_APPLY_CONFIG.formSubtitle,
-          firstNameLabel: safeTrim(firstNameLabel) || DEFAULT_APPLY_CONFIG.firstNameLabel,
-          lastNameLabel: safeTrim(lastNameLabel) || DEFAULT_APPLY_CONFIG.lastNameLabel,
-          yearLabel: safeTrim(yearLabel) || DEFAULT_APPLY_CONFIG.yearLabel,
-          departmentLabel: safeTrim(departmentLabel) || DEFAULT_APPLY_CONFIG.departmentLabel,
-          emailLabel: safeTrim(emailLabel) || DEFAULT_APPLY_CONFIG.emailLabel,
-          phoneLabel: safeTrim(phoneLabel) || DEFAULT_APPLY_CONFIG.phoneLabel,
-          messageLabel: safeTrim(messageLabel) || DEFAULT_APPLY_CONFIG.messageLabel,
-          placeholders: {
-            firstName: safeTrim(phFirst) || DEFAULT_APPLY_CONFIG.placeholders.firstName,
-            lastName: safeTrim(phLast) || DEFAULT_APPLY_CONFIG.placeholders.lastName,
-            email: safeTrim(phEmail) || DEFAULT_APPLY_CONFIG.placeholders.email,
-            phone: safeTrim(phPhone) || DEFAULT_APPLY_CONFIG.placeholders.phone,
-            message: safeTrim(phMessage) || DEFAULT_APPLY_CONFIG.placeholders.message,
+      const socials = normalizeSocials(socialLinks);
+      const socialObj: Record<string, string> = {};
+      for (const p of ["instagram", "linkedin", "twitter", "youtube"] as const) {
+        socialObj[p] = socials.find((s) => s.platform === p)?.url ?? "";
+      }
+
+      const contactDocRows = rowsClean.map((r, i) => ({
+        id: `row-${i}`,
+        label: r.label,
+        value: r.value,
+        type: r.iconKey,
+        accent: r.tone,
+        order: i,
+      }));
+
+      await Promise.all([
+        setDoc(
+          doc(db(), "apply", "hero"),
+          {
+            stepLabel: safeTrim(topLabel) || DEFAULT_APPLY_CONFIG.topLabel,
+            titleLine1: safeTrim(heroLine1) || DEFAULT_APPLY_CONFIG.heroLine1,
+            titleLine2: safeTrim(heroLine2) || DEFAULT_APPLY_CONFIG.heroLine2,
+            subtitle: safeTrim(heroSub) || DEFAULT_APPLY_CONFIG.heroSub,
           },
-          yearOptions: years,
-          departmentOptions: depts,
-          charterLinkText: safeTrim(charterLinkText) || DEFAULT_APPLY_CONFIG.charterLinkText,
-          charterLinkHref: safeTrim(charterLinkHref) || DEFAULT_APPLY_CONFIG.charterLinkHref,
-          submitNotePrefix: safeTrim(submitNotePrefix) || DEFAULT_APPLY_CONFIG.submitNotePrefix,
-          submitButtonLabel: safeTrim(submitButtonLabel) || DEFAULT_APPLY_CONFIG.submitButtonLabel,
-          successTitle: safeTrim(successTitle) || DEFAULT_APPLY_CONFIG.successTitle,
-          successMessage: safeTrim(successMessage) || DEFAULT_APPLY_CONFIG.successMessage,
-        },
-        { merge: true },
-      );
+          { merge: true },
+        ),
+        setDoc(
+          doc(db(), "apply", "leftPanel"),
+          {
+            badge: safeTrim(infoBadge) || DEFAULT_APPLY_CONFIG.infoBadge,
+            title: safeTrim(infoTitle) || DEFAULT_APPLY_CONFIG.infoTitle,
+            description: safeTrim(infoDesc) || DEFAULT_APPLY_CONFIG.infoDesc,
+          },
+          { merge: true },
+        ),
+        setDoc(doc(db(), "apply", "contactRows"), { rows: contactDocRows }, { merge: true }),
+        setDoc(doc(db(), "apply", "socialLinks"), socialObj, { merge: true }),
+        setDoc(
+          doc(db(), "apply", "form"),
+          {
+            formTitle: safeTrim(formTitle) || DEFAULT_APPLY_CONFIG.formTitle,
+            formSubtitle: safeTrim(formSubtitle) || DEFAULT_APPLY_CONFIG.formSubtitle,
+            fieldLabels: {
+              firstName: safeTrim(firstNameLabel) || DEFAULT_APPLY_CONFIG.firstNameLabel,
+              lastName: safeTrim(lastNameLabel) || DEFAULT_APPLY_CONFIG.lastNameLabel,
+              year: safeTrim(yearLabel) || DEFAULT_APPLY_CONFIG.yearLabel,
+              department: safeTrim(departmentLabel) || DEFAULT_APPLY_CONFIG.departmentLabel,
+              email: safeTrim(emailLabel) || DEFAULT_APPLY_CONFIG.emailLabel,
+              phone: safeTrim(phoneLabel) || DEFAULT_APPLY_CONFIG.phoneLabel,
+              message: safeTrim(messageLabel) || DEFAULT_APPLY_CONFIG.messageLabel,
+            },
+            placeholders: {
+              firstName: safeTrim(phFirst) || DEFAULT_APPLY_CONFIG.placeholders.firstName,
+              lastName: safeTrim(phLast) || DEFAULT_APPLY_CONFIG.placeholders.lastName,
+              email: safeTrim(phEmail) || DEFAULT_APPLY_CONFIG.placeholders.email,
+              phone: safeTrim(phPhone) || DEFAULT_APPLY_CONFIG.placeholders.phone,
+              message: safeTrim(phMessage) || DEFAULT_APPLY_CONFIG.placeholders.message,
+            },
+            yearOptions: years,
+            departmentOptions: depts.map((d) => ({
+              label: d,
+              value: d.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, ""),
+            })),
+          },
+          { merge: true },
+        ),
+        setDoc(
+          doc(db(), "apply", "submitBlock"),
+          {
+            charterText: safeTrim(charterLinkText) || DEFAULT_APPLY_CONFIG.charterLinkText,
+            charterUrl: safeTrim(charterLinkHref) || DEFAULT_APPLY_CONFIG.charterLinkHref,
+            submitNotePrefix: safeTrim(submitNotePrefix) || DEFAULT_APPLY_CONFIG.submitNotePrefix,
+            submitLabel: safeTrim(submitButtonLabel) || DEFAULT_APPLY_CONFIG.submitButtonLabel,
+            successTitle: safeTrim(successTitle) || DEFAULT_APPLY_CONFIG.successTitle,
+            successMessage: safeTrim(successMessage) || DEFAULT_APPLY_CONFIG.successMessage,
+          },
+          { merge: true },
+        ),
+      ]);
       setSuccess("Apply section saved. The homepage updates live for visitors.");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to save.");

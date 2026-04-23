@@ -1,6 +1,6 @@
 "use client";
 
-import { collection, onSnapshot } from "firebase/firestore";
+import { collection, limit, onSnapshot, query, where } from "firebase/firestore";
 import { useEffect } from "react";
 
 import { db, isFirebaseConfigured } from "@/lib/firebase";
@@ -26,7 +26,12 @@ export function FirestoreDebugRawTeamMembers() {
     }
 
     const unsub = onSnapshot(
-      collection(db(), "teamMembers"),
+      query(
+        collection(db(), "teamMembers"),
+        where("isActive", "==", true),
+        where("isVisible", "==", true),
+        limit(200),
+      ),
       (snapshot) => {
         console.log("[Firestore DEBUG] RAW SNAPSHOT SIZE:", snapshot.size);
         if (snapshot.size === 0) {

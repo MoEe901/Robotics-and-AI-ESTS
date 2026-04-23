@@ -24,7 +24,7 @@ export function NavbarConfigClient() {
     let cancelled = false;
     (async () => {
       try {
-        const snap = await getDoc(doc(db(), "siteConfig", "navbar"));
+        const snap = await getDoc(doc(db(), "siteContent", "navbar"));
         if (!cancelled && snap.exists()) {
           const r = snap.data() as Record<string, unknown>;
           const str = (key: string, fb: string) =>
@@ -74,7 +74,7 @@ export function NavbarConfigClient() {
     setSuccess(null);
     try {
       await setDoc(
-        doc(db(), "siteConfig", "navbar"),
+        doc(db(), "siteContent", "navbar"),
         {
           logoText: logoText.trim() || DEFAULT_NAVBAR_CONFIG.logoText,
           navItems: cleaned,

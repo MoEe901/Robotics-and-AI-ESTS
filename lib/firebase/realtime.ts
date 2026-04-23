@@ -10,10 +10,12 @@ import {
   where,
   type DocumentData,
   type QueryConstraint,
+  type Timestamp,
   type Unsubscribe,
 } from "firebase/firestore";
 
 import { db } from "@/lib/firebase";
+import { logFirestoreListenerError } from "@/lib/firebase/firestore-listener-log";
 import {
   DEFAULT_TEAM_VISIBILITY,
   type EventAttachment,
@@ -52,6 +54,24 @@ import type { TeamMemberProfile } from "@/lib/team/types";
 
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
+}
+
+function formatEventDate(raw: unknown): string | undefined {
+  if (raw == null) return undefined;
+  if (typeof raw === "string" && raw.trim()) return raw.trim();
+  if (
+    typeof raw === "object" &&
+    raw !== null &&
+    "toDate" in raw &&
+    typeof (raw as Timestamp).toDate === "function"
+  ) {
+    try {
+      return (raw as Timestamp).toDate().toISOString();
+    } catch {
+      return undefined;
+    }
+  }
+  return undefined;
 }
 
 function clampNumber(value: unknown, min: number, max: number, fallback: number): number {
@@ -133,6 +153,7 @@ function mapTeamDoc(docId: string, data: DocumentData): TeamMemberProfile | null
   }
 
   if (row.isActive !== true) return null;
+  if (row.isVisible !== true) return null;
 
   const contacts = Array.isArray(row.contacts)
     ? row.contacts.filter(
@@ -176,22 +197,33 @@ function sortMembers<T extends TeamMemberProfile>(rows: T[]): T[] {
   });
 }
 
-// Debug-first subscription: no filters, checks connectivity and raw documents.
+/**
+ * Dev-oriented subscription using the same constraints as security rules allow for anonymous list reads.
+ * Unfiltered `collection(teamMembers)` is rejected by rules — queries must include equality on guarded fields.
+ */
 export function subscribeToTeamMembers(
   callback: (members: TeamMemberProfile[]) => void,
   onError?: (error: Error) => void,
 ): Unsubscribe {
-  return onSnapshot(
+  const q = query(
     collection(db(), "teamMembers"),
+    where("isActive", "==", true),
+    where("isVisible", "==", true),
+    limit(500),
+  );
+  return onSnapshot(
+    q,
     (snapshot) => {
-      console.log("[Firestore] RAW SNAPSHOT SIZE:", snapshot.size);
+      if (process.env.NODE_ENV === "development") {
+        console.log("[Firestore] teamMembers (public-safe query) size:", snapshot.size);
+      }
       const mapped = snapshot.docs
         .map((doc) => mapTeamDoc(doc.id, doc.data()))
         .filter((m): m is TeamMemberProfile => Boolean(m));
-      console.log("[Firestore] RAW DATA rows:", mapped.length);
       callback(sortMembers(mapped));
     },
     (error) => {
+      logFirestoreListenerError("subscribeToTeamMembers query(teamMembers isActive+isVisible)", error);
       console.error("[Firestore] subscribeToTeamMembers failed", error);
       onError?.(error);
     },
@@ -206,6 +238,7 @@ export function subscribeToTeamByYear(
   const constraints: QueryConstraint[] = [
     where("academicYear", "==", year),
     where("isActive", "==", true),
+    where("isVisible", "==", true),
     orderBy("order", "asc"),
   ];
 
@@ -229,10 +262,14 @@ export function subscribeToTeamByYear(
       callback(sortMembers(mapped));
     },
     (error) => {
+      logFirestoreListenerError(
+        `subscribeToTeamByYear query(teamMembers academicYear=${year} isActive isVisible order)`,
+        error,
+      );
       const err = error as { code?: string; message?: string };
       if (err.code === "failed-precondition") {
         console.error(
-          "[Firestore] Missing composite index for teamMembers: academicYear ASC + isActive ASC + order ASC",
+          "[Firestore] Missing composite index for teamMembers: academicYear + isActive + isVisible + order",
         );
         if (err.message?.includes("firebase.google.com")) {
           console.info("[Firestore] Use the URL inside the error message below to create the index in one click.");
@@ -253,6 +290,7 @@ export function subscribeToMemberBySlug(
     collection(db(), "teamMembers"),
     where("slug", "==", slug),
     where("isActive", "==", true),
+    where("isVisible", "==", true),
     limit(1),
   );
 
@@ -268,6 +306,7 @@ export function subscribeToMemberBySlug(
       callback(data);
     },
     (error) => {
+      logFirestoreListenerError(`subscribeToMemberBySlug query(slug=${slug})`, error);
       console.error("[Firestore] subscribeToMemberBySlug failed", error);
       onError?.(error);
     },
@@ -294,15 +333,25 @@ export function mapEventDocToItem(docId: string, raw: EventDoc): EventItem | nul
   if (!isNonEmptyString(raw.title)) return null;
   const attachments = parseEventAttachments(raw.attachments);
   const gallery = parseEventGallery(raw.gallery);
+  const dateTba = raw.dateTba === true;
+  const dateStr = dateTba ? undefined : formatEventDate(raw.date);
+  const venue = isNonEmptyString(raw.venue) ? raw.venue.trim() : isNonEmptyString(raw.location) ? raw.location : undefined;
+  const mapsUrl =
+    isNonEmptyString(raw.mapsUrl) ? raw.mapsUrl.trim() : isNonEmptyString(raw.locationMapsUrl)
+      ? raw.locationMapsUrl.trim()
+      : undefined;
+  const story =
+    isNonEmptyString(raw.documentary) ? raw.documentary : isNonEmptyString(raw.eventStory) ? raw.eventStory : undefined;
   return {
     _id: docId,
     title: raw.title.trim(),
     slug: raw.slug ? { current: raw.slug } : null,
     description: isNonEmptyString(raw.description) ? raw.description : undefined,
-    documentary: isNonEmptyString(raw.documentary) ? raw.documentary : undefined,
-    location: isNonEmptyString(raw.location) ? raw.location : undefined,
-    locationMapsUrl: isNonEmptyString(raw.locationMapsUrl) ? raw.locationMapsUrl.trim() : undefined,
-    date: isNonEmptyString(raw.date) ? raw.date : undefined,
+    documentary: story,
+    location: venue,
+    locationMapsUrl: mapsUrl,
+    date: dateStr,
+    dateTba: dateTba || undefined,
     attachments,
     gallery,
     eventWebsiteUrl: isNonEmptyString(raw.eventWebsiteUrl) ? raw.eventWebsiteUrl.trim() : undefined,
@@ -420,10 +469,9 @@ export function subscribeToEvents(
 ): Unsubscribe {
   const q = query(
     collection(db(), "events"),
+    where("isActive", "==", true),
     orderBy("order", "asc"),
-    // Avoid composite-index dependency (isActive + order) by querying by order only.
-    // We filter inactive docs client-side and then keep the first 24 visible events.
-    limit(200),
+    limit(60),
   );
   return onSnapshot(
     q,
@@ -431,7 +479,6 @@ export function subscribeToEvents(
       const events = snapshot.docs
         .map((d) => mapEventDocToItem(d.id, d.data() as EventDoc))
         .filter((e): e is EventItem => e !== null)
-        .filter((e) => e.isActive !== false)
         .sort((a, b) => {
           const fa = a.isFeatured ? 1 : 0;
           const fb = b.isFeatured ? 1 : 0;
@@ -444,6 +491,7 @@ export function subscribeToEvents(
       callback(events);
     },
     (error) => {
+      logFirestoreListenerError("subscribeToEvents query(events isActive order)", error);
       console.error("[Firestore] subscribeToEvents failed", error);
       onError?.(error);
     },
@@ -470,6 +518,7 @@ export function subscribeToPageSections(
       callback(sections);
     },
     (error) => {
+      logFirestoreListenerError("subscribeToPageSections query(pageSections order)", error);
       console.error("[Firestore] subscribeToPageSections failed", error);
       onError?.(error);
     },

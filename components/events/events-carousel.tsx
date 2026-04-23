@@ -29,6 +29,8 @@ export type EventCarouselItem = {
 
 type EventsCarouselProps = {
   items: EventCarouselItem[];
+  emptyTitle?: string;
+  emptyMessage?: string;
 };
 
 function coverSrc(imageUrl: string | null | undefined): string {
@@ -36,7 +38,7 @@ function coverSrc(imageUrl: string | null | undefined): string {
   return FALLBACK;
 }
 
-export function EventsCarousel({ items }: EventsCarouselProps) {
+export function EventsCarousel({ items, emptyTitle, emptyMessage }: EventsCarouselProps) {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [autoplay, setAutoplay] = useState(false);
@@ -144,10 +146,17 @@ export function EventsCarousel({ items }: EventsCarouselProps) {
   }, [autoplay, items.length, reduceMotion, scrollToIndex]);
 
   if (!items.length) {
+    const title = emptyTitle?.trim() || "No events scheduled yet.";
+    const msg = emptyMessage?.trim();
     return (
-      <p className="rounded-2xl border border-white/10 bg-black/20 px-6 py-10 text-center text-sm text-white/55">
-        No events scheduled yet.
-      </p>
+      <div className="rounded-2xl border border-white/10 bg-black/20 px-6 py-10 text-center">
+        <p className="text-sm font-medium text-white/75">{title}</p>
+        {msg ? (
+          <p className="mt-2 text-xs text-white/45">{msg}</p>
+        ) : (
+          <div className="mx-auto mt-4 h-2 max-w-[220px] rounded-full bg-white/[0.06] animate-pulse" aria-hidden />
+        )}
+      </div>
     );
   }
 
