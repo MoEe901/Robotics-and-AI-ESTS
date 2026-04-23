@@ -89,6 +89,15 @@ export function AdminShell({ children }: Props) {
             <Link className="hover:text-white" href="/admin/events">
               Events
             </Link>
+            <Link className="hover:text-white" href="/admin/basic">
+              Know us
+            </Link>
+            <Link className="hover:text-white" href="/admin/faq">
+              FAQ
+            </Link>
+            <Link className="hover:text-white" href="/admin/apply">
+              Apply
+            </Link>
             <Link className="text-blue-300 hover:text-blue-200" href="/">
               View site
             </Link>

@@ -19,7 +19,7 @@ test.describe("Public site", () => {
   test("events carousel first three cards are rendered with loaded images", async ({ page }) => {
     await page.goto("/#events");
 
-    await expect(page.getByRole("heading", { name: "Events" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Events", exact: true })).toBeVisible();
     const emptyState = page.getByText("No events scheduled yet.");
     const eventLinks = page.locator('a[aria-label$="open event story"]');
 

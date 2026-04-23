@@ -14,6 +14,17 @@
     primary: "Join the Club",
     secondary: "Explore Events",
   },
+  /**
+   * Full-screen homepage hero video (see `scripts/compress-video.mjs`).
+   * Set `NEXT_PUBLIC_HERO_VIDEO_URL` to a single MP4/WebM URL to override local files.
+   * Set `NEXT_PUBLIC_DISABLE_HERO_VIDEO=true` for particle-only background.
+   */
+  heroVideoDisabled: process.env.NEXT_PUBLIC_DISABLE_HERO_VIDEO === "true",
+  heroVideoUrl: (process.env.NEXT_PUBLIC_HERO_VIDEO_URL ?? "").trim(),
+  heroVideo: {
+    webm: "/assets/video/hero-video.webm",
+    mp4: "/assets/video/hero-video.mp4",
+  },
 };
 
 export const designTokens = {

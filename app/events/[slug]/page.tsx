@@ -17,7 +17,7 @@ export default async function EventDocumentaryPage({ params }: PageProps) {
   const { slug } = await params;
 
   return (
-    <div className="relative overflow-x-hidden">
+    <div className="relative">
       <Navbar />
       <EventDocumentaryPageClient key={slug} pathSegment={slug} />
     </div>

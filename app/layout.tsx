@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Space_Grotesk } from "next/font/google";
 
 import { FirestoreDebugRawTeamMembers } from "@/components/firebase/firestore-debug-raw";
+import { StartupLoader } from "@/components/layout/startup-loader";
 
 import "./globals.css";
 
@@ -32,8 +33,10 @@ export default function RootLayout({
       className={`${inter.variable} ${spaceGrotesk.variable} relative h-full antialiased`}
     >
       <body className="relative min-h-full flex flex-col">
-        {process.env.NODE_ENV === "development" ? <FirestoreDebugRawTeamMembers /> : null}
-        <div className="relative min-h-0 flex-1">{children}</div>
+        <StartupLoader>
+          {process.env.NODE_ENV === "development" ? <FirestoreDebugRawTeamMembers /> : null}
+          <div className="relative min-h-0 flex-1">{children}</div>
+        </StartupLoader>
       </body>
     </html>
   );

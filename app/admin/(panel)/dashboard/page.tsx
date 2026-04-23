@@ -31,6 +31,24 @@ export default function AdminDashboardPage() {
           </Link>
         </li>
         <li>
+          <Link
+            href="/admin/faq"
+            className="flex items-center justify-between rounded-2xl border border-white/12 bg-white/[0.05] px-5 py-4 text-sm font-medium text-white transition hover:border-white/25 hover:bg-white/[0.08]"
+          >
+            FAQ (homepage)
+            <span className="text-white/45">→</span>
+          </Link>
+        </li>
+        <li>
+          <Link
+            href="/admin/apply"
+            className="flex items-center justify-between rounded-2xl border border-white/12 bg-white/[0.05] px-5 py-4 text-sm font-medium text-white transition hover:border-white/25 hover:bg-white/[0.08]"
+          >
+            Apply / contact (homepage)
+            <span className="text-white/45">→</span>
+          </Link>
+        </li>
+        <li>
           <a
             href={`https://console.firebase.google.com/project/${projectId}/firestore`}
             target="_blank"

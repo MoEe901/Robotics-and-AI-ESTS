@@ -14,9 +14,9 @@ import {
 import type { TeamMemberProfile } from "@/lib/team/types";
 import { useTeamStore } from "@/store/teamStore";
 
-function normalizeRoleFilter(role: string | null): "All" {
-  void role;
-  return "All";
+function normalizeRoleFilter(role: string | null | undefined): string {
+  if (role == null || role.trim() === "" || role === "All") return "All";
+  return decodeURIComponent(role.trim());
 }
 
 function resolveAcademicYear(yearParam: string | null): string {
@@ -38,7 +38,8 @@ export function TeamPageClient() {
   const params = useSearchParams();
   const year = useMemo(() => resolveAcademicYear(params.get("year")), [params]);
   const role = useMemo(() => normalizeRoleFilter(params.get("role")), [params]);
-  const cacheKey = `${year}::${role}`;
+  /** One cache entry per academic year — filter by roleType in the directory UI. */
+  const cacheKey = year;
 
   const clientMounted = useClientMounted();
 
@@ -75,17 +76,13 @@ export function TeamPageClient() {
         unsubscribeFiltered = subscribeToTeamByYear(
           year,
           (rows) => {
-            const filtered =
-              role === "All" ? rows : rows.filter((m) => m.roleType === role);
-
             if (process.env.NODE_ENV === "development") {
-              console.log("FILTERED ROWS:", filtered.length, { year, role });
+              console.log("TEAM ROWS:", rows.length, { year });
             }
 
-            setMembers(cacheKey, filtered);
+            setMembers(cacheKey, rows);
           },
           {
-            roleType: role,
             onError: () => {
               markLoaded(cacheKey);
             },
@@ -102,7 +99,7 @@ export function TeamPageClient() {
       unsubscribeDebug();
       unsubscribeFiltered?.();
     };
-  }, [cacheKey, markLoaded, role, setMembers, year]);
+  }, [cacheKey, markLoaded, setMembers, year]);
 
   if (!clientMounted) {
     return <div className="min-h-[50vh]" suppressHydrationWarning aria-hidden />;

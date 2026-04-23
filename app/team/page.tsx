@@ -12,29 +12,21 @@ export const dynamic = "force-dynamic";
 
 export default function TeamPage() {
   return (
-    <>
+    <div className="relative pt-24 md:pt-28">
       <Navbar />
       <Suspense
         fallback={
-          <main className="mx-auto w-[min(94%,1100px)] px-4 pb-24 pt-28 md:px-6 md:pt-32">
-            <div className="flex flex-col gap-6 border-b border-white/10 pb-10 md:flex-row md:items-end md:justify-between">
-              <div className="max-w-xl space-y-3">
-                <div className="h-3 w-24 animate-pulse rounded bg-white/10" />
-                <div className="h-10 w-48 animate-pulse rounded-lg bg-white/10" />
-                <div className="h-4 w-full animate-pulse rounded bg-white/[0.06]" />
-              </div>
-              <div className="h-5 w-28 animate-pulse rounded bg-white/10" />
+          <main className="min-h-screen bg-[#08080e] px-6 pb-24 pt-8 md:px-12">
+            <div className="mx-auto max-w-[1200px] space-y-4">
+              <div className="h-3 w-28 animate-pulse rounded bg-white/10" />
+              <div className="h-16 w-2/3 max-w-md animate-pulse rounded-lg bg-white/10" />
+              <div className="h-4 w-48 animate-pulse rounded bg-white/[0.06]" />
             </div>
-            <div className="mt-8 flex gap-2">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="h-9 w-24 animate-pulse rounded-full bg-white/10" />
-              ))}
-            </div>
-            <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {[1, 2, 3].map((i) => (
+            <div className="mx-auto mt-10 grid max-w-[1200px] grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
                 <div
                   key={i}
-                  className="aspect-[4/5] animate-pulse rounded-2xl border border-white/10 bg-white/[0.04]"
+                  className="h-[360px] animate-pulse rounded-[20px] border border-white/[0.07] bg-[#0d0d18]"
                 />
               ))}
             </div>
@@ -43,6 +35,6 @@ export default function TeamPage() {
       >
         <TeamPageClient />
       </Suspense>
-    </>
+    </div>
   );
 }

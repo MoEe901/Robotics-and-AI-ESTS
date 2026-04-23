@@ -283,3 +283,64 @@ h3 {
 .admin-root[data-admin-theme="light"] .\[color-scheme\:dark\] {
   color-scheme: light !important;
 }
+
+@keyframes loaderFloat {
+  0% {
+    transform: translateY(0px) scale(1);
+    opacity: 0.92;
+  }
+  50% {
+    transform: translateY(-6px) scale(1.015);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(0px) scale(1);
+    opacity: 0.92;
+  }
+}
+
+/* Clip scroll area; fade logos at left/right so sides feel open (not a hard box). */
+.partners-marquee {
+  overflow: hidden;
+  contain: paint;
+  mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    #000 14%,
+    #000 86%,
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    #000 14%,
+    #000 86%,
+    transparent 100%
+  );
+  mask-size: 100% 100%;
+  -webkit-mask-size: 100% 100%;
+  mask-repeat: no-repeat;
+  -webkit-mask-repeat: no-repeat;
+}
+
+.partners-marquee-track {
+  display: flex;
+  align-items: center;
+  gap: var(--partners-gap, 52px);
+  width: max-content;
+  animation: partnersMarquee var(--partners-duration, 16s) linear infinite;
+  will-change: transform;
+}
+
+.partners-logo-item {
+  flex-shrink: 0;
+}
+
+@keyframes partnersMarquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}

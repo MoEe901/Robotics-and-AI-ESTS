@@ -157,7 +157,7 @@ export function EventsCarousel({ items }: EventsCarouselProps) {
     <div className="relative w-full">
       <div
         ref={scrollerRef}
-        className="scrollbar-none flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 pt-3 sm:gap-4 sm:px-5 md:pt-4 md:gap-3 lg:gap-3 lg:px-[max(1rem,calc((100vw-min(85vw,96rem))/2))] xl:gap-[12px] 2xl:gap-3"
+        className="scrollbar-none flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 pt-3 sm:gap-4 sm:px-5 md:gap-3 md:pt-4 lg:gap-3 lg:px-6 xl:gap-[12px] 2xl:gap-3"
       >
         {items.map((item, index) => {
           const href = `/events/${encodeURIComponent(item.linkSlug)}#documentary`;
@@ -166,7 +166,7 @@ export function EventsCarousel({ items }: EventsCarouselProps) {
               key={item.id}
               href={href}
               scroll={false}
-              className="group flex w-[min(88vw,26rem)] shrink-0 snap-center flex-col overflow-hidden rounded-2xl border border-white/10 bg-black/80 text-left shadow-[0_24px_80px_-24px_rgba(27,110,200,0.35)] ring-1 ring-white/[0.06] transition-shadow duration-[400ms] ease-in-out outline-offset-4 hover:shadow-[0_28px_90px_-20px_rgba(27,110,200,0.45)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-white/40 sm:w-[min(86vw,28rem)] md:w-[min(90vw,40rem)] lg:w-[min(85vw,96rem)] lg:rounded-3xl xl:rounded-[1.35rem]"
+              className="group flex w-[min(80vw,22rem)] shrink-0 snap-center flex-col overflow-hidden rounded-2xl border border-white/10 bg-black/80 text-left shadow-[0_24px_80px_-24px_rgba(27,110,200,0.35)] ring-1 ring-white/[0.06] transition-shadow duration-[400ms] ease-in-out outline-offset-4 hover:shadow-[0_28px_90px_-20px_rgba(27,110,200,0.45)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-white/40 sm:w-[min(78vw,24rem)] md:w-[calc((100%-0.75rem)/2)] lg:w-[calc((100%-0.75rem)/2)] lg:rounded-3xl xl:rounded-[1.35rem]"
               aria-label={`${item.title} — open event story`}
             >
               <motion.article
@@ -180,7 +180,7 @@ export function EventsCarousel({ items }: EventsCarouselProps) {
                 whileHover={{ scale: 1.012 }}
                 className="flex min-h-0 flex-1 flex-col"
               >
-                <div className="relative aspect-[4/5] min-h-[220px] w-full shrink-0 overflow-hidden sm:aspect-video sm:min-h-[240px] md:min-h-[260px] lg:aspect-[21/9] lg:min-h-[min(42vw,380px)] xl:min-h-[min(40vw,480px)] 2xl:min-h-[min(38vw,560px)]">
+                <div className="relative aspect-[4/5] min-h-[190px] w-full shrink-0 overflow-hidden sm:aspect-video sm:min-h-[208px] md:min-h-[224px] lg:aspect-[21/9] lg:min-h-[min(30vw,260px)] xl:min-h-[min(28vw,320px)] 2xl:min-h-[min(26vw,380px)]">
                   <img
                     src={coverSrc(item.imageUrl)}
                     alt=""

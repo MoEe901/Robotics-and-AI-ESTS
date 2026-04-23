@@ -16,9 +16,9 @@ export async function generateMetadata({ params }: PageProps) {
 export default async function TeamMemberPage({ params }: PageProps) {
   const { slug } = await params;
   return (
-    <>
+    <div className="relative">
       <Navbar />
       <TeamMemberProfilePageClient key={slug} slug={slug} />
-    </>
+    </div>
   );
 }

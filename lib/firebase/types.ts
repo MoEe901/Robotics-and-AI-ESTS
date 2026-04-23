@@ -110,6 +110,153 @@ export type PageSection = {
   order?: number;
 };
 
+export type KnowUsCard = {
+  title: string;
+  description: string;
+};
+
+export type KnowUsConfig = {
+  intro: string;
+  cards: KnowUsCard[];
+};
+
+export type PartnerLogo = {
+  imageUrl: string;
+  alt: string;
+  visible?: boolean;
+  sourceTone?: "light" | "dark";
+};
+
+export type PartnersConfig = {
+  title: string;
+  logos: PartnerLogo[];
+};
+
+export type WhyJoinCard = {
+  title: string;
+  description: string;
+};
+
+export type WhyJoinConfig = {
+  smallHeading: string;
+  title: string;
+  description: string;
+  cards: WhyJoinCard[];
+};
+
+export type CelluleCard = {
+  title: string;
+  description: string;
+  iconKey?: string;
+  iconImageUrl?: string;
+};
+
+export type CellulesConfig = {
+  eyebrow: string;
+  title: string;
+  subtitle: string;
+  cards: CelluleCard[];
+};
+
+export type ProcessStepItem = {
+  badge: string;
+  title: string;
+  description: string;
+  /** Lucide-style key: users | lightbulb | calendar | award | rocket | target | sparkles */
+  iconKey: string;
+};
+
+export type ProcessStepsConfig = {
+  eyebrow: string;
+  /** Text before the gradient accent (e.g. "Step-by-Step ") */
+  titleLine: string;
+  /** Gradient accent word (e.g. "Process") */
+  titleAccent: string;
+  steps: ProcessStepItem[];
+};
+
+export type FaqCategory = {
+  id: string;
+  label: string;
+};
+
+export type FaqItemColor = "blue" | "violet" | "pink" | "amber" | "green";
+
+export type FaqItem = {
+  categoryId: string;
+  question: string;
+  answer: string;
+  color: FaqItemColor;
+  iconKey: string;
+};
+
+export type FaqConfig = {
+  eyebrow: string;
+  titleLine: string;
+  titleAccent: string;
+  subtitle: string;
+  categories: FaqCategory[];
+  items: FaqItem[];
+  ctaTitle: string;
+  ctaSubtitle: string;
+  ctaButtonLabel: string;
+  ctaButtonHref: string;
+};
+
+export type ApplyContactIconKey = "map" | "phone" | "mail" | "clock";
+export type ApplyContactTone = "blue" | "violet" | "pink" | "green";
+
+export type ApplyContactRow = {
+  label: string;
+  /** Use line breaks in text; rendered with <br /> on site */
+  value: string;
+  iconKey: ApplyContactIconKey;
+  tone: ApplyContactTone;
+};
+
+export type ApplySocialPlatform = "instagram" | "linkedin" | "twitter" | "youtube";
+
+export type ApplySocialLink = {
+  platform: ApplySocialPlatform;
+  url: string;
+};
+
+export type ApplySectionConfig = {
+  topLabel: string;
+  heroLine1: string;
+  heroLine2: string;
+  heroSub: string;
+  infoBadge: string;
+  infoTitle: string;
+  infoDesc: string;
+  contactRows: ApplyContactRow[];
+  socialLinks: ApplySocialLink[];
+  formTitle: string;
+  formSubtitle: string;
+  firstNameLabel: string;
+  lastNameLabel: string;
+  yearLabel: string;
+  departmentLabel: string;
+  emailLabel: string;
+  phoneLabel: string;
+  messageLabel: string;
+  placeholders: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+    message: string;
+  };
+  yearOptions: string[];
+  departmentOptions: string[];
+  charterLinkText: string;
+  charterLinkHref: string;
+  submitNotePrefix: string;
+  submitButtonLabel: string;
+  successTitle: string;
+  successMessage: string;
+};
+
 export const DEFAULT_TEAM_VISIBILITY: TeamMemberVisibility = {
   showEmail: true,
   showPhone: true,

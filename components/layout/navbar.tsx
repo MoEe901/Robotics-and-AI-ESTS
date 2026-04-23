@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { siteConfig } from "@/lib/site-config";
 import { motion } from "framer-motion";
@@ -63,14 +63,28 @@ export function Navbar() {
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, ease: "easeOut" }}
-        className="fixed inset-x-0 top-0 z-50 mx-auto mt-4 flex w-[min(94%,1100px)] items-center justify-between rounded-full border px-5 py-3 shadow-[0_8px_32px_rgba(0,0,0,0.18)] backdrop-blur-2xl backdrop-saturate-150 transition-all duration-[400ms] ease-in-out [background:var(--surface)] [border-color:var(--surface-border)]"
+        className="fixed inset-x-0 top-0 z-50 mx-auto mt-3 flex w-[min(calc(100%-1.5rem),1100px)] max-w-full items-center justify-between gap-2 rounded-full border px-3 py-2.5 shadow-[0_8px_32px_rgba(0,0,0,0.18)] backdrop-blur-2xl backdrop-saturate-150 transition-all duration-[400ms] ease-in-out [background:var(--surface)] [border-color:var(--surface-border)] sm:mt-4 sm:gap-3 sm:px-5 sm:py-3"
       >
-        <Link href="/" className="flex items-center gap-3" onClick={() => setOpen(false)}>
-          <Image src="/assets/logos/logo-optimized.svg" alt="Club logo" width={32} height={32} />
-          <span className="text-sm font-semibold tracking-wide [color:var(--foreground)]">Robotics & AI Club</span>
+        <Link
+          href="/"
+          className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3"
+          onClick={() => setOpen(false)}
+        >
+          <Image
+            src="/assets/logos/logo-optimized.svg"
+            alt="Club logo"
+            width={32}
+            height={32}
+            className="size-8 shrink-0"
+            loading="eager"
+            priority
+          />
+          <span className="truncate text-xs font-semibold tracking-wide [color:var(--foreground)] sm:text-sm">
+            Robotics & AI Club
+          </span>
         </Link>
 
-        <nav className="ml-auto hidden items-center gap-6 md:flex">
+        <nav className="ml-auto hidden shrink-0 items-center gap-6 md:flex">
           <button
             type="button"
             onClick={toggleTheme}
@@ -95,12 +109,12 @@ export function Navbar() {
           ))}
         </nav>
 
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2 md:hidden">
           <button
             type="button"
             onClick={toggleTheme}
             aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-            className="inline-flex items-center justify-center rounded-full border p-2 [border-color:var(--surface-border)] [color:var(--foreground)] md:hidden"
+            className="inline-flex size-10 shrink-0 items-center justify-center rounded-full border [border-color:var(--surface-border)] [color:var(--foreground)]"
           >
             {theme === "dark" ? (
               <Sun className="size-4" />
@@ -111,7 +125,7 @@ export function Navbar() {
 
           <button
             type="button"
-            className="inline-flex items-center justify-center rounded-full border p-2 [border-color:var(--surface-border)] [color:var(--foreground)] md:hidden"
+            className="inline-flex size-10 shrink-0 items-center justify-center rounded-full border [border-color:var(--surface-border)] [color:var(--foreground)]"
             aria-label={open ? "Close navigation menu" : "Open navigation menu"}
             onClick={() => setOpen((v) => !v)}
           >

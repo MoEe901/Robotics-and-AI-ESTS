@@ -44,15 +44,15 @@ export function TeamMemberProfilePageClient({ slug }: TeamMemberProfilePageClien
 
   if (!member && awaitingLive) {
     return (
-      <p className="mx-auto w-[min(94%,720px)] px-4 pb-24 pt-28 text-sm text-white/70">
-        Loading profile...
+      <p className="mx-auto w-[min(94%,720px)] px-4 pb-24 pt-24 text-sm text-[#6b6a80] md:pt-28">
+        Loading profile…
       </p>
     );
   }
 
   if (!member) {
     return (
-      <p className="mx-auto w-[min(94%,720px)] px-4 pb-24 pt-28 text-sm text-white/70">
+      <p className="mx-auto w-[min(94%,720px)] px-4 pb-24 pt-24 text-sm text-[#6b6a80] md:pt-28">
         Member not found.
       </p>
     );
