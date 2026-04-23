@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 
 import { cn } from "@/lib/utils";
 
-const COLORS = ["#4f8ef7", "#a78bfa", "#3ecf8e", "#f056a0", "#38bdf8"];
+const COLORS = ["#4f8ef7", "#a78bfa", "#3ecf8e", "#f056a0", "#38bdf8", "#c084fc", "#22d3ee"];
 
 type Particle = {
   x: number;
@@ -16,6 +16,7 @@ type Particle = {
   color: string;
   alpha: number;
   pulse: number;
+  glow: boolean;
   reset: (rand: boolean) => void;
   update: (Wi: number, Hi: number) => void;
   draw: (ctx: CanvasRenderingContext2D) => void;
@@ -39,7 +40,7 @@ export function HeroParticleCanvas({ className }: { className?: string }) {
     let W = 0;
     let H = 0;
 
-    function createParticle(): Particle {
+    const createParticle = (): Particle => {
       const p: Particle = {
         x: 0,
         y: 0,
@@ -50,10 +51,12 @@ export function HeroParticleCanvas({ className }: { className?: string }) {
         color: "",
         alpha: 0,
         pulse: 0,
+        glow: false,
         reset(rand: boolean) {
           this.x = Math.random() * W;
           this.y = rand ? Math.random() * H : -10;
-          this.size = Math.random() * 1.5 + 0.3;
+          this.glow = Math.random() < 0.1;
+          this.size = this.glow ? Math.random() * 2 + 1.5 : Math.random() * 1.5 + 0.3;
           this.speed = Math.random() * 0.15 + 0.05;
           this.vx = (Math.random() - 0.5) * 0.12;
           this.vy = Math.random() * 0.3 + 0.05;
@@ -65,12 +68,22 @@ export function HeroParticleCanvas({ className }: { className?: string }) {
           this.pulse += 0.012;
           this.x += this.vx;
           this.y += this.vy * this.speed * 0.8;
-          this.alpha = 0.15 + Math.sin(this.pulse) * 0.08;
+          this.alpha = (this.glow ? 0.22 : 0.15) + Math.sin(this.pulse) * 0.1;
           if (this.y > Hi + 10) this.reset(false);
           if (this.x < 0) this.x = Wi;
           if (this.x > Wi) this.x = 0;
         },
         draw(c: CanvasRenderingContext2D) {
+          if (this.glow) {
+            const gr = c.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.size * 6);
+            gr.addColorStop(0, this.color);
+            gr.addColorStop(1, "transparent");
+            c.globalAlpha = this.alpha * 0.55;
+            c.fillStyle = gr;
+            c.beginPath();
+            c.arc(this.x, this.y, this.size * 6, 0, Math.PI * 2);
+            c.fill();
+          }
           c.globalAlpha = this.alpha;
           c.fillStyle = this.color;
           c.beginPath();
@@ -81,7 +94,7 @@ export function HeroParticleCanvas({ className }: { className?: string }) {
       return p;
     }
 
-    function layout() {
+    const layout = () => {
       const w = container.clientWidth;
       const h = container.clientHeight;
       if (w < 2 || h < 2) return;
@@ -96,7 +109,7 @@ export function HeroParticleCanvas({ className }: { className?: string }) {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
       if (!particlesRef.current.length) {
-        particlesRef.current = Array.from({ length: 160 }, () => {
+        particlesRef.current = Array.from({ length: 200 }, () => {
           const p = createParticle();
           p.reset(true);
           return p;
@@ -106,18 +119,18 @@ export function HeroParticleCanvas({ className }: { className?: string }) {
       }
     }
 
-    function drawConnections(parts: Particle[]) {
-      const DIST = 100;
+    const drawConnections = (parts: Particle[]) => {
+      const DIST = 115;
       for (let i = 0; i < parts.length; i++) {
         for (let j = i + 1; j < parts.length; j++) {
           const dx = parts[i]!.x - parts[j]!.x;
           const dy = parts[i]!.y - parts[j]!.y;
           const d = Math.sqrt(dx * dx + dy * dy);
           if (d < DIST) {
-            const alpha = (1 - d / DIST) * 0.06;
+            const alpha = (1 - d / DIST) * 0.1;
             ctx.globalAlpha = alpha;
             ctx.strokeStyle = parts[i]!.color;
-            ctx.lineWidth = 0.4;
+            ctx.lineWidth = 0.5;
             ctx.beginPath();
             ctx.moveTo(parts[i]!.x, parts[i]!.y);
             ctx.lineTo(parts[j]!.x, parts[j]!.y);
@@ -127,7 +140,7 @@ export function HeroParticleCanvas({ className }: { className?: string }) {
       }
     }
 
-    function loop() {
+    const loop = () => {
       if (W < 2 || H < 2) {
         rafRef.current = requestAnimationFrame(loop);
         return;
@@ -155,21 +168,37 @@ export function HeroParticleCanvas({ className }: { className?: string }) {
       const parts = particlesRef.current;
       drawConnections(parts);
 
+      const mx = mxRef.current;
+      const my = myRef.current;
+      const REPEL = 145;
+
       parts.forEach((p) => {
         p.update(W, H);
+
+        // Mouse repulsion — particles gently flee the cursor
+        if (mx >= 0 && mx <= W && my >= 0 && my <= H) {
+          const dx = p.x - mx;
+          const dy = p.y - my;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < REPEL && dist > 0.5) {
+            const force = ((REPEL - dist) / REPEL) * 2.4;
+            p.x += (dx / dist) * force;
+            p.y += (dy / dist) * force;
+          }
+        }
+
         p.draw(ctx);
       });
 
-      const mx = mxRef.current;
-      const my = myRef.current;
       if (mx >= 0 && mx <= W && my >= 0 && my <= H) {
-        const grad = ctx.createRadialGradient(mx, my, 0, mx, my, 120);
-        grad.addColorStop(0, "rgba(79,142,247,0.04)");
+        const grad = ctx.createRadialGradient(mx, my, 0, mx, my, 160);
+        grad.addColorStop(0, "rgba(124,58,237,0.07)");
+        grad.addColorStop(0.5, "rgba(6,182,212,0.03)");
         grad.addColorStop(1, "transparent");
         ctx.globalAlpha = 1;
         ctx.fillStyle = grad;
         ctx.beginPath();
-        ctx.arc(mx, my, 120, 0, Math.PI * 2);
+        ctx.arc(mx, my, 160, 0, Math.PI * 2);
         ctx.fill();
       }
 

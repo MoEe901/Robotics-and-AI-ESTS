@@ -312,3 +312,47 @@ export const DEFAULT_FOOTER_CONFIG: FooterConfig = {
   copyrightText: "Robotics & AI Club · EST Safi, Morocco",
   versionLine: "All systems operational · v2.0",
 };
+
+export type HeroConfig = {
+  eyebrow: string;
+  headlinePrefix: string;
+  headlineAccent: string;
+  subtitle: string;
+  ctaPrimaryText: string;
+  ctaPrimaryHref: string;
+  ctaSecondaryText: string;
+  ctaSecondaryHref: string;
+};
+
+export const DEFAULT_HERO_CONFIG: HeroConfig = {
+  eyebrow: "University Tech Community · EST Safi",
+  headlinePrefix: "Welcome to the",
+  headlineAccent: "Robotics & AI Club",
+  subtitle:
+    "A community of builders, dreamers, and innovators transforming ideas into intelligent machines. Join us and shape the future of technology — starting today.",
+  ctaPrimaryText: "Join the Club",
+  ctaPrimaryHref: "/#apply",
+  ctaSecondaryText: "Explore Events",
+  ctaSecondaryHref: "/#events",
+};
+
+export type NavbarConfig = {
+  logoText: string;
+  navItems: Array<{ label: string; href: string }>;
+  ctaText: string;
+  ctaHref: string;
+};
+
+export const DEFAULT_NAVBAR_CONFIG: NavbarConfig = {
+  logoText: "Robotics & AI Club",
+  navItems: [
+    { label: "Home", href: "/" },
+    { label: "Events", href: "/#events" },
+    { label: "Know us", href: "/#know" },
+    { label: "Cellules", href: "/#cellules" },
+    { label: "Team", href: "/#team" },
+    { label: "FAQ", href: "/#faq" },
+  ],
+  ctaText: "Apply Now",
+  ctaHref: "/#apply",
+};

@@ -2,8 +2,8 @@
 
 import { BarChart3, Calendar, ClipboardList, Code2, Zap } from "lucide-react";
 import Link from "next/link";
-import { motion, useScroll, useTransform } from "framer-motion";
-import { useRef, useState } from "react";
+import { motion, useMotionValue, useScroll, useSpring, useTransform } from "framer-motion";
+import { useCallback, useRef, useState } from "react";
 
 import { HeroParticleCanvas } from "@/components/hero/hero-particle-canvas";
 import { siteConfig } from "@/lib/site-config";
@@ -25,11 +25,33 @@ export function HeroSection() {
   const contentOpacity = useTransform(scrollYProgress, [0, 0.45], [1, 0]);
   const contentY = useTransform(scrollYProgress, [0, 0.45], [0, -48]);
 
+  // Mouse parallax for floating cards
+  const rawX = useMotionValue(0.5);
+  const rawY = useMotionValue(0.5);
+  const springX = useSpring(rawX, { stiffness: 40, damping: 22 });
+  const springY = useSpring(rawY, { stiffness: 40, damping: 22 });
+  const cardOffsetX = useTransform(springX, [0, 1], [16, -16]);
+  const cardOffsetY = useTransform(springY, [0, 1], [10, -10]);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLElement>) => {
+    const rect = sectionRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    rawX.set((e.clientX - rect.left) / rect.width);
+    rawY.set((e.clientY - rect.top) / rect.height);
+  }, [rawX, rawY]);
+
+  const handleMouseLeave = useCallback(() => {
+    rawX.set(0.5);
+    rawY.set(0.5);
+  }, [rawX, rawY]);
+
   return (
     <section
       id="home"
       ref={sectionRef}
-      className="relative min-h-screen overflow-hidden bg-[#07080f] text-[#e2e8f0]"
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      className="relative min-h-screen overflow-x-clip overflow-y-hidden bg-[#07080f] text-[#e2e8f0]"
     >
       {showHeroVideo ? (
         <>
@@ -112,10 +134,13 @@ export function HeroSection() {
         }
       `}</style>
 
-      <div className="relative z-[30] mx-auto flex min-h-screen max-w-[1300px] flex-col justify-center px-4 pb-8 pt-[6.5rem] sm:px-6 sm:pt-[7.25rem] md:px-9 lg:px-16 lg:pb-12 lg:pt-[7.5rem]">
+      <div className="relative z-[30] mx-auto flex min-h-screen w-full max-w-[1300px] flex-col justify-center px-5 pb-8 pt-[6.5rem] sm:px-8 sm:pt-[7.25rem] lg:px-16 lg:pb-12 lg:pt-[7.5rem]">
+        {/* lg grid: reserves right column for cards so headline never draws under them; min-w-0 lets long words shrink inside the track */}
+        <div className="grid w-full grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-center lg:gap-x-12 lg:gap-y-0">
+          <div className="min-w-0">
         <motion.div
           style={{ opacity: contentOpacity, y: contentY }}
-          className="relative max-w-[980px] min-[1060px]:max-w-[1050px]"
+          className="relative w-full max-w-full"
         >
           <div
             className="mb-6 flex flex-wrap items-center gap-3 sm:mb-8 sm:gap-4"
@@ -136,21 +161,34 @@ export function HeroSection() {
 
           <h1
             className={cn(
-              "font-syne leading-[0.9] tracking-[-0.02em]",
-              "text-[clamp(2.1rem,17vw,7.5rem)] font-extrabold",
+              "font-syne max-w-full font-extrabold uppercase leading-[0.9] tracking-tight [hyphens:none] [word-break:normal]",
+              /* clamp(1.75rem,9vw,8rem): smaller vw + floor so "ROBOTICS" stays one line on ~360px; no overflow-wrap to avoid mid-word breaks */
+              "text-[clamp(1.75rem,9vw,8rem)]",
             )}
           >
             <span
               className="block text-white uppercase tracking-[0.035em] sm:tracking-[0.05em]"
               style={{ animation: "heroFadeUp 0.8s ease both 0.28s" }}
             >
-              Welcome to the
+              Welcome
             </span>
-            <span className="block leading-[0.9]" style={{ animation: "heroFadeUp 0.8s ease both 0.34s" }}>
-              <span className="hero-title-grad block uppercase tracking-[-0.02em]">
-                <span className="block whitespace-nowrap">Robotics</span>
-                <span className="block whitespace-nowrap">&amp; AI</span>
-              </span>
+            <span
+              className="block text-white uppercase tracking-[0.035em] sm:tracking-[0.05em]"
+              style={{ animation: "heroFadeUp 0.8s ease both 0.3s" }}
+            >
+              to the
+            </span>
+            <span
+              className="hero-title-grad block uppercase tracking-[-0.02em]"
+              style={{ animation: "heroFadeUp 0.8s ease both 0.34s" }}
+            >
+              Robotics
+            </span>
+            <span
+              className="hero-title-grad block uppercase tracking-[-0.02em]"
+              style={{ animation: "heroFadeUp 0.8s ease both 0.36s" }}
+            >
+              {"& AI"}
             </span>
             <span
               className="block text-white uppercase tracking-[0.035em] sm:tracking-[0.05em]"
@@ -174,7 +212,7 @@ export function HeroSection() {
           >
             <Link
               href="/#apply"
-              className="font-jetbrains inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-gradient-to-br from-violet-600 to-cyan-500 px-6 py-3.5 text-[12px] font-medium uppercase tracking-[0.08em] text-white shadow-[0_0_25px_rgba(124,58,237,0.4)] transition hover:-translate-y-0.5 hover:shadow-[0_0_45px_rgba(124,58,237,0.55)] sm:min-h-0 sm:w-auto sm:justify-start sm:px-8"
+              className="btn-shine font-jetbrains inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-gradient-to-br from-violet-600 to-cyan-500 px-6 py-3.5 text-[12px] font-medium uppercase tracking-[0.08em] text-white shadow-[0_0_30px_rgba(124,58,237,0.45)] transition hover:-translate-y-1 hover:shadow-[0_0_55px_rgba(124,58,237,0.65)] sm:min-h-0 sm:w-auto sm:justify-start sm:px-8"
             >
               <ClipboardList className="size-4 shrink-0" strokeWidth={2} />
               {siteConfig.ctas.primary}
@@ -188,48 +226,15 @@ export function HeroSection() {
             </Link>
           </div>
         </motion.div>
-
-        <motion.div
-          style={{ opacity: contentOpacity, y: contentY }}
-          className="relative z-[30] mt-10 w-[min(100vw,100%)] max-w-none sm:mt-14"
-        >
-          <div
-            className="relative left-1/2 flex w-screen max-w-none -translate-x-1/2 overflow-hidden border-y border-violet-500/10 bg-violet-500/[0.02]"
-            style={{ animation: "heroFadeUp 0.8s ease both 0.54s" }}
-          >
-            {[
-              { v: "200+", l: "Members", c: "text-violet-500" },
-              { v: "6", l: "Cellules", c: "text-cyan-400" },
-              { v: "14", l: "Projects", c: "text-emerald-400" },
-              { v: "8+", l: "Awards", c: "text-fuchsia-400" },
-            ].map((stat, i) => (
-              <div
-                key={stat.l}
-                className={cn(
-                  "group relative flex min-w-[50%] flex-1 flex-col items-center gap-1 border-r border-violet-500/[0.08] px-3 py-7 text-center transition-colors last:border-r-0 hover:bg-violet-500/[0.04] sm:min-w-0 sm:px-4 sm:py-10 max-[639px]:border-b max-[639px]:border-violet-500/[0.08] max-[639px]:py-7",
-                  i === 1 ? "max-[639px]:border-r max-[639px]:border-violet-500/[0.08]" : "",
-                  i === 2 ? "max-[639px]:border-b-0" : "",
-                  i === 3 ? "max-[639px]:border-r-0" : "",
-                )}
-              >
-                <span
-                  className="pointer-events-none absolute inset-x-0 top-0 h-0.5 origin-left scale-x-0 bg-gradient-to-r from-violet-600 to-cyan-400 transition-transform duration-500 ease-out group-hover:scale-x-100"
-                  aria-hidden
-                />
-                <span className={cn("font-syne text-[clamp(1.65rem,8vw,2.8rem)] font-extrabold leading-none", stat.c)}>
-                  {stat.v}
-                </span>
-                <span className="font-jetbrains text-[10px] font-medium uppercase tracking-[0.16em] text-slate-500 sm:text-[11px] sm:tracking-[0.25em]">
-                  {stat.l}
-                </span>
-              </div>
-            ))}
           </div>
-        </motion.div>
 
-        <div className="pointer-events-none absolute right-12 top-1/2 z-[31] hidden min-[1060px]:flex min-[1060px]:-translate-y-1/2 min-[1060px]:flex-col min-[1060px]:gap-4 xl:right-16">
+        <motion.aside
+          style={{ x: cardOffsetX, y: cardOffsetY }}
+          className="pointer-events-none relative z-[31] hidden min-w-0 w-full lg:flex lg:flex-col lg:w-auto lg:justify-center lg:self-center"
+        >
+        <div className="mx-auto flex w-full max-w-[300px] flex-col gap-4 lg:mx-0">
           <div
-            className="w-[300px] rounded-2xl border border-violet-500/20 bg-[rgba(13,15,26,0.85)] p-5 backdrop-blur-[20px] transition hover:-translate-x-1 hover:border-violet-500/40"
+            className="w-full max-w-[300px] rounded-2xl border border-violet-500/20 bg-[rgba(13,15,26,0.85)] p-5 backdrop-blur-[20px] transition hover:-translate-x-1 hover:border-violet-500/40"
             style={{ animation: "heroFadeLeft 1s ease both 0.65s" }}
           >
             <div style={{ animation: "heroCardFloat 6s ease-in-out infinite 1s" }}>
@@ -267,7 +272,7 @@ export function HeroSection() {
           </div>
 
           <div
-            className="w-[300px] rounded-2xl border border-violet-500/20 bg-[rgba(13,15,26,0.85)] p-5 backdrop-blur-[20px] transition hover:-translate-x-1 hover:border-violet-500/40"
+            className="w-full max-w-[300px] rounded-2xl border border-violet-500/20 bg-[rgba(13,15,26,0.85)] p-5 backdrop-blur-[20px] transition hover:-translate-x-1 hover:border-violet-500/40"
             style={{ animation: "heroFadeLeft 1s ease both 0.72s" }}
           >
             <div style={{ animation: "heroCardFloat 7s ease-in-out infinite 0.5s" }}>
@@ -306,7 +311,7 @@ export function HeroSection() {
           </div>
 
           <div
-            className="w-[300px] rounded-2xl border border-violet-500/20 bg-[rgba(13,15,26,0.85)] p-5 backdrop-blur-[20px] transition hover:-translate-x-1 hover:border-violet-500/40"
+            className="w-full max-w-[300px] rounded-2xl border border-violet-500/20 bg-[rgba(13,15,26,0.85)] p-5 backdrop-blur-[20px] transition hover:-translate-x-1 hover:border-violet-500/40"
             style={{ animation: "heroFadeLeft 1s ease both 0.78s" }}
           >
             <div style={{ animation: "heroCardFloat 5.5s ease-in-out infinite 1s" }}>
@@ -341,6 +346,46 @@ export function HeroSection() {
             </div>
           </div>
         </div>
+        </motion.aside>
+        </div>
+
+        <motion.div
+          style={{ opacity: contentOpacity, y: contentY }}
+          className="relative z-[30] mt-10 w-full max-w-none sm:mt-14"
+        >
+          <div
+            className="relative left-1/2 grid grid-cols-2 gap-4 sm:flex sm:flex-row w-screen max-w-none -translate-x-1/2 sm:overflow-hidden border-y border-violet-500/10 bg-violet-500/[0.02]"
+            style={{ animation: "heroFadeUp 0.8s ease both 0.54s" }}
+          >
+            {[
+              { v: "200+", l: "Members", c: "text-violet-500" },
+              { v: "6", l: "Cellules", c: "text-cyan-400" },
+              { v: "14", l: "Projects", c: "text-emerald-400" },
+              { v: "8+", l: "Awards", c: "text-fuchsia-400" },
+            ].map((stat, i) => (
+              <div
+                key={stat.l}
+                className={cn(
+                  "group relative flex w-full sm:w-auto min-w-[50%] flex-1 flex-col items-center gap-1 border-r border-violet-500/[0.08] px-3 py-7 text-center transition-colors last:border-r-0 hover:bg-violet-500/[0.04] sm:min-w-0 sm:px-4 sm:py-10 max-[639px]:border-b max-[639px]:border-violet-500/[0.08] max-[639px]:py-7",
+                  i === 1 ? "max-[639px]:border-r max-[639px]:border-violet-500/[0.08]" : "",
+                  i === 2 ? "max-[639px]:border-b-0" : "",
+                  i === 3 ? "max-[639px]:border-r-0" : "",
+                )}
+              >
+                <span
+                  className="pointer-events-none absolute inset-x-0 top-0 h-0.5 origin-left scale-x-0 bg-gradient-to-r from-violet-600 to-cyan-400 transition-transform duration-500 ease-out group-hover:scale-x-100"
+                  aria-hidden
+                />
+                <span className={cn("font-syne text-[clamp(1.65rem,8vw,2.8rem)] font-extrabold leading-none", stat.c)}>
+                  {stat.v}
+                </span>
+                <span className="font-jetbrains text-[10px] font-medium uppercase tracking-[0.16em] text-slate-500 sm:text-[11px] sm:tracking-[0.25em]">
+                  {stat.l}
+                </span>
+              </div>
+            ))}
+          </div>
+        </motion.div>
 
         <div
           className="absolute bottom-6 left-1/2 z-[31] hidden -translate-x-1/2 flex-col items-center gap-2 font-jetbrains text-[9px] uppercase tracking-[0.18em] text-slate-500 sm:flex"

@@ -1,60 +1,41 @@
 ﻿"use client";
 
 import { siteConfig } from "@/lib/site-config";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { Menu, Moon, Sun, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState, useSyncExternalStore } from "react";
-
-type ThemeMode = "light" | "dark";
-
-const THEME_KEY = "site-theme";
-const THEME_EVENT = "site-theme-change";
-
-function resolveInitialTheme(): ThemeMode {
-  if (typeof window === "undefined") return "dark";
-  const saved = window.localStorage.getItem(THEME_KEY);
-  if (saved === "light" || saved === "dark") return saved;
-  return window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
-}
-
-function applyTheme(theme: ThemeMode): void {
-  if (typeof document === "undefined") return;
-  document.documentElement.dataset.theme = theme;
-}
-
-function subscribeTheme(onStoreChange: () => void): () => void {
-  if (typeof window === "undefined") return () => {};
-  const onStorage = (event: StorageEvent) => {
-    if (event.key === THEME_KEY) onStoreChange();
-  };
-  const onCustom = () => onStoreChange();
-  window.addEventListener("storage", onStorage);
-  window.addEventListener(THEME_EVENT, onCustom);
-  return () => {
-    window.removeEventListener("storage", onStorage);
-    window.removeEventListener(THEME_EVENT, onCustom);
-  };
-}
+import {
+  applySiteTheme,
+  resolveSiteTheme,
+  setSiteTheme,
+  subscribeSiteTheme,
+  type SiteThemeMode,
+} from "@/lib/theme/site-theme";
 
 export function Navbar() {
   const [open, setOpen] = useState(false);
-  const theme = useSyncExternalStore<ThemeMode>(
-    subscribeTheme,
-    resolveInitialTheme,
+  const [scrolled, setScrolled] = useState(false);
+  const theme = useSyncExternalStore<SiteThemeMode>(
+    subscribeSiteTheme,
+    resolveSiteTheme,
     () => "dark",
   );
 
   useEffect(() => {
-    applyTheme(theme);
+    applySiteTheme(theme);
   }, [theme]);
 
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 48);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   const toggleTheme = () => {
-    const next: ThemeMode = theme === "dark" ? "light" : "dark";
-    window.localStorage.setItem(THEME_KEY, next);
-    applyTheme(next);
-    window.dispatchEvent(new Event(THEME_EVENT));
+    const next: SiteThemeMode = theme === "dark" ? "light" : "dark";
+    setSiteTheme(next);
   };
 
   const navLinks = siteConfig.navItems.filter((item) => item.href !== "/#apply");
@@ -62,7 +43,9 @@ export function Navbar() {
 
   const shellClass =
     theme === "dark"
-      ? "border-violet-500/25 bg-[rgba(13,15,26,0.75)] shadow-[0_0_20px_rgba(124,58,237,0.12)]"
+      ? scrolled
+        ? "border-violet-500/35 bg-[rgba(7,8,15,0.92)] shadow-[0_0_40px_rgba(124,58,237,0.2),0_8px_32px_rgba(0,0,0,0.4)]"
+        : "border-violet-500/20 bg-[rgba(13,15,26,0.65)] shadow-[0_0_15px_rgba(124,58,237,0.08)]"
       : "[border-color:var(--surface-border)] [background:var(--surface)] shadow-[0_8px_32px_rgba(0,0,0,0.18)]";
 
   return (
@@ -131,7 +114,7 @@ export function Navbar() {
           {applyNav ? (
             <Link
               href={applyNav.href}
-              className="font-jetbrains rounded-full bg-gradient-to-br from-violet-600 to-cyan-500 px-5 py-2 text-[11px] font-medium uppercase tracking-[0.05em] text-white shadow-[0_0_20px_rgba(124,58,237,0.35)] transition hover:-translate-y-px hover:shadow-[0_0_32px_rgba(124,58,237,0.5)]"
+              className="btn-shine font-jetbrains rounded-full bg-gradient-to-br from-violet-600 to-cyan-500 px-5 py-2 text-[11px] font-medium uppercase tracking-[0.05em] text-white shadow-[0_0_22px_rgba(124,58,237,0.38)] transition hover:-translate-y-px hover:shadow-[0_0_38px_rgba(124,58,237,0.58)]"
             >
               Apply Now
             </Link>
@@ -163,31 +146,40 @@ export function Navbar() {
         </div>
       </motion.header>
 
-      {open ? (
-        <div className="fixed inset-x-0 top-[64px] z-40 mx-auto w-[min(calc(100%-1rem),1100px)] rounded-2xl border p-2.5 backdrop-blur-xl sm:top-[74px] sm:w-[min(calc(100%-1.25rem),1100px)] sm:p-3 md:hidden [background:var(--surface-strong)] [border-color:var(--surface-border)]">
-          <nav className="flex flex-col gap-1">
-            {navLinks.map((item) => (
-              <Link
-                key={item.label}
-                href={item.href}
-                onClick={() => setOpen(false)}
-                className="rounded-xl px-3 py-2 text-sm font-medium uppercase tracking-wide [color:var(--foreground-muted)] hover:[background:var(--surface-hover)] hover:[color:var(--foreground)]"
-              >
-                {item.label}
-              </Link>
-            ))}
-            {applyNav ? (
-              <Link
-                href={applyNav.href}
-                onClick={() => setOpen(false)}
-                className="font-jetbrains mt-1 rounded-xl bg-gradient-to-br from-violet-600 to-cyan-500 px-3 py-2.5 text-center text-xs font-medium uppercase tracking-wide text-white"
-              >
-                Apply Now
-              </Link>
-            ) : null}
-          </nav>
-        </div>
-      ) : null}
+      <AnimatePresence>
+        {open ? (
+          <motion.div
+            key="mobile-menu"
+            initial={{ opacity: 0, y: -10, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -8, scale: 0.98 }}
+            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+            className="fixed inset-x-0 top-[64px] z-40 mx-auto w-[min(calc(100%-1rem),1100px)] rounded-2xl border p-2.5 backdrop-blur-xl sm:top-[74px] sm:w-[min(calc(100%-1.25rem),1100px)] sm:p-3 md:hidden [background:var(--surface-strong)] [border-color:var(--surface-border)]"
+          >
+            <nav className="flex flex-col gap-1">
+              {navLinks.map((item) => (
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  onClick={() => setOpen(false)}
+                  className="rounded-xl px-3 py-2 text-sm font-medium uppercase tracking-wide [color:var(--foreground-muted)] hover:[background:var(--surface-hover)] hover:[color:var(--foreground)]"
+                >
+                  {item.label}
+                </Link>
+              ))}
+              {applyNav ? (
+                <Link
+                  href={applyNav.href}
+                  onClick={() => setOpen(false)}
+                  className="btn-shine font-jetbrains mt-1 rounded-xl bg-gradient-to-br from-violet-600 to-cyan-500 px-3 py-2.5 text-center text-xs font-medium uppercase tracking-wide text-white"
+                >
+                  Apply Now
+                </Link>
+              ) : null}
+            </nav>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
     </>
   );
 }

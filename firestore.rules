@@ -9,18 +9,15 @@ service cloud.firestore {
         && request.auth.token.email == "admin123@gmail.com";
     }
 
-    function eventVisibleToPublic() {
-      // Keep query authorization predictable: public events must be explicitly active.
-      return ('isActive' in resource.data) && resource.data.isActive == true;
-    }
-
     match /teamMembers/{docId} {
       allow read: if true;
       allow create, update, delete: if isAdmin();
     }
 
     match /events/{docId} {
-      allow read: if eventVisibleToPublic() || isAdmin();
+      // Allow public list/get reads for events. Client code still filters `isActive`.
+      // If stricter public/private separation is needed later, split to published/draft collections.
+      allow read: if true;
       allow create, update, delete: if isAdmin();
     }
 

@@ -4,6 +4,11 @@ import { motion, useReducedMotion } from "framer-motion";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 
 import type { PartnerLogo } from "@/lib/firebase/types";
+import {
+  resolveSiteTheme,
+  subscribeSiteTheme,
+  type SiteThemeMode,
+} from "@/lib/theme/site-theme";
 
 type PartnersMarqueeProps = {
   logos: PartnerLogo[];
@@ -12,38 +17,13 @@ type PartnersMarqueeProps = {
   logoBasis: string;
 };
 
-type ThemeMode = "light" | "dark";
-const THEME_KEY = "site-theme";
-const THEME_EVENT = "site-theme-change";
-
-function resolveTheme(): ThemeMode {
-  if (typeof window === "undefined") return "dark";
-  const saved = window.localStorage.getItem(THEME_KEY);
-  if (saved === "light" || saved === "dark") return saved;
-  return window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
-}
-
-function subscribeTheme(onStoreChange: () => void): () => void {
-  if (typeof window === "undefined") return () => {};
-  const onStorage = (event: StorageEvent) => {
-    if (event.key === THEME_KEY) onStoreChange();
-  };
-  const onCustom = () => onStoreChange();
-  window.addEventListener("storage", onStorage);
-  window.addEventListener(THEME_EVENT, onCustom);
-  return () => {
-    window.removeEventListener("storage", onStorage);
-    window.removeEventListener(THEME_EVENT, onCustom);
-  };
-}
-
 export function PartnersMarquee({ logos, gapPx, durationSec, logoBasis }: PartnersMarqueeProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const groupRef = useRef<HTMLDivElement | null>(null);
   const [shiftPx, setShiftPx] = useState(0);
   const [repeatCount, setRepeatCount] = useState(2);
   const reduceMotion = useReducedMotion();
-  const theme = useSyncExternalStore<ThemeMode>(subscribeTheme, resolveTheme, () => "dark");
+  const theme = useSyncExternalStore<SiteThemeMode>(subscribeSiteTheme, resolveSiteTheme, () => "dark");
 
   const prepared = useMemo(
     () =>

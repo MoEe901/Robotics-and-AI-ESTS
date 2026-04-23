@@ -243,7 +243,7 @@ export function MemberProfile({ member }: MemberProfileProps) {
       : null;
 
   return (
-    <article className={`relative min-h-screen bg-[#08080e] text-[#f0eff5] ${fontSans.className}`}>
+    <article className={`member-profile-shell relative min-h-screen bg-[#08080e] text-[#f0eff5] ${fontSans.className}`}>
       <style>{`
         @keyframes profile-fade-down {
           from { opacity: 0; transform: translateY(-10px); }
@@ -365,11 +365,11 @@ export function MemberProfile({ member }: MemberProfileProps) {
             ) : null}
           </div>
           <h1
-            className={`mb-2 text-[clamp(2.25rem,5vw,3.5rem)] leading-[0.95] tracking-[0.02em] text-[#f0eff5] ${fontDisplay.className}`}
+            className={`member-profile-hero-title mb-2 text-[clamp(2.25rem,5vw,3.5rem)] leading-[0.95] tracking-[0.02em] text-[#f0eff5] ${fontDisplay.className}`}
           >
             {member.name}
           </h1>
-          <p className="flex items-center justify-center gap-2 text-sm font-light text-[#6b6a80] sm:justify-start">
+          <p className="member-profile-hero-subtitle flex items-center justify-center gap-2 text-sm font-light text-[#6b6a80] sm:justify-start">
             <span className="h-px w-4 bg-sky-400" aria-hidden />
             {roleLine}
           </p>

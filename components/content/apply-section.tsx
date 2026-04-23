@@ -91,17 +91,19 @@ function CharterLink({
   linkText: string;
   href: string;
 }) {
-  const inner = href.startsWith("/") ? (
-    <Link href={href} className="text-cyan-400 no-underline hover:underline">
-      {linkText}
+  const safeHref = typeof href === "string" && href.trim().length > 0 ? href.trim() : "#";
+  const safeLinkText = typeof linkText === "string" && linkText.trim().length > 0 ? linkText.trim() : "Club Charter";
+  const inner = safeHref.startsWith("/") ? (
+    <Link href={safeHref} className="text-cyan-400 no-underline hover:underline">
+      {safeLinkText}
     </Link>
   ) : (
     <a
-      href={href}
+      href={safeHref}
       className="text-cyan-400 no-underline hover:underline"
-      {...(href.startsWith("http") ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+      {...(safeHref.startsWith("http") ? { target: "_blank", rel: "noopener noreferrer" } : {})}
     >
-      {linkText}
+      {safeLinkText}
     </a>
   );
   return (
@@ -113,9 +115,23 @@ function CharterLink({
 
 export function ApplySection({ config }: ApplySectionProps) {
   const c = config ?? DEFAULT_APPLY_CONFIG;
-  const years = c.yearOptions.length ? c.yearOptions : DEFAULT_APPLY_CONFIG.yearOptions;
-  const depts =
-    c.departmentOptions.length ? c.departmentOptions : DEFAULT_APPLY_CONFIG.departmentOptions;
+  const years = Array.isArray(c.yearOptions) && c.yearOptions.length
+    ? c.yearOptions
+    : DEFAULT_APPLY_CONFIG.yearOptions;
+  const depts = Array.isArray(c.departmentOptions) && c.departmentOptions.length
+    ? c.departmentOptions
+    : DEFAULT_APPLY_CONFIG.departmentOptions;
+  const contactRows = Array.isArray(c.contactRows) && c.contactRows.length
+    ? c.contactRows
+    : DEFAULT_APPLY_CONFIG.contactRows;
+  const charterLinkHref =
+    typeof c.charterLinkHref === "string" && c.charterLinkHref.trim().length > 0
+      ? c.charterLinkHref
+      : DEFAULT_APPLY_CONFIG.charterLinkHref;
+  const charterLinkText =
+    typeof c.charterLinkText === "string" && c.charterLinkText.trim().length > 0
+      ? c.charterLinkText
+      : DEFAULT_APPLY_CONFIG.charterLinkText;
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -187,7 +203,8 @@ export function ApplySection({ config }: ApplySectionProps) {
     }
   }
 
-  const socialWithUrl = c.socialLinks.filter((s) => s.url.trim().length > 0);
+  const socialWithUrl = (Array.isArray(c.socialLinks) ? c.socialLinks : DEFAULT_APPLY_CONFIG.socialLinks)
+    .filter((s) => typeof s?.url === "string" && s.url.trim().length > 0);
 
   return (
     <section
@@ -284,7 +301,7 @@ export function ApplySection({ config }: ApplySectionProps) {
             </p>
 
             <div className="relative z-[1] flex flex-col gap-4">
-              {c.contactRows.map((row) => {
+              {contactRows.map((row) => {
                 const Icon = CONTACT_ICONS[row.iconKey] ?? MapPin;
                 return (
                   <div
@@ -455,8 +472,8 @@ export function ApplySection({ config }: ApplySectionProps) {
                 <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <CharterLink
                     prefix={c.submitNotePrefix}
-                    linkText={c.charterLinkText}
-                    href={c.charterLinkHref}
+                    linkText={charterLinkText}
+                    href={charterLinkHref}
                   />
                   <button
                     type="button"

@@ -154,10 +154,10 @@ export function EventsCarousel({ items }: EventsCarouselProps) {
   const showControls = items.length > 1;
 
   return (
-    <div className="relative w-full">
+    <div className="relative isolate z-0 w-full">
       <div
         ref={scrollerRef}
-        className="scrollbar-none flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 pt-3 sm:gap-4 sm:px-5 md:gap-3 md:pt-4 lg:gap-3 lg:px-6 xl:gap-[12px] 2xl:gap-3"
+        className="scrollbar-none relative z-0 flex snap-x snap-mandatory gap-3 overflow-x-auto overflow-y-clip px-4 pb-2 pt-3 sm:gap-4 sm:px-5 md:gap-3 md:pt-4 lg:gap-3 lg:px-6 xl:gap-[12px] 2xl:gap-3"
       >
         {items.map((item, index) => {
           const href = `/events/${encodeURIComponent(item.linkSlug)}#documentary`;
@@ -177,7 +177,6 @@ export function EventsCarousel({ items }: EventsCarouselProps) {
                   ease: [0.22, 1, 0.36, 1],
                   delay: index * 0.07,
                 }}
-                whileHover={{ scale: 1.012 }}
                 className="flex min-h-0 flex-1 flex-col"
               >
                 <div className="relative aspect-[4/5] min-h-[190px] w-full shrink-0 overflow-hidden sm:aspect-video sm:min-h-[208px] md:min-h-[224px] lg:aspect-[21/9] lg:min-h-[min(30vw,260px)] xl:min-h-[min(28vw,320px)] 2xl:min-h-[min(26vw,380px)]">
@@ -214,7 +213,7 @@ export function EventsCarousel({ items }: EventsCarouselProps) {
       </div>
 
       {showControls ? (
-        <div className="grid w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 px-4 pb-8 pt-4 sm:px-6 md:px-8">
+        <div className="events-carousel-controls pointer-events-auto relative z-20 grid w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 px-4 pb-8 pt-4 sm:px-6 md:px-8">
           <span aria-hidden className="min-w-0" />
           <div
             className="flex max-w-[min(100%,22rem)] flex-wrap items-center justify-center gap-1.5 sm:gap-2"
@@ -233,40 +232,44 @@ export function EventsCarousel({ items }: EventsCarouselProps) {
                   aria-label={`${item.title}, slide ${i + 1} of ${items.length}`}
                   onClick={() => {
                     manualCooldownUntil.current = Date.now() + MANUAL_COOLDOWN_MS;
+                    setActiveIndex(i);
                     scrollToIndex(i);
                   }}
-                  className="group inline-flex h-10 min-w-9 touch-manipulation items-center justify-center rounded-full p-1 text-white transition-colors hover:bg-white/[0.06]"
+                  className="events-carousel-dot group inline-flex h-10 min-w-9 touch-manipulation items-center justify-center rounded-full p-1 text-white transition-colors hover:bg-white/[0.08]"
                 >
                   <span
                     className={
                       isActive
-                        ? "block h-2 w-8 rounded-full bg-white shadow-sm transition-all duration-300 ease-out"
+                        ? "block h-2 w-8 rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.55)] transition-all duration-300 ease-out"
                         : dist === 1
-                          ? "block h-1.5 w-1.5 rounded-full bg-white/50 transition-all duration-300 ease-out group-hover:bg-white/70"
-                          : "block h-1 w-1 rounded-full bg-white/35 transition-all duration-300 ease-out group-hover:bg-white/55"
+                          ? "block h-1.5 w-1.5 rounded-full bg-white/70 transition-all duration-300 ease-out group-hover:bg-white/90"
+                          : "block h-1 w-1 rounded-full bg-white/55 transition-all duration-300 ease-out group-hover:bg-white/80"
                     }
                   />
                 </button>
               );
             })}
           </div>
-          <div className="flex min-w-0 justify-end">
+          <div className="relative z-30 flex min-w-[3.5rem] shrink-0 justify-end pl-2">
             <button
               type="button"
               aria-pressed={autoplay}
               aria-label={autoplay ? "Pause automatic slideshow" : "Play automatic slideshow"}
-              disabled={reduceMotion}
               title={
-                reduceMotion ? "Autoplay is disabled when reduced motion is on" : undefined
+                reduceMotion
+                  ? "Slideshow timing is off while reduced motion is enabled; use dots to change slides."
+                  : undefined
               }
               onClick={() => setAutoplay((v) => !v)}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/12 bg-white/[0.08] text-white/90 transition hover:border-white/22 hover:bg-white/[0.12] disabled:cursor-not-allowed disabled:opacity-40"
+              className="events-carousel-play-hit group relative z-10 grid size-14 shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-transparent p-0 text-white outline-offset-2"
             >
-              {autoplay ? (
-                <Pause className="size-4" strokeWidth={2} />
-              ) : (
-                <Play className="size-4 translate-x-px" strokeWidth={2} />
-              )}
+              <span className="events-carousel-play-visual pointer-events-none grid size-10 place-items-center rounded-full border border-white/20 bg-white/[0.12] shadow-none transition-[background-color,box-shadow,border-color,transform] duration-200 ease-out group-hover:border-white/35 group-hover:bg-white/[0.2] group-hover:shadow-[0_0_0_6px_rgba(255,255,255,0.07)] motion-reduce:transition-[background-color,box-shadow,border-color] motion-reduce:group-hover:scale-100 group-hover:scale-105 group-active:scale-100">
+                {autoplay ? (
+                  <Pause className="size-4" strokeWidth={2} />
+                ) : (
+                  <Play className="size-4 translate-x-px" strokeWidth={2} />
+                )}
+              </span>
             </button>
           </div>
         </div>

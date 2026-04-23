@@ -420,9 +420,10 @@ export function subscribeToEvents(
 ): Unsubscribe {
   const q = query(
     collection(db(), "events"),
-    where("isActive", "==", true),
     orderBy("order", "asc"),
-    limit(24),
+    // Avoid composite-index dependency (isActive + order) by querying by order only.
+    // We filter inactive docs client-side and then keep the first 24 visible events.
+    limit(200),
   );
   return onSnapshot(
     q,
@@ -438,7 +439,8 @@ export function subscribeToEvents(
           const oa = typeof a.order === "number" ? a.order : 9999;
           const ob = typeof b.order === "number" ? b.order : 9999;
           return oa - ob;
-        });
+        })
+        .slice(0, 24);
       callback(events);
     },
     (error) => {

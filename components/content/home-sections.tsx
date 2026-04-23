@@ -271,7 +271,7 @@ export function HomeSections({
             );
           })()}
         </h2>
-        <div className="card-lift-3d rounded-[20px] border border-violet-500/15 bg-[#111422]/80 py-2 shadow-[0_20px_60px_rgba(124,58,237,0.08)]">
+        <div className="card-lift-3d card-lift-3d--controls-safe rounded-[20px] border border-violet-500/15 bg-[#111422]/80 py-2 shadow-[0_20px_60px_rgba(124,58,237,0.08)]">
           <EventsCarousel items={carouselItems} />
         </div>
       </RevealSection>
@@ -343,8 +343,8 @@ export function HomeSections({
         <div className="overflow-hidden rounded-3xl border border-violet-500/10 bg-violet-500/[0.02]">
           <div className="grid gap-px bg-violet-500/10 lg:grid-cols-[minmax(280px,360px)_1fr]">
             <article className="relative overflow-hidden bg-[#0d0f1a] p-7 md:p-9">
-              <div className="pointer-events-none absolute -bottom-20 -right-20 size-72 rounded-full bg-violet-600/15 blur-3xl" />
-              <div className="pointer-events-none absolute right-6 top-8 size-44 rounded-full bg-cyan-500/10 blur-3xl" />
+              <div className="pointer-events-none absolute -bottom-20 -right-20 size-72 rounded-full bg-violet-600/15 blur-3xl ambient-blob" />
+              <div className="pointer-events-none absolute right-6 top-8 size-44 rounded-full bg-cyan-500/10 blur-3xl ambient-blob-slow" />
 
               <div className="relative z-10">
                 <p className="font-jetbrains inline-flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.22em] text-slate-500">

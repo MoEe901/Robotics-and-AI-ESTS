@@ -37,6 +37,22 @@ type HomeContentStore = {
   setApplyConfig: (config: ApplySectionConfig | null) => void;
 };
 
+type PersistedHomeContentState = Partial<
+  Omit<
+    HomeContentStore,
+    | "setEvents"
+    | "setTeamMembers"
+    | "setSections"
+    | "setKnowUsConfig"
+    | "setPartnersConfig"
+    | "setWhyJoinConfig"
+    | "setCellulesConfig"
+    | "setProcessStepsConfig"
+    | "setFaqConfig"
+    | "setApplyConfig"
+  >
+>;
+
 export const useHomeContentStore = create<HomeContentStore>()(
   persist(
     (set) => ({
@@ -64,6 +80,24 @@ export const useHomeContentStore = create<HomeContentStore>()(
     {
       name: "home-content-cache",
       storage: createJSONStorage(() => localStorage),
+      migrate: (persistedState: unknown) => {
+        const state =
+          persistedState && typeof persistedState === "object"
+            ? (persistedState as PersistedHomeContentState)
+            : {};
+        return {
+          events: Array.isArray(state.events) ? state.events : [],
+          teamMembers: Array.isArray(state.teamMembers) ? state.teamMembers : [],
+          sections: Array.isArray(state.sections) ? state.sections : [],
+          knowUsConfig: state.knowUsConfig ?? null,
+          partnersConfig: state.partnersConfig ?? null,
+          whyJoinConfig: state.whyJoinConfig ?? null,
+          cellulesConfig: state.cellulesConfig ?? null,
+          processStepsConfig: state.processStepsConfig ?? null,
+          faqConfig: state.faqConfig ?? null,
+          applyConfig: state.applyConfig ?? null,
+        };
+      },
       partialize: (s) => ({
         events: s.events,
         teamMembers: s.teamMembers,
