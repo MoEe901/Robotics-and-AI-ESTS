@@ -1,17 +1,29 @@
 "use client";
 
 import { signOut } from "firebase/auth";
-import { Moon, Sun } from "lucide-react";
+import {
+  Calendar,
+  ExternalLink,
+  FileEdit,
+  HelpCircle,
+  Info,
+  LayoutDashboard,
+  LogOut,
+  Menu,
+  Moon,
+  SlidersHorizontal,
+  Sun,
+  Users,
+  X,
+} from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useSyncExternalStore } from "react";
+import { useState, useSyncExternalStore } from "react";
 
 import { auth } from "@/lib/firebase";
 
-type Props = {
-  children: React.ReactNode;
-};
-
+type Props = { children: React.ReactNode };
 type AdminThemeMode = "light" | "dark";
 
 const ADMIN_THEME_KEY = "admin-theme";
@@ -38,9 +50,26 @@ function subscribeAdminTheme(onStoreChange: () => void): () => void {
   };
 }
 
+const NAV_ITEMS = [
+  { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/admin/team", label: "Team members", icon: Users },
+  { href: "/admin/team/taxonomy", label: "Roles & cells", icon: SlidersHorizontal },
+  { href: "/admin/events", label: "Events", icon: Calendar },
+  { href: "/admin/basic", label: "Know us", icon: Info },
+  { href: "/admin/faq", label: "FAQ", icon: HelpCircle },
+  { href: "/admin/apply", label: "Apply", icon: FileEdit },
+] as const;
+
+function isActivePath(pathname: string, href: string) {
+  if (href === "/admin/dashboard") return pathname === href;
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
 export function AdminShell({ children }: Props) {
   const pathname = usePathname();
   const hideNav = pathname === "/admin/login";
+  const [mobileOpen, setMobileOpen] = useState(false);
+
   const theme = useSyncExternalStore<AdminThemeMode>(
     subscribeAdminTheme,
     resolveAdminInitialTheme,
@@ -53,67 +82,158 @@ export function AdminShell({ children }: Props) {
     window.dispatchEvent(new Event(ADMIN_THEME_EVENT));
   };
 
+  const handleSignOut = () => {
+    void signOut(auth()).then(() => {
+      window.location.href = "/admin/login";
+    });
+  };
+
+  if (hideNav) {
+    return (
+      <div
+        className="admin-root min-h-screen [background:var(--admin-bg)] [color:var(--admin-fg)]"
+        data-admin-theme={theme}
+      >
+        {children}
+      </div>
+    );
+  }
+
+  const sidebarContent = (
+    <>
+      <Link
+        href="/admin/dashboard"
+        onClick={() => setMobileOpen(false)}
+        className="flex items-center gap-3 border-b border-[rgba(124,58,237,0.18)] px-6 py-5"
+      >
+        <Image
+          src="/assets/logos/logo-optimized.svg"
+          alt=""
+          width={34}
+          height={34}
+          className="shrink-0"
+        />
+        <div className="flex min-w-0 flex-col">
+          <span className="font-syne text-sm font-bold tracking-tight text-white">
+            Club admin
+          </span>
+          <span className="font-jetbrains text-[10px] uppercase tracking-[0.2em] text-white/45">
+            Control center
+          </span>
+        </div>
+      </Link>
+
+      <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-3 py-4">
+        <span className="font-jetbrains px-3 pb-2 text-[10px] uppercase tracking-[0.2em] text-white/40">
+          Manage
+        </span>
+        {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
+          const active = isActivePath(pathname, href);
+          return (
+            <Link
+              key={href}
+              href={href}
+              onClick={() => setMobileOpen(false)}
+              aria-current={active ? "page" : undefined}
+              className={
+                active
+                  ? "relative flex items-center gap-3 rounded-xl bg-gradient-to-r from-[#7c3aed] to-[#06b6d4] px-3 py-2.5 text-sm font-medium text-white shadow-[0_8px_24px_-8px_rgba(124,58,237,0.55)]"
+                  : "group flex items-center gap-3 rounded-xl border border-transparent px-3 py-2.5 text-sm font-medium text-white/70 transition-all hover:border-[rgba(124,58,237,0.25)] hover:bg-[rgba(124,58,237,0.08)] hover:text-white"
+              }
+            >
+              <Icon className="size-4 shrink-0" />
+              <span className="truncate">{label}</span>
+            </Link>
+          );
+        })}
+      </nav>
+
+      <div className="flex flex-col gap-1 border-t border-[rgba(124,58,237,0.18)] px-3 py-4">
+        <Link
+          href="/"
+          onClick={() => setMobileOpen(false)}
+          className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-white/75 transition-colors hover:bg-[rgba(6,182,212,0.1)] hover:text-white"
+        >
+          <ExternalLink className="size-4" />
+          <span>View site</span>
+        </Link>
+        <button
+          type="button"
+          onClick={toggleTheme}
+          aria-label={theme === "dark" ? "Switch admin to light mode" : "Switch admin to dark mode"}
+          className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-white/75 transition-colors hover:bg-[rgba(124,58,237,0.08)] hover:text-white"
+        >
+          {theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
+          <span>{theme === "dark" ? "Light mode" : "Dark mode"}</span>
+        </button>
+        <button
+          type="button"
+          onClick={handleSignOut}
+          className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-red-300/85 transition-colors hover:bg-red-500/10 hover:text-red-200"
+        >
+          <LogOut className="size-4" />
+          <span>Sign out</span>
+        </button>
+      </div>
+    </>
+  );
+
   return (
     <div
-      className="admin-root min-h-screen [background:var(--admin-bg)] [color:var(--admin-fg)]"
+      className="admin-root relative min-h-screen [background:var(--background)] [color:var(--admin-fg)]"
       data-admin-theme={theme}
     >
-      {!hideNav ? (
-        <header className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 px-6 py-4">
-          <Link href="/admin/dashboard" className="text-sm font-semibold tracking-tight">
-            Club admin
-          </Link>
-          <nav className="flex flex-wrap items-center gap-5 text-xs font-medium text-white/75">
-            <button
-              type="button"
-              onClick={toggleTheme}
-              aria-label={theme === "dark" ? "Switch admin to light mode" : "Switch admin to dark mode"}
-              title={theme === "dark" ? "Light mode" : "Dark mode"}
-              className="inline-flex items-center justify-center rounded-full border border-white/15 p-1.5 text-white/80 hover:border-white/25 hover:text-white"
-            >
-              {theme === "dark" ? (
-                <Sun className="size-4" />
-              ) : (
-                <Moon className="size-4" />
-              )}
-            </button>
-            <Link className="hover:text-white" href="/admin/dashboard">
-              Dashboard
-            </Link>
-            <Link className="hover:text-white" href="/admin/team">
-              Team members
-            </Link>
-            <Link className="hover:text-white" href="/admin/team/taxonomy">
-              Roles & cells
-            </Link>
-            <Link className="hover:text-white" href="/admin/events">
-              Events
-            </Link>
-            <Link className="hover:text-white" href="/admin/basic">
-              Know us
-            </Link>
-            <Link className="hover:text-white" href="/admin/faq">
-              FAQ
-            </Link>
-            <Link className="hover:text-white" href="/admin/apply">
-              Apply
-            </Link>
-            <Link className="text-blue-300 hover:text-blue-200" href="/">
-              View site
-            </Link>
-            <button
-              type="button"
-              onClick={() => void signOut(auth()).then(() => {
-                window.location.href = "/admin/login";
-              })}
-              className="rounded-full border border-white/15 px-3 py-1 text-white/70 hover:border-white/25 hover:text-white"
-            >
-              Sign out
-            </button>
-          </nav>
-        </header>
+      <div className="futurized-violet-grid" aria-hidden />
+      <div className="futurized-scanlines" aria-hidden />
+      <div className="futurized-corner futurized-corner-tl hidden sm:block" aria-hidden />
+      <div className="futurized-corner futurized-corner-tr hidden sm:block" aria-hidden />
+      <div className="futurized-corner futurized-corner-bl hidden sm:block" aria-hidden />
+      <div className="futurized-corner futurized-corner-br hidden sm:block" aria-hidden />
+
+      <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-[rgba(124,58,237,0.18)] bg-[rgba(7,8,15,0.82)] px-4 py-3 backdrop-blur lg:hidden">
+        <Link href="/admin/dashboard" className="flex items-center gap-2">
+          <Image src="/assets/logos/logo-optimized.svg" alt="" width={26} height={26} />
+          <span className="font-syne text-sm font-bold tracking-tight">Club admin</span>
+        </Link>
+        <button
+          type="button"
+          aria-label="Open navigation"
+          onClick={() => setMobileOpen(true)}
+          className="rounded-lg border border-[rgba(124,58,237,0.28)] p-2 text-white/85 transition-colors hover:bg-[rgba(124,58,237,0.1)] hover:text-white"
+        >
+          <Menu className="size-5" />
+        </button>
+      </header>
+
+      <aside className="fixed inset-y-0 left-0 z-20 hidden w-72 flex-col border-r border-[rgba(124,58,237,0.18)] bg-[rgba(7,8,15,0.72)] backdrop-blur lg:flex">
+        {sidebarContent}
+      </aside>
+
+      {mobileOpen ? (
+        <div className="fixed inset-0 z-40 lg:hidden" role="dialog" aria-modal="true">
+          <button
+            type="button"
+            aria-label="Close navigation"
+            onClick={() => setMobileOpen(false)}
+            className="absolute inset-0 bg-black/65 backdrop-blur-sm"
+          />
+          <aside className="absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col border-r border-[rgba(124,58,237,0.22)] bg-[rgba(7,8,15,0.95)] shadow-[0_0_60px_rgba(0,0,0,0.6)]">
+            <div className="flex justify-end px-3 pt-3">
+              <button
+                type="button"
+                aria-label="Close navigation"
+                onClick={() => setMobileOpen(false)}
+                className="rounded-lg border border-white/10 p-1.5 text-white/70 hover:text-white"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+            {sidebarContent}
+          </aside>
+        </div>
       ) : null}
-      <main>{children}</main>
+
+      <main className="relative z-[2] min-w-0 lg:ml-72">{children}</main>
     </div>
   );
 }
