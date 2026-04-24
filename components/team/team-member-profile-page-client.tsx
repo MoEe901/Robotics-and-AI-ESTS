@@ -1,0 +1,62 @@
+"use client";
+
+import { useEffect, useState } from "react";
+
+import { MemberProfile } from "@/components/team/member-profile";
+import { useClientMounted } from "@/lib/hooks/use-client-mounted";
+import { subscribeToMemberBySlug } from "@/lib/firebase/realtime";
+import type { TeamMemberProfile } from "@/lib/team/types";
+import { useTeamStore } from "@/store/teamStore";
+
+type TeamMemberProfilePageClientProps = {
+  slug: string;
+};
+
+export function TeamMemberProfilePageClient({ slug }: TeamMemberProfilePageClientProps) {
+  const clientMounted = useClientMounted();
+  const setProfileForSlug = useTeamStore((s) => s.setProfileForSlug);
+
+  /** False until the slug subscription has fired at least once (success or error). */
+  const [subscriptionSettled, setSubscriptionSettled] = useState(false);
+
+  useEffect(() => {
+    const unsub = subscribeToMemberBySlug(
+      slug,
+      (row) => {
+        if (row) setProfileForSlug(slug, row);
+        else setProfileForSlug(slug, null);
+        setSubscriptionSettled(true);
+      },
+      () => {
+        setSubscriptionSettled(true);
+      },
+    );
+
+    return () => unsub();
+  }, [setProfileForSlug, slug]);
+
+  const member: TeamMemberProfile | undefined = useTeamStore((s) => s.profilesBySlug[slug]);
+  const awaitingLive = !member && !subscriptionSettled;
+
+  if (!clientMounted) {
+    return <div className="min-h-[50vh]" suppressHydrationWarning aria-hidden />;
+  }
+
+  if (!member && awaitingLive) {
+    return (
+      <p className="mx-auto w-[min(94%,720px)] px-4 pb-24 pt-24 text-sm text-[#6b6a80] md:pt-28">
+        Loading profile…
+      </p>
+    );
+  }
+
+  if (!member) {
+    return (
+      <p className="mx-auto w-[min(94%,720px)] px-4 pb-24 pt-24 text-sm text-[#6b6a80] md:pt-28">
+        Member not found.
+      </p>
+    );
+  }
+
+  return <MemberProfile member={member} />;
+}

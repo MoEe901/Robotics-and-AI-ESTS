@@ -1,0 +1,108 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    /** Null-safe: never touch request.auth.token until auth is non-null. */
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email in ["admin123@gmail.com"];
+    }
+
+    match /teamMembers/{docId} {
+      allow read: if isAdmin()
+        || (resource.data.isActive == true && resource.data.isVisible == true);
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /events/{docId} {
+      allow read: if isAdmin() || resource.data.isActive == true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /pageSections/{docId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /teamConfig/{docId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /siteConfig/{docId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /siteContent/{docId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /faq/config {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /faq/config/questions/{qid} {
+      allow read: if isAdmin() || resource.data.isVisible == true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /apply/{docId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /eventsConfig/{docId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /activity/{docId} {
+      allow read: if isAdmin() || resource.data.isVisible == true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /rsvps/{docId} {
+      allow read: if isAdmin();
+      allow create: if true;
+      allow update, delete: if isAdmin();
+    }
+
+    match /submissions/{docId} {
+      // Create constraints:
+      // - status pinning prevents clients from writing already-archived spam.
+      // - size limits prevent payload bombs on deeply nested maps.
+      // - keys allowlist blocks unknown fields the admin UI does not understand.
+      allow create: if request.resource.data.status == "new"
+        && request.resource.data.formId is string
+        && request.resource.data.userAgent is string
+        && request.resource.data.fields is map
+        && request.resource.data.fields.size() > 0
+        && request.resource.data.fields.size() < 50
+        && request.resource.data.keys().hasOnly([
+          "formId",
+          "fields",
+          "submittedAt",
+          "userAgent",
+          "status",
+          "readAt",
+          "notes",
+          "notificationSent",
+          "notificationError",
+        ]);
+      allow read, update, delete: if isAdmin();
+    }
+
+    match /applySubmissions/{docId} {
+      allow read: if isAdmin();
+      allow create: if true;
+      allow update, delete: if isAdmin();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
