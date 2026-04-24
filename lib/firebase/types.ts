@@ -354,23 +354,34 @@ export const DEFAULT_HERO_CONFIG: HeroConfig = {
   ctaSecondaryHref: "/#events",
 };
 
+export type NavbarLink = {
+  id: string;
+  label: string;
+  href: string;
+  isExternal: boolean;
+  order: number;
+  isVisible: boolean;
+};
+
 export type NavbarConfig = {
+  logoUrl: string;
   logoText: string;
-  navItems: Array<{ label: string; href: string }>;
-  ctaText: string;
-  ctaHref: string;
+  links: NavbarLink[];
+  ctaButton: { label: string; href: string; isVisible: boolean };
+  showThemeToggle: boolean;
 };
 
 export const DEFAULT_NAVBAR_CONFIG: NavbarConfig = {
+  logoUrl: "/assets/logos/logo-optimized.svg",
   logoText: "Robotics & AI Club",
-  navItems: [
-    { label: "Home", href: "/" },
-    { label: "Events", href: "/#events" },
-    { label: "Know us", href: "/#know" },
-    { label: "Cellules", href: "/#cellules" },
-    { label: "Team", href: "/#team" },
-    { label: "FAQ", href: "/#faq" },
+  links: [
+    { id: "home", label: "Home", href: "/", isExternal: false, order: 0, isVisible: true },
+    { id: "events", label: "Events", href: "/#events", isExternal: false, order: 1, isVisible: true },
+    { id: "know", label: "Know us", href: "/#know", isExternal: false, order: 2, isVisible: true },
+    { id: "cellules", label: "Cellules", href: "/#cellules", isExternal: false, order: 3, isVisible: true },
+    { id: "team", label: "Team", href: "/#team", isExternal: false, order: 4, isVisible: true },
+    { id: "faq", label: "FAQ", href: "/#faq", isExternal: false, order: 5, isVisible: true },
   ],
-  ctaText: "Apply Now",
-  ctaHref: "/#apply",
+  ctaButton: { label: "Apply Now", href: "/#apply", isVisible: true },
+  showThemeToggle: true,
 };

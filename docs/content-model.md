@@ -43,9 +43,44 @@ Split across documents **`hero`**, **`leftPanel`**, **`contactRows`** (field `ro
 
 Document **`public`** carries **`emptyTitle`** and **`emptyMessage`** for the events carousel when there are no active events, so the empty state copy is editable without code changes.
 
+## `siteConfig` (collection — layout and navbar)
+
+Document **`siteConfig/sections`** controls homepage section order and visibility. Fields: **`order`** (string array of section IDs) and **`visibility`** (map of sectionId → boolean). Known IDs: `hero, events, knowUs, whyJoin, cellules, processSteps, faq, apply, footer`. Hero and footer are rendered outside the dynamic section loop (in `app/page.tsx`) — their IDs are recognized by the admin layout editor for future use. Unknown IDs are silently ignored on render (forward-compatible). The admin layout page at `/admin/layout` writes this document.
+
+The `siteContent/hero` document is extended with **`backgroundMedia`** (type, videoUrl, videoPosterUrl, imageUrl, loop, muted, autoplay), **`mask`** (enabled, opacity 0–1, color hex, gradient), and **`datashow`** (enabled, imageUrl, caption, position). When `backgroundMedia.type == "none"` (the default), the hero falls back to the legacy `videoUrl` field and hardcoded overlay, preserving backward compatibility.
+
+## `submissions` (collection)
+
+One document per public form submission (auto-ID). Fields: `formId`, `fields` (map of label→value), `submittedAt` (serverTimestamp), `userAgent` (UA+IP hash), `status` ("new"|"read"|"archived"), `readAt`, `notes`, `notificationSent`, `notificationError`. Created via **POST `/api/submissions`** (client-side Firebase SDK, no Admin SDK needed). Rules: anonymous create allowed if status=="new", fields non-empty (<50 keys), and no extra fields (hasOnly). Read/update/delete: admins only.
+
+Email notification is sent via Resend on each new submission. Set `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `ADMIN_NOTIFICATION_EMAIL`, and `NEXT_PUBLIC_SITE_URL` in your environment (see `.env.example`). If `RESEND_API_KEY` is absent, submissions still save and a warning is logged.
+
 ## `siteConfig` / `teamConfig` (legacy)
 
 Older configuration may still exist for backward compatibility; new work should use **`siteContent`** and the paths above. Security rules still allow read on `siteConfig` for migration periods.
+
+## `siteConfig/navbar` (document)
+
+Navbar rendering is fully Firestore-driven. Fields: `logoUrl`, `logoText`, `links[]` (`id`, `label`, `href`, `isExternal`, `order`, `isVisible`), `ctaButton` (`label`, `href`, `isVisible`), and `showThemeToggle`. Public navbar reads this via `useFirestoreDoc("siteConfig/navbar")`; `/admin/navbar` edits it.
+
+## `siteConfig/sections` (document)
+
+Homepage ordering/visibility control. Fields: `order` (array of section IDs) and `visibility` (sectionId -> boolean). Known IDs: `hero`, `events`, `knowUs`, `whyJoin`, `cellules`, `processSteps`, `faq`, `apply`, `footer`. Unknown IDs are ignored so future sections can be added without runtime crashes.
+
+## Rule–query coupling
+
+**Every public collection query must include a `where()` clause that mirrors the rule's predicate**, otherwise Firestore rejects the whole query even if every matching document satisfies the predicate individually.
+
+| Collection | Rule predicate | Required query filter |
+|---|---|---|
+| `events` | `resource.data.isActive == true` | `where("isActive", "==", true)` |
+| `teamMembers` | `isActive == true && isVisible == true` | `where("isActive", "==", true)` + `where("isVisible", "==", true)` |
+| `faq/config/questions` | `resource.data.isVisible == true` | `where("isVisible", "==", true)` |
+| `siteContent` | `if true` | no filter needed |
+| `siteConfig` | `if true` | no filter needed |
+| `submissions` create | status=="new", fields non-empty, hasOnly(...) | enforced by route handler, not a public query |
+
+If you add a new guarded collection, always add the matching `where()` in client-side queries and verify in the Firebase Firestore **Rules Playground** with auth=off before merging.
 
 ## Seeding
 

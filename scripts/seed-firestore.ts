@@ -140,6 +140,9 @@ async function main() {
     primaryCta: DEFAULT_HERO_PUBLIC.primaryCta,
     secondaryCta: DEFAULT_HERO_PUBLIC.secondaryCta,
     videoUrl: DEFAULT_HERO_PUBLIC.videoUrl,
+    backgroundMedia: DEFAULT_HERO_PUBLIC.backgroundMedia,
+    mask: DEFAULT_HERO_PUBLIC.mask,
+    datashow: DEFAULT_HERO_PUBLIC.datashow,
     liveActivity: DEFAULT_HERO_PUBLIC.liveActivity,
     techStack: DEFAULT_HERO_PUBLIC.techStack,
     growthStats: DEFAULT_HERO_PUBLIC.growthStats,
@@ -147,12 +150,13 @@ async function main() {
   results.push(`siteContent/hero: ${await writeIfMissing("siteContent/hero", heroPayload)}`);
 
   const navbarPayload = {
+    logoUrl: DEFAULT_NAVBAR_CONFIG.logoUrl,
     logoText: DEFAULT_NAVBAR_CONFIG.logoText,
-    navItems: DEFAULT_NAVBAR_CONFIG.navItems,
-    ctaText: DEFAULT_NAVBAR_CONFIG.ctaText,
-    ctaHref: DEFAULT_NAVBAR_CONFIG.ctaHref,
+    links: DEFAULT_NAVBAR_CONFIG.links,
+    ctaButton: DEFAULT_NAVBAR_CONFIG.ctaButton,
+    showThemeToggle: DEFAULT_NAVBAR_CONFIG.showThemeToggle,
   };
-  results.push(`siteContent/navbar: ${await writeIfMissing("siteContent/navbar", navbarPayload)}`);
+  results.push(`siteConfig/navbar: ${await writeIfMissing("siteConfig/navbar", navbarPayload)}`);
 
   const knowUsPayload = {
     emailHeading: "A quick overview so new members understand our direction, culture, and learning model.",
@@ -260,6 +264,16 @@ async function main() {
     `eventsConfig/public: ${await writeIfMissing("eventsConfig/public", {
       emptyTitle: "No events scheduled yet.",
       emptyMessage: "",
+    })}`,
+  );
+
+  results.push(
+    `siteConfig/sections: ${await writeIfMissing("siteConfig/sections", {
+      order: ["hero", "events", "knowUs", "whyJoin", "cellules", "processSteps", "faq", "apply", "footer"],
+      visibility: {
+        hero: true, events: true, knowUs: true, whyJoin: true,
+        cellules: true, processSteps: true, faq: true, apply: true, footer: true,
+      },
     })}`,
   );
 

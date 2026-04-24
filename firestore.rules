@@ -65,6 +65,31 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
+    match /submissions/{docId} {
+      // Create constraints:
+      // - status pinning prevents clients from writing already-archived spam.
+      // - size limits prevent payload bombs on deeply nested maps.
+      // - keys allowlist blocks unknown fields the admin UI does not understand.
+      allow create: if request.resource.data.status == "new"
+        && request.resource.data.formId is string
+        && request.resource.data.userAgent is string
+        && request.resource.data.fields is map
+        && request.resource.data.fields.size() > 0
+        && request.resource.data.fields.size() < 50
+        && request.resource.data.keys().hasOnly([
+          "formId",
+          "fields",
+          "submittedAt",
+          "userAgent",
+          "status",
+          "readAt",
+          "notes",
+          "notificationSent",
+          "notificationError",
+        ]);
+      allow read, update, delete: if isAdmin();
+    }
+
     match /applySubmissions/{docId} {
       allow read: if isAdmin();
       allow create: if true;

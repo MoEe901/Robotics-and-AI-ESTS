@@ -19,9 +19,28 @@ export function HeroSection() {
   const hero = publicHero ?? DEFAULT_HERO_PUBLIC;
   const sectionRef = useRef<HTMLElement>(null);
   const [heroVideoFailed, setHeroVideoFailed] = useState(false);
-  const videoSrc = hero.videoUrl?.trim() || siteConfig.heroVideoUrl || null;
-  const showHeroVideo =
-    !siteConfig.heroVideoDisabled && !heroVideoFailed && Boolean(videoSrc || siteConfig.heroVideo.mp4);
+
+  const bm = hero.backgroundMedia;
+  const bmType = bm.type;
+  const legacyPath = bmType === "none";
+
+  // Legacy path (backgroundMedia.type == "none"): use hero.videoUrl + siteConfig fallback
+  const legacyVideoSrc = hero.videoUrl?.trim() || siteConfig.heroVideoUrl || null;
+  const showLegacyVideo =
+    legacyPath &&
+    !siteConfig.heroVideoDisabled &&
+    !heroVideoFailed &&
+    Boolean(legacyVideoSrc || siteConfig.heroVideo.mp4);
+
+  // New backgroundMedia paths
+  const showBmVideo = bmType === "video" && !heroVideoFailed && Boolean(bm.videoUrl?.trim());
+  const showBmImage = bmType === "image" && Boolean(bm.imageUrl?.trim());
+  const showAnyVideo = showBmVideo || showLegacyVideo;
+  const resolvedVideoSrc = showBmVideo
+    ? bm.videoUrl!.trim()
+    : legacyPath
+      ? legacyVideoSrc
+      : null;
 
   const { scrollYProgress } = useScroll({
     target: sectionRef,
@@ -59,32 +78,82 @@ export function HeroSection() {
       onMouseLeave={handleMouseLeave}
       className="relative min-h-screen overflow-x-clip overflow-y-hidden bg-[#07080f] text-[#e2e8f0]"
     >
-      {showHeroVideo ? (
-        <>
-          <video
-            className="pointer-events-none absolute inset-0 z-0 h-full w-full object-cover"
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="metadata"
-            aria-hidden
-            onError={() => setHeroVideoFailed(true)}
-          >
-            {videoSrc ? (
-              <source src={videoSrc} />
-            ) : (
-              <>
-                <source src={siteConfig.heroVideo.webm} type="video/webm" />
-                <source src={siteConfig.heroVideo.mp4} type="video/mp4" />
-              </>
-            )}
-          </video>
+      {showAnyVideo ? (
+        <video
+          className="pointer-events-none absolute inset-0 z-0 h-full w-full object-cover"
+          autoPlay={!legacyPath ? bm.autoplay : true}
+          muted
+          loop={!legacyPath ? bm.loop : true}
+          playsInline
+          preload="metadata"
+          aria-hidden
+          poster={showBmVideo && bm.videoPosterUrl?.trim() ? bm.videoPosterUrl.trim() : undefined}
+          onError={() => setHeroVideoFailed(true)}
+        >
+          {resolvedVideoSrc ? (
+            <source src={resolvedVideoSrc} />
+          ) : (
+            <>
+              <source src={siteConfig.heroVideo.webm} type="video/webm" />
+              <source src={siteConfig.heroVideo.mp4} type="video/mp4" />
+            </>
+          )}
+        </video>
+      ) : showBmImage ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={bm.imageUrl!.trim()}
+          alt=""
+          aria-hidden
+          className="pointer-events-none absolute inset-0 z-0 h-full w-full object-cover"
+        />
+      ) : null}
+
+      {/* Mask overlay: legacy path keeps original 60% dark scrim; new paths use admin mask settings */}
+      {(showAnyVideo || showBmImage) ? (
+        legacyPath ? (
+          <div className="pointer-events-none absolute inset-0 z-[1] bg-[#07080f]/60" aria-hidden />
+        ) : hero.mask.enabled ? (
           <div
-            className="pointer-events-none absolute inset-0 z-[1] bg-[#07080f]/60"
+            className="pointer-events-none absolute inset-0 z-[1]"
+            style={(() => {
+              const alpha = Math.round(hero.mask.opacity * 255).toString(16).padStart(2, "0");
+              const c = `${hero.mask.color}${alpha}`;
+              if (hero.mask.gradient === "radial") return { background: `radial-gradient(ellipse at center, transparent 20%, ${c} 100%)` };
+              if (hero.mask.gradient === "linear-bottom") return { background: `linear-gradient(to bottom, transparent 0%, ${c} 100%)` };
+              if (hero.mask.gradient === "linear-top") return { background: `linear-gradient(to top, transparent 0%, ${c} 100%)` };
+              return { background: c };
+            })()}
             aria-hidden
           />
-        </>
+        ) : null
+      ) : null}
+
+      {/* Datashow overlay: above mask, below text */}
+      {hero.datashow.enabled && hero.datashow.imageUrl ? (
+        <div
+          className={cn(
+            "pointer-events-none absolute inset-0 z-[2] flex items-center",
+            hero.datashow.position === "left"
+              ? "justify-start pl-12"
+              : hero.datashow.position === "right"
+                ? "justify-end pr-12"
+                : "justify-center",
+          )}
+          aria-hidden
+        >
+          <figure className="flex flex-col items-center gap-2">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={hero.datashow.imageUrl}
+              alt=""
+              className="max-h-64 max-w-sm object-contain opacity-90"
+            />
+            {hero.datashow.caption ? (
+              <figcaption className="text-xs font-light text-white/60">{hero.datashow.caption}</figcaption>
+            ) : null}
+          </figure>
+        </div>
       ) : null}
 
       <HeroParticleCanvas />

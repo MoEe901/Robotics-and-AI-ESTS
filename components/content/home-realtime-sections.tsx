@@ -14,6 +14,7 @@ export function HomeRealtimeSections() {
   const events = useHomeContentStore((s) => s.events);
   const teamMembers = useHomeContentStore((s) => s.teamMembers);
   const sections = useHomeContentStore((s) => s.sections);
+  const sectionLayout = useHomeContentStore((s) => s.sectionLayout);
   const knowUsConfig = useHomeContentStore((s) => s.knowUsConfig);
   const partnersConfig = useHomeContentStore((s) => s.partnersConfig);
   const whyJoinConfig = useHomeContentStore((s) => s.whyJoinConfig);
@@ -38,6 +39,7 @@ export function HomeRealtimeSections() {
         events={events}
         teamMembers={teamMembers}
         sections={sections}
+        sectionLayout={sectionLayout}
         knowUsConfig={knowUsConfig}
         partnersConfig={partnersConfig}
         whyJoinConfig={whyJoinConfig}

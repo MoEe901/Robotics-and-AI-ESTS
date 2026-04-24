@@ -31,6 +31,7 @@ import type {
   ApplySectionConfig,
 } from "@/lib/firebase/types";
 import type { TeamMemberListItem } from "@/lib/team/types";
+import type { SectionLayout } from "@/store/homeContentStore";
 
 const knowUsIcons = [Target, Settings2, Rocket] as const;
 
@@ -186,6 +187,7 @@ type HomeSectionsProps = {
   faqConfig: FaqConfig | null;
   applyConfig: ApplySectionConfig | null;
   eventsEmptyCopy: { title: string; message: string };
+  sectionLayout: SectionLayout | null;
 };
 
 function sectionTitle(sectionKey: string, fallback: string) {
@@ -215,6 +217,7 @@ export function HomeSections({
   faqConfig,
   applyConfig,
   eventsEmptyCopy,
+  sectionLayout,
 }: HomeSectionsProps) {
   const eventsTitle =
     sections.find((item) => item.sectionType === "events")?.title ??
@@ -250,12 +253,34 @@ export function HomeSections({
     cards: cellulesCards,
   };
 
+  const layout = sectionLayout ?? {
+    order: ["hero", "events", "knowUs", "whyJoin", "cellules", "processSteps", "faq", "apply", "footer"],
+    visibility: {
+      hero: true,
+      events: true,
+      knowUs: true,
+      whyJoin: true,
+      cellules: true,
+      processSteps: true,
+      faq: true,
+      apply: true,
+      footer: true,
+    } as Record<string, boolean>,
+  };
+  const sectionOrder = (id: string) => {
+    const idx = layout.order.indexOf(id);
+    return idx >= 0 ? idx : 999;
+  };
+  const isVisible = (id: string) => layout.visibility[id] !== false;
+
   return (
-    <main className="perspective-page space-y-8 pb-20">
+    <main className="perspective-page flex flex-col space-y-8 pb-20">
+      {isVisible("events") ? (
       <RevealSection
         id="events"
         className="mx-auto w-[min(94%,1200px)] scroll-mt-28 space-y-6 px-4 sm:px-6 lg:px-8"
         delay={0}
+        style={{ order: sectionOrder("events") }}
       >
         <span className="font-jetbrains mb-2 block text-[10px] uppercase tracking-[0.3em] text-cyan-400">
           {"// Upcoming & Past"}
@@ -282,11 +307,14 @@ export function HomeSections({
           />
         </div>
       </RevealSection>
+      ) : null}
 
+      {isVisible("knowUs") ? (
       <RevealSection
         id="know"
         className="mx-auto w-full max-w-[1200px] scroll-mt-28 bg-[#0d0f1a] px-4 py-16 sm:px-10 sm:py-20 lg:px-16"
         delay={0.05}
+        style={{ order: sectionOrder("knowUs") }}
       >
         <span className="font-jetbrains mb-2 block text-[10px] uppercase tracking-[0.3em] text-cyan-400">
           {"// Club Fundamentals"}
@@ -329,6 +357,7 @@ export function HomeSections({
           })}
         </div>
       </RevealSection>
+      ) : null}
 
       {partnerLogos.length ? (
         <RevealSection
@@ -351,10 +380,12 @@ export function HomeSections({
         </RevealSection>
       ) : null}
 
+      {isVisible("whyJoin") ? (
       <RevealSection
         id="why-join"
         className="mx-auto w-[min(94%,1200px)] scroll-mt-28 px-4 py-2 sm:px-6 lg:px-8"
         delay={0.1}
+        style={{ order: sectionOrder("whyJoin") }}
       >
         <span className="font-jetbrains mb-2 block text-[10px] uppercase tracking-[0.3em] text-cyan-400">
           {"// Build the future"}
@@ -429,11 +460,14 @@ export function HomeSections({
           </div>
         </div>
       </RevealSection>
+      ) : null}
 
+      {isVisible("cellules") ? (
       <RevealSection
         id="cellules"
         className="mx-auto w-[min(94%,1200px)] scroll-mt-28 px-4 py-2 sm:px-6 lg:px-8"
         delay={0.12}
+        style={{ order: sectionOrder("cellules") }}
       >
         <span className="font-jetbrains mb-2 block text-[10px] uppercase tracking-[0.3em] text-cyan-400">
           {"// Structure"}
@@ -496,22 +530,29 @@ export function HomeSections({
           </div>
         </div>
       </RevealSection>
+      ) : null}
 
-      <RevealSection className="mx-auto w-[min(94%,1100px)] py-2" delay={0.14}>
+      {isVisible("processSteps") ? (
+      <RevealSection className="mx-auto w-[min(94%,1100px)] py-2" delay={0.14} style={{ order: sectionOrder("processSteps") }}>
         <ProcessStepsSection config={processStepsConfig} />
       </RevealSection>
+      ) : null}
 
       <RevealSection className="mx-auto w-[min(94%,1100px)] py-2" delay={0.16}>
         <TeamSection title={teamTitle} members={teamMembers} />
       </RevealSection>
 
-      <RevealSection className="mx-auto w-[min(94%,1100px)] py-2" delay={0.18}>
+      {isVisible("faq") ? (
+      <RevealSection className="mx-auto w-[min(94%,1100px)] py-2" delay={0.18} style={{ order: sectionOrder("faq") }}>
         <FaqSection config={faqConfig} />
       </RevealSection>
+      ) : null}
 
-      <RevealSection className="mx-auto w-[min(94%,1100px)] py-2" delay={0.2}>
+      {isVisible("apply") ? (
+      <RevealSection className="mx-auto w-[min(94%,1100px)] py-2" delay={0.2} style={{ order: sectionOrder("apply") }}>
         <ApplySection config={applyConfig} />
       </RevealSection>
+      ) : null}
     </main>
   );
 }

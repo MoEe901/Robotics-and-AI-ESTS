@@ -17,10 +17,31 @@ import type {
 import type { PublicHeroContent } from "@/lib/content/site-content-parser";
 import type { TeamMemberListItem } from "@/lib/team/types";
 
+export type SectionLayout = {
+  order: string[];
+  visibility: Record<string, boolean>;
+};
+
+const DEFAULT_SECTION_LAYOUT: SectionLayout = {
+  order: ["hero", "events", "knowUs", "whyJoin", "cellules", "processSteps", "faq", "apply", "footer"],
+  visibility: {
+    hero: true,
+    events: true,
+    knowUs: true,
+    whyJoin: true,
+    cellules: true,
+    processSteps: true,
+    faq: true,
+    apply: true,
+    footer: true,
+  },
+};
+
 export type HomeContentStore = {
   events: EventItem[];
   teamMembers: TeamMemberListItem[];
   sections: PageSection[];
+  sectionLayout: SectionLayout | null;
   knowUsConfig: KnowUsConfig | null;
   partnersConfig: PartnersConfig | null;
   whyJoinConfig: WhyJoinConfig | null;
@@ -35,6 +56,7 @@ export type HomeContentStore = {
   setEvents: (events: EventItem[]) => void;
   setTeamMembers: (members: TeamMemberListItem[]) => void;
   setSections: (sections: PageSection[]) => void;
+  setSectionLayout: (layout: SectionLayout | null) => void;
   setKnowUsConfig: (config: KnowUsConfig | null) => void;
   setPartnersConfig: (config: PartnersConfig | null) => void;
   setWhyJoinConfig: (config: WhyJoinConfig | null) => void;
@@ -54,6 +76,7 @@ type PersistedHomeContentState = Partial<
     | "setEvents"
     | "setTeamMembers"
     | "setSections"
+    | "setSectionLayout"
     | "setKnowUsConfig"
     | "setPartnersConfig"
     | "setWhyJoinConfig"
@@ -74,6 +97,7 @@ export const useHomeContentStore = create<HomeContentStore>()(
       events: [],
       teamMembers: [],
       sections: [],
+      sectionLayout: DEFAULT_SECTION_LAYOUT,
       knowUsConfig: null,
       partnersConfig: null,
       whyJoinConfig: null,
@@ -88,6 +112,7 @@ export const useHomeContentStore = create<HomeContentStore>()(
       setEvents: (events) => set({ events }),
       setTeamMembers: (teamMembers) => set({ teamMembers }),
       setSections: (sections) => set({ sections }),
+      setSectionLayout: (sectionLayout) => set({ sectionLayout }),
       setKnowUsConfig: (knowUsConfig) => set({ knowUsConfig }),
       setPartnersConfig: (partnersConfig) => set({ partnersConfig }),
       setWhyJoinConfig: (whyJoinConfig) => set({ whyJoinConfig }),
@@ -112,6 +137,10 @@ export const useHomeContentStore = create<HomeContentStore>()(
           events: Array.isArray(state.events) ? state.events : [],
           teamMembers: Array.isArray(state.teamMembers) ? state.teamMembers : [],
           sections: Array.isArray(state.sections) ? state.sections : [],
+          sectionLayout:
+            state.sectionLayout && typeof state.sectionLayout === "object"
+              ? (state.sectionLayout as SectionLayout)
+              : DEFAULT_SECTION_LAYOUT,
           knowUsConfig: state.knowUsConfig ?? null,
           partnersConfig: state.partnersConfig ?? null,
           whyJoinConfig: state.whyJoinConfig ?? null,
@@ -130,7 +159,7 @@ export const useHomeContentStore = create<HomeContentStore>()(
         teamMembers: s.teamMembers,
         sections: s.sections,
       }),
-      version: 5,
+      version: 6,
     },
   ),
 );

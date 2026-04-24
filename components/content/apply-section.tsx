@@ -140,6 +140,7 @@ export function ApplySection({ config }: ApplySectionProps) {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [message, setMessage] = useState("");
+  const [website, setWebsite] = useState("");
 
   const [success, setSuccess] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -177,17 +178,21 @@ export function ApplySection({ config }: ApplySectionProps) {
     }
     setSubmitting(true);
     try {
-      const res = await fetch("/api/apply", {
+      const res = await fetch("/api/submissions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          firstName: firstName.trim(),
-          lastName: lastName.trim(),
-          educationYear,
-          department,
-          email: email.trim(),
-          phone: phone.trim(),
-          message: message.trim() || undefined,
+          formId: "apply",
+          website,
+          fields: {
+            firstName: firstName.trim(),
+            lastName: lastName.trim(),
+            educationYear,
+            department,
+            email: email.trim(),
+            phone: phone.trim(),
+            message: message.trim(),
+          },
         }),
       });
       const data = (await res.json().catch(() => ({}))) as { error?: string };
@@ -347,6 +352,15 @@ export function ApplySection({ config }: ApplySectionProps) {
           <div className="relative flex flex-col px-8 py-10 md:px-11 md:py-12">
             {!success ? (
               <>
+                <label className="sr-only" aria-hidden>
+                  Website
+                  <input
+                    value={website}
+                    onChange={(e) => setWebsite(e.target.value)}
+                    tabIndex={-1}
+                    autoComplete="off"
+                  />
+                </label>
                 <div className="mb-8">
                   <h3 className="font-syne mb-1.5 text-[1.35rem] font-extrabold tracking-tight text-white md:text-[1.5rem]">
                     {c.formTitle}

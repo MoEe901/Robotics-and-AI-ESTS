@@ -1,13 +1,16 @@
 "use client";
 
 import { signOut } from "firebase/auth";
+import { collection, onSnapshot, query, where } from "firebase/firestore";
 import {
   Calendar,
   ExternalLink,
   FileEdit,
   HelpCircle,
   Info,
+  Inbox,
   LayoutDashboard,
+  LayoutTemplate,
   LogOut,
   Menu,
   Moon,
@@ -19,9 +22,9 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 
-import { auth } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
 
 type Props = { children: React.ReactNode };
 type AdminThemeMode = "light" | "dark";
@@ -56,8 +59,11 @@ const NAV_ITEMS = [
   { href: "/admin/team/taxonomy", label: "Roles & cells", icon: SlidersHorizontal },
   { href: "/admin/events", label: "Events", icon: Calendar },
   { href: "/admin/basic", label: "Know us", icon: Info },
+  { href: "/admin/navbar", label: "Navbar", icon: Info },
   { href: "/admin/faq", label: "FAQ", icon: HelpCircle },
   { href: "/admin/apply", label: "Apply", icon: FileEdit },
+  { href: "/admin/submissions", label: "Submissions", icon: Inbox },
+  { href: "/admin/layout", label: "Layout", icon: LayoutTemplate },
 ] as const;
 
 function isActivePath(pathname: string, href: string) {
@@ -69,6 +75,12 @@ export function AdminShell({ children }: Props) {
   const pathname = usePathname();
   const hideNav = pathname === "/admin/login";
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [newSubmissionsCount, setNewSubmissionsCount] = useState(0);
+
+  useEffect(() => {
+    const q = query(collection(db(), "submissions"), where("status", "==", "new"));
+    return onSnapshot(q, (snap) => setNewSubmissionsCount(snap.size), () => {});
+  }, []);
 
   const theme = useSyncExternalStore<AdminThemeMode>(
     subscribeAdminTheme,
@@ -129,6 +141,7 @@ export function AdminShell({ children }: Props) {
         </span>
         {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
           const active = isActivePath(pathname, href);
+          const badge = href === "/admin/submissions" && newSubmissionsCount > 0 ? newSubmissionsCount : 0;
           return (
             <Link
               key={href}
@@ -143,6 +156,11 @@ export function AdminShell({ children }: Props) {
             >
               <Icon className="size-4 shrink-0" />
               <span className="truncate">{label}</span>
+              {badge > 0 && (
+                <span className="ml-auto shrink-0 rounded-full bg-cyan-500 px-1.5 py-0.5 text-[10px] font-bold leading-none text-white">
+                  {badge > 99 ? "99+" : badge}
+                </span>
+              )}
             </Link>
           );
         })}

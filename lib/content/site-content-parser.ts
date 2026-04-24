@@ -23,6 +23,39 @@ const heroCtaSchema = z.object({
   href: z.string(),
 });
 
+const heroBackgroundMediaSchema = z
+  .object({
+    type: z.enum(["video", "image", "none"]).optional(),
+    videoUrl: z.string().nullable().optional(),
+    videoPosterUrl: z.string().nullable().optional(),
+    imageUrl: z.string().nullable().optional(),
+    loop: z.boolean().optional(),
+    muted: z.boolean().optional(),
+    autoplay: z.boolean().optional(),
+  })
+  .passthrough()
+  .optional();
+
+const heroMaskSchema = z
+  .object({
+    enabled: z.boolean().optional(),
+    opacity: z.number().min(0).max(1).optional(),
+    color: z.string().optional(),
+    gradient: z.enum(["none", "radial", "linear-bottom", "linear-top"]).optional(),
+  })
+  .passthrough()
+  .optional();
+
+const heroDatashowSchema = z
+  .object({
+    enabled: z.boolean().optional(),
+    imageUrl: z.string().nullable().optional(),
+    caption: z.string().optional(),
+    position: z.enum(["center", "left", "right"]).optional(),
+  })
+  .passthrough()
+  .optional();
+
 const heroSchema = z
   .object({
     eyebrow: z.string().optional(),
@@ -38,6 +71,9 @@ const heroSchema = z
       .optional(),
     techStack: z.array(z.string()).optional(),
     growthStats: z.array(z.object({ label: z.string(), value: z.string() })).optional(),
+    backgroundMedia: heroBackgroundMediaSchema,
+    mask: heroMaskSchema,
+    datashow: heroDatashowSchema,
   })
   .passthrough();
 
@@ -50,6 +86,27 @@ export type PublicHeroContent = {
   primaryCta: { label: string; href: string };
   secondaryCta: { label: string; href: string };
   videoUrl: string | null;
+  backgroundMedia: {
+    type: "video" | "image" | "none";
+    videoUrl: string | null;
+    videoPosterUrl: string | null;
+    imageUrl: string | null;
+    loop: boolean;
+    muted: boolean;
+    autoplay: boolean;
+  };
+  mask: {
+    enabled: boolean;
+    opacity: number;
+    color: string;
+    gradient: "none" | "radial" | "linear-bottom" | "linear-top";
+  };
+  datashow: {
+    enabled: boolean;
+    imageUrl: string | null;
+    caption: string;
+    position: "center" | "left" | "right";
+  };
   liveActivity: Array<{ id: string; title: string; timeAgo: string }>;
   techStack: string[];
   growthStats: Array<{ label: string; value: string }>;
@@ -65,6 +122,27 @@ export const DEFAULT_HERO_PUBLIC: PublicHeroContent = {
   primaryCta: { label: "Join the Club", href: "/#apply" },
   secondaryCta: { label: "Explore Events", href: "/#events" },
   videoUrl: null,
+  backgroundMedia: {
+    type: "none",
+    videoUrl: null,
+    videoPosterUrl: null,
+    imageUrl: null,
+    loop: true,
+    muted: true,
+    autoplay: true,
+  },
+  mask: {
+    enabled: true,
+    opacity: 0.6,
+    color: "#07080f",
+    gradient: "none",
+  },
+  datashow: {
+    enabled: false,
+    imageUrl: null,
+    caption: "",
+    position: "center",
+  },
   liveActivity: [
     { id: "1", title: "New workshop announced", timeAgo: "2m ago" },
     { id: "2", title: "Member joined Design Cellule", timeAgo: "1h ago" },
@@ -86,6 +164,24 @@ export function parseHeroDoc(raw: Record<string, unknown>): PublicHeroContent {
     return { ...DEFAULT_HERO_PUBLIC };
   }
   const d = r.data;
+  const mediaRaw = raw.backgroundMedia && typeof raw.backgroundMedia === "object"
+    ? (raw.backgroundMedia as Record<string, unknown>)
+    : {};
+  const maskRaw = raw.mask && typeof raw.mask === "object" ? (raw.mask as Record<string, unknown>) : {};
+  const datashowRaw = raw.datashow && typeof raw.datashow === "object"
+    ? (raw.datashow as Record<string, unknown>)
+    : {};
+  const mediaTypeRaw = typeof mediaRaw.type === "string" ? mediaRaw.type.trim().toLowerCase() : "none";
+  const mediaType = mediaTypeRaw === "video" || mediaTypeRaw === "image" ? mediaTypeRaw : "none";
+  const maskGradientRaw = typeof maskRaw.gradient === "string" ? maskRaw.gradient.trim().toLowerCase() : "none";
+  const maskGradient =
+    maskGradientRaw === "radial" || maskGradientRaw === "linear-bottom" || maskGradientRaw === "linear-top"
+      ? maskGradientRaw
+      : "none";
+  const datashowPosRaw = typeof datashowRaw.position === "string" ? datashowRaw.position.trim().toLowerCase() : "center";
+  const datashowPosition = datashowPosRaw === "left" || datashowPosRaw === "right" ? datashowPosRaw : "center";
+  const maskOpacityValue = typeof maskRaw.opacity === "number" && Number.isFinite(maskRaw.opacity) ? maskRaw.opacity : 0.6;
+  const maskOpacity = Math.min(1, Math.max(0, maskOpacityValue));
   return {
     eyebrow: d.eyebrow?.trim() || DEFAULT_HERO_PUBLIC.eyebrow,
     location: d.location?.trim() || DEFAULT_HERO_PUBLIC.location,
@@ -104,6 +200,42 @@ export function parseHeroDoc(raw: Record<string, unknown>): PublicHeroContent {
       href: d.secondaryCta?.href?.trim() || DEFAULT_HERO_PUBLIC.secondaryCta.href,
     },
     videoUrl: typeof d.videoUrl === "string" && d.videoUrl.trim() ? d.videoUrl.trim() : d.videoUrl ?? null,
+    backgroundMedia: {
+      type: mediaType,
+      videoUrl:
+        typeof mediaRaw.videoUrl === "string" && mediaRaw.videoUrl.trim()
+          ? mediaRaw.videoUrl.trim()
+          : null,
+      videoPosterUrl:
+        typeof mediaRaw.videoPosterUrl === "string" && mediaRaw.videoPosterUrl.trim()
+          ? mediaRaw.videoPosterUrl.trim()
+          : null,
+      imageUrl:
+        typeof mediaRaw.imageUrl === "string" && mediaRaw.imageUrl.trim()
+          ? mediaRaw.imageUrl.trim()
+          : null,
+      loop: mediaRaw.loop !== false,
+      muted: mediaRaw.muted !== false,
+      autoplay: mediaRaw.autoplay !== false,
+    },
+    mask: {
+      enabled: maskRaw.enabled !== false,
+      opacity: maskOpacity,
+      color:
+        typeof maskRaw.color === "string" && maskRaw.color.trim()
+          ? maskRaw.color.trim()
+          : "#07080f",
+      gradient: maskGradient,
+    },
+    datashow: {
+      enabled: datashowRaw.enabled === true,
+      imageUrl:
+        typeof datashowRaw.imageUrl === "string" && datashowRaw.imageUrl.trim()
+          ? datashowRaw.imageUrl.trim()
+          : null,
+      caption: typeof datashowRaw.caption === "string" ? datashowRaw.caption.trim() : "",
+      position: datashowPosition,
+    },
     liveActivity:
       Array.isArray(d.liveActivity) && d.liveActivity.length ? d.liveActivity : DEFAULT_HERO_PUBLIC.liveActivity,
     techStack: Array.isArray(d.techStack) && d.techStack.length ? d.techStack : DEFAULT_HERO_PUBLIC.techStack,
@@ -142,26 +274,62 @@ export function parseKnowUsDoc(raw: Record<string, unknown>): KnowUsConfig | nul
 }
 
 export function parseNavbarDoc(raw: Record<string, unknown>): NavbarConfig | null {
+  const logoUrl =
+    typeof raw.logoUrl === "string" && raw.logoUrl.trim()
+      ? raw.logoUrl.trim()
+      : DEFAULT_NAVBAR_CONFIG.logoUrl;
   const logoText = typeof raw.logoText === "string" ? raw.logoText.trim() : "";
-  const rawItems = Array.isArray(raw.navItems) ? raw.navItems : [];
-  const navItems = rawItems
-    .map((item) => {
+  const rawItems =
+    Array.isArray(raw.links) ? raw.links : Array.isArray(raw.navItems) ? raw.navItems : [];
+  const links = sortByOrder(
+    rawItems
+    .map((item, idx) => {
       if (!item || typeof item !== "object") return null;
       const o = item as Record<string, unknown>;
+      const id =
+        typeof o.id === "string" && o.id.trim()
+          ? o.id.trim()
+          : `${String(o.label ?? "link").trim().toLowerCase().replace(/\s+/g, "-")}-${idx}`;
       const label = typeof o.label === "string" ? o.label.trim() : "";
       const href = typeof o.href === "string" ? o.href.trim() : "";
       if (!label || !href) return null;
-      return { label, href };
+      return {
+        id,
+        label,
+        href,
+        isExternal: o.isExternal === true || /^https?:\/\//i.test(href),
+        order: typeof o.order === "number" ? o.order : 0,
+        isVisible: o.isVisible !== false,
+      };
     })
-    .filter((x): x is { label: string; href: string } => Boolean(x));
-  const ctaText = typeof raw.ctaText === "string" ? raw.ctaText.trim() : "";
-  const ctaHref = typeof raw.ctaHref === "string" ? raw.ctaHref.trim() : "";
-  if (!navItems.length) return null;
+    .filter((x): x is NavbarConfig["links"][number] => Boolean(x)),
+  );
+  const ctaLabel =
+    typeof raw.ctaText === "string" && raw.ctaText.trim()
+      ? raw.ctaText.trim()
+      : raw.ctaButton && typeof raw.ctaButton === "object" && typeof (raw.ctaButton as Record<string, unknown>).label === "string"
+        ? ((raw.ctaButton as Record<string, unknown>).label as string).trim()
+        : DEFAULT_NAVBAR_CONFIG.ctaButton.label;
+  const ctaHref =
+    typeof raw.ctaHref === "string" && raw.ctaHref.trim()
+      ? raw.ctaHref.trim()
+      : raw.ctaButton && typeof raw.ctaButton === "object" && typeof (raw.ctaButton as Record<string, unknown>).href === "string"
+        ? ((raw.ctaButton as Record<string, unknown>).href as string).trim()
+        : DEFAULT_NAVBAR_CONFIG.ctaButton.href;
+  const ctaVisible =
+    raw.ctaButton && typeof raw.ctaButton === "object"
+      ? (raw.ctaButton as Record<string, unknown>).isVisible !== false
+      : true;
   return {
+    logoUrl,
     logoText: logoText || DEFAULT_NAVBAR_CONFIG.logoText,
-    navItems,
-    ctaText: ctaText || DEFAULT_NAVBAR_CONFIG.ctaText,
-    ctaHref: ctaHref || DEFAULT_NAVBAR_CONFIG.ctaHref,
+    links: links.length ? links : [...DEFAULT_NAVBAR_CONFIG.links],
+    ctaButton: {
+      label: ctaLabel || DEFAULT_NAVBAR_CONFIG.ctaButton.label,
+      href: ctaHref || DEFAULT_NAVBAR_CONFIG.ctaButton.href,
+      isVisible: ctaVisible,
+    },
+    showThemeToggle: raw.showThemeToggle !== false,
   };
 }
 

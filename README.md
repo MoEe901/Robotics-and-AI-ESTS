@@ -34,3 +34,18 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Editable Content Recipe
+
+1. Add the field to the Firestore doc shape in `types/content.ts` (or relevant local config type).
+2. Parse with fallback in `lib/content/*-parser.ts` so malformed docs never crash rendering.
+3. Wire the public component with `useFirestoreDoc` / `useFirestoreCollection` (client SDK only).
+4. Add matching controls in `/admin` using existing `admin-page`, `admin-card`, `admin-page-title` classes.
+5. Extend `scripts/seed-firestore.ts` so fresh environments get sane defaults.
+6. Update `firestore.rules` and ensure every public query mirrors rule predicates with `where(...)`.
+
+## Resend Configuration
+
+- Set `RESEND_API_KEY` to enable notifications; if missing, submissions still save and email is skipped.
+- Optional: `RESEND_FROM_EMAIL` (default: `onboarding@resend.dev`) and `ADMIN_NOTIFICATION_EMAIL`.
+- `NEXT_PUBLIC_SITE_URL` is used to build the admin deep-link in the notification email body.

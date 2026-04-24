@@ -1,7 +1,8 @@
 ﻿"use client";
 
 import { DEFAULT_NAVBAR_CONFIG } from "@/lib/firebase/types";
-import { useHomeContentStore } from "@/store/homeContentStore";
+import { parseNavbarDoc } from "@/lib/content/site-content-parser";
+import { useFirestoreDoc } from "@/lib/hooks/use-firestore-doc";
 import { AnimatePresence, motion } from "framer-motion";
 import { Menu, Moon, Sun, X } from "lucide-react";
 import Image from "next/image";
@@ -16,7 +17,7 @@ import {
 } from "@/lib/theme/site-theme";
 
 export function Navbar() {
-  const navbarConfig = useHomeContentStore((s) => s.navbarConfig);
+  const { data: navbarConfig } = useFirestoreDoc("siteConfig/navbar", (raw) => parseNavbarDoc(raw));
   const nav = navbarConfig ?? DEFAULT_NAVBAR_CONFIG;
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -41,8 +42,8 @@ export function Navbar() {
     setSiteTheme(next);
   };
 
-  const navLinks = nav.navItems.filter((item) => item.href !== "/#apply");
-  const applyNav = nav.navItems.find((item) => item.href === "/#apply");
+  const navLinks = nav.links.filter((item) => item.isVisible && item.href !== "/#apply");
+  const applyNav = nav.links.find((item) => item.isVisible && item.href === "/#apply");
 
   const shellClass =
     theme === "dark"
@@ -69,7 +70,7 @@ export function Navbar() {
             aria-hidden
           />
           <Image
-            src="/assets/logos/logo-optimized.svg"
+            src={nav.logoUrl || "/assets/logos/logo-optimized.svg"}
             alt="Club logo"
             width={32}
             height={32}
@@ -87,23 +88,26 @@ export function Navbar() {
         </Link>
 
         <nav className="ml-auto hidden shrink-0 items-center gap-8 md:flex">
-          <button
-            type="button"
-            onClick={toggleTheme}
-            aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-            className="inline-flex items-center justify-center rounded-full border p-1.5 [border-color:var(--surface-border)] [color:var(--foreground)]"
-            title={theme === "dark" ? "Light mode" : "Dark mode"}
-          >
-            {theme === "dark" ? (
-              <Sun className="size-3.5" />
-            ) : (
-              <Moon className="size-3.5" />
-            )}
-          </button>
+          {nav.showThemeToggle ? (
+            <button
+              type="button"
+              onClick={toggleTheme}
+              aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+              className="inline-flex items-center justify-center rounded-full border p-1.5 [border-color:var(--surface-border)] [color:var(--foreground)]"
+              title={theme === "dark" ? "Light mode" : "Dark mode"}
+            >
+              {theme === "dark" ? (
+                <Sun className="size-3.5" />
+              ) : (
+                <Moon className="size-3.5" />
+              )}
+            </button>
+          ) : null}
           {navLinks.map((item) => (
             <Link
-              key={item.label}
+              key={item.id}
               href={item.href}
+              {...(item.isExternal ? { target: "_blank", rel: "noopener noreferrer" } : {})}
               className={`text-[11px] font-medium uppercase tracking-[0.12em] transition-colors duration-200 ${
                 theme === "dark"
                   ? "text-slate-400/80 hover:text-cyan-400"
@@ -115,27 +119,29 @@ export function Navbar() {
           ))}
           {applyNav ? (
             <Link
-              href={nav.ctaHref || applyNav.href}
+              href={nav.ctaButton.href || applyNav.href}
               className="btn-shine font-jetbrains rounded-full bg-gradient-to-br from-violet-600 to-cyan-500 px-5 py-2 text-[11px] font-medium uppercase tracking-[0.05em] text-white shadow-[0_0_22px_rgba(124,58,237,0.38)] transition hover:-translate-y-px hover:shadow-[0_0_38px_rgba(124,58,237,0.58)]"
             >
-              {nav.ctaText}
+              {nav.ctaButton.label}
             </Link>
           ) : null}
         </nav>
 
         <div className="flex shrink-0 items-center gap-1 sm:gap-1.5 md:hidden">
-          <button
-            type="button"
-            onClick={toggleTheme}
-            aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-            className="inline-flex size-9 shrink-0 items-center justify-center rounded-full border [border-color:var(--surface-border)] [color:var(--foreground)] sm:size-10"
-          >
-            {theme === "dark" ? (
-              <Sun className="size-4" />
-            ) : (
-              <Moon className="size-4" />
-            )}
-          </button>
+          {nav.showThemeToggle ? (
+            <button
+              type="button"
+              onClick={toggleTheme}
+              aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+              className="inline-flex size-9 shrink-0 items-center justify-center rounded-full border [border-color:var(--surface-border)] [color:var(--foreground)] sm:size-10"
+            >
+              {theme === "dark" ? (
+                <Sun className="size-4" />
+              ) : (
+                <Moon className="size-4" />
+              )}
+            </button>
+          ) : null}
 
           <button
             type="button"
@@ -161,8 +167,9 @@ export function Navbar() {
             <nav className="flex flex-col gap-1">
               {navLinks.map((item) => (
                 <Link
-                  key={item.label}
+                  key={item.id}
                   href={item.href}
+                  {...(item.isExternal ? { target: "_blank", rel: "noopener noreferrer" } : {})}
                   onClick={() => setOpen(false)}
                   className="rounded-xl px-3 py-2 text-sm font-medium uppercase tracking-wide [color:var(--foreground-muted)] hover:[background:var(--surface-hover)] hover:[color:var(--foreground)]"
                 >
@@ -171,11 +178,11 @@ export function Navbar() {
               ))}
               {applyNav ? (
                 <Link
-                  href={nav.ctaHref || applyNav.href}
+                  href={nav.ctaButton.href || applyNav.href}
                   onClick={() => setOpen(false)}
                   className="btn-shine font-jetbrains mt-1 rounded-xl bg-gradient-to-br from-violet-600 to-cyan-500 px-3 py-2.5 text-center text-xs font-medium uppercase tracking-wide text-white"
                 >
-                  {nav.ctaText}
+                  {nav.ctaButton.label}
                 </Link>
               ) : null}
             </nav>

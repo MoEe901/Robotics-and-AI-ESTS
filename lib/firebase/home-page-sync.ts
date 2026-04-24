@@ -15,7 +15,7 @@ import {
   parseFaqConfigHeader,
   parseFaqQuestionDoc,
 } from "@/lib/content/faq-public-merge";
-import { parseSiteContentSnapshot } from "@/lib/content/site-content-parser";
+import { parseNavbarDoc, parseSiteContentSnapshot } from "@/lib/content/site-content-parser";
 import { db } from "@/lib/firebase";
 import { logFirestoreListenerError } from "@/lib/firebase/firestore-listener-log";
 import { mapEventDocToItem, subscribeToHomepageTeam, subscribeToPageSections } from "@/lib/firebase/realtime";
@@ -27,11 +27,13 @@ type Setter = Pick<
   | "setEvents"
   | "setTeamMembers"
   | "setSections"
+  | "setSectionLayout"
   | "setKnowUsConfig"
   | "setPartnersConfig"
   | "setWhyJoinConfig"
   | "setCellulesConfig"
   | "setProcessStepsConfig"
+  | "setSectionLayout"
   | "setFaqConfig"
   | "setApplyConfig"
   | "setPublicHero"
@@ -43,13 +45,14 @@ type Setter = Pick<
 /**
  * Exactly eight Firestore listeners for the public homepage:
  * 1) siteContent collection
- * 2) events (active, ordered)
- * 3) homepage team
- * 4) pageSections
- * 5) faq/config document
- * 6) faq/config/questions collection
- * 7) apply collection
- * 8) eventsConfig/public empty-state copy
+ * 2) siteConfig/navbar document
+ * 3) events (active, ordered)
+ * 4) homepage team
+ * 5) pageSections
+ * 6) faq/config document
+ * 7) faq/config/questions collection
+ * 8) apply collection
+ * 9) eventsConfig/public empty-state copy
  */
 export function subscribeHomePageFirestore(set: Setter): () => void {
   const unsubs: Unsubscribe[] = [];
@@ -60,7 +63,6 @@ export function subscribeHomePageFirestore(set: Setter): () => void {
       (snap) => {
         const bundle = parseSiteContentSnapshot(snap);
         set.setPublicHero(bundle.hero);
-        set.setNavbarConfig(bundle.navbar);
         set.setKnowUsConfig(bundle.knowUs);
         set.setPartnersConfig(bundle.partners);
         set.setWhyJoinConfig(bundle.whyJoin);
@@ -71,6 +73,24 @@ export function subscribeHomePageFirestore(set: Setter): () => void {
       (err) => {
         logFirestoreListenerError("home-page-sync siteContent collection", err);
         console.error("[home-page-sync] siteContent", err);
+      },
+    ),
+  );
+
+  unsubs.push(
+    onSnapshot(
+      doc(db(), "siteConfig", "navbar"),
+      (snap) => {
+        if (!snap.exists()) {
+          set.setNavbarConfig(null);
+          return;
+        }
+        const parsed = parseNavbarDoc(snap.data() as Record<string, unknown>);
+        set.setNavbarConfig(parsed);
+      },
+      (err) => {
+        logFirestoreListenerError("home-page-sync siteConfig/navbar doc", err);
+        console.error("[home-page-sync] siteConfig/navbar", err);
       },
     ),
   );
@@ -122,6 +142,28 @@ export function subscribeHomePageFirestore(set: Setter): () => void {
       (e) => {
         logFirestoreListenerError("home-page-sync pageSections", e);
         console.error("[home-page-sync] pageSections", e);
+      },
+    ),
+  );
+
+  unsubs.push(
+    onSnapshot(
+      doc(db(), "siteConfig", "sections"),
+      (snap) => {
+        if (!snap.exists()) return;
+        const raw = snap.data() as Record<string, unknown>;
+        const orderRaw = Array.isArray(raw.order) ? raw.order : [];
+        const order = orderRaw.filter((x): x is string => typeof x === "string");
+        const visRaw = raw.visibility && typeof raw.visibility === "object"
+          ? (raw.visibility as Record<string, unknown>)
+          : {};
+        const visibility: Record<string, boolean> = {};
+        for (const [k, v] of Object.entries(visRaw)) visibility[k] = v !== false;
+        set.setSectionLayout({ order, visibility });
+      },
+      (err) => {
+        logFirestoreListenerError("home-page-sync siteConfig/sections doc", err);
+        console.error("[home-page-sync] siteConfig/sections", err);
       },
     ),
   );
@@ -209,6 +251,31 @@ export function subscribeHomePageFirestore(set: Setter): () => void {
       (err) => {
         logFirestoreListenerError("home-page-sync eventsConfig/public doc", err);
         console.error("[home-page-sync] eventsConfig", err);
+      },
+    ),
+  );
+
+  unsubs.push(
+    onSnapshot(
+      doc(db(), "siteConfig", "sections"),
+      (snap) => {
+        if (!snap.exists()) {
+          set.setSectionLayout(null);
+          return;
+        }
+        const r = snap.data() as Record<string, unknown>;
+        const order = Array.isArray(r.order)
+          ? r.order.filter((x): x is string => typeof x === "string")
+          : [];
+        const visibility =
+          r.visibility && typeof r.visibility === "object"
+            ? (r.visibility as Record<string, boolean>)
+            : {};
+        set.setSectionLayout({ order, visibility });
+      },
+      (err) => {
+        logFirestoreListenerError("home-page-sync siteConfig/sections doc", err);
+        console.error("[home-page-sync] siteConfig/sections", err);
       },
     ),
   );
