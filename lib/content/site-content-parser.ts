@@ -212,6 +212,11 @@ export type PublicHeroContent = {
     metric: "newMembers";
     months: number;
   };
+  heroCards: {
+    activity: { isVisible: boolean; eyebrow: string; title: string };
+    techStack: { isVisible: boolean; eyebrow: string; title: string };
+    growth: { isVisible: boolean; eyebrow: string };
+  };
 };
 
 export const DEFAULT_HERO_PUBLIC: PublicHeroContent = {
@@ -284,6 +289,11 @@ export const DEFAULT_HERO_PUBLIC: PublicHeroContent = {
   },
   foundedYear: null,
   growth: { title: "Club stats", metric: "newMembers", months: 6 },
+  heroCards: {
+    activity: { isVisible: true, eyebrow: "Live Activity", title: "Club Updates" },
+    techStack: { isVisible: true, eyebrow: "Tech Stack", title: "What We Build With" },
+    growth: { isVisible: true, eyebrow: "Growth" },
+  },
 };
 
 export function parseHeroDoc(raw: Record<string, unknown>): PublicHeroContent {
@@ -486,6 +496,39 @@ export function parseHeroDoc(raw: Record<string, unknown>): PublicHeroContent {
         typeof growthRaw.months === "number" && [3, 6, 12].includes(growthRaw.months)
           ? growthRaw.months
           : DEFAULT_HERO_PUBLIC.growth.months,
+    },
+    heroCards: parseHeroCards(raw.heroCards),
+  };
+}
+
+function parseHeroCards(raw: unknown): PublicHeroContent["heroCards"] {
+  const src =
+    raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
+  function pick(
+    key: "activity" | "techStack" | "growth",
+  ): Record<string, unknown> {
+    const v = src[key];
+    return v && typeof v === "object" ? (v as Record<string, unknown>) : {};
+  }
+  const a = pick("activity");
+  const t = pick("techStack");
+  const g = pick("growth");
+  const str = (v: unknown, fallback: string) =>
+    typeof v === "string" && v.trim() ? v.trim() : fallback;
+  return {
+    activity: {
+      isVisible: a.isVisible !== false,
+      eyebrow: str(a.eyebrow, DEFAULT_HERO_PUBLIC.heroCards.activity.eyebrow),
+      title: str(a.title, DEFAULT_HERO_PUBLIC.heroCards.activity.title),
+    },
+    techStack: {
+      isVisible: t.isVisible !== false,
+      eyebrow: str(t.eyebrow, DEFAULT_HERO_PUBLIC.heroCards.techStack.eyebrow),
+      title: str(t.title, DEFAULT_HERO_PUBLIC.heroCards.techStack.title),
+    },
+    growth: {
+      isVisible: g.isVisible !== false,
+      eyebrow: str(g.eyebrow, DEFAULT_HERO_PUBLIC.heroCards.growth.eyebrow),
     },
   };
 }
@@ -723,18 +766,20 @@ export function parseCellulesDoc(raw: Record<string, unknown>): CellulesConfig |
 }
 
 const STEP_ICONS = new Set([
-  "users",
-  "lightbulb",
-  "calendar",
-  "award",
-  "rocket",
-  "target",
-  "sparkles",
-  "palette",
-  "video",
-  "file",
-  "wallet",
-  "megaphone",
+  // People
+  "users", "user", "user-plus", "user-check", "graduation-cap", "badge",
+  // Actions / Progress
+  "rocket", "target", "award", "trophy", "star", "zap",
+  "flag", "send", "check-circle", "play-circle",
+  // Tech / Build
+  "lightbulb", "sparkles", "cpu", "circuit-board", "bot", "code",
+  "terminal", "git-branch", "database", "server", "wifi", "layers", "blocks",
+  // Creativity / Design
+  "palette", "pen-tool", "brush", "image", "video", "camera", "mic",
+  // Organisation / Admin
+  "calendar", "file-text", "clipboard", "folder", "wallet", "megaphone", "mail",
+  // Science / Innovation
+  "flask-conical", "microscope", "atom", "brain", "dna", "wrench", "settings",
 ]);
 
 export function parseProcessStepsDoc(raw: Record<string, unknown>): ProcessStepsConfig | null {

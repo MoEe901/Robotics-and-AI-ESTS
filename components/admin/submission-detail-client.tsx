@@ -86,37 +86,81 @@ export function SubmissionDetailClient({ id }: { id: string }) {
   if (error) return <div className="admin-page">{error}</div>;
   if (!row) return <div className="admin-page">Loading...</div>;
 
+  const actionBtn = "rounded-lg border px-4 py-2 text-sm transition-colors";
+
   return (
     <div className="admin-page">
       <h1 className="admin-page-title">Submission</h1>
       <p className="admin-page-subtitle">
-        {row.formId} - {row.submittedAt ? new Date(row.submittedAt).toLocaleString() : ""}
+        {row.formId} &middot; {row.submittedAt ? new Date(row.submittedAt).toLocaleString() : ""}
       </p>
-      <div className="mt-4 flex flex-wrap gap-2">
-        <button type="button" onClick={() => void setStatus("read")} className="rounded border border-white/20 px-3 py-1 text-sm">Mark read</button>
-        <button type="button" onClick={() => void setStatus("archived")} className="rounded border border-white/20 px-3 py-1 text-sm">Archive</button>
-        <button type="button" onClick={() => void remove()} className="rounded border border-rose-400/30 px-3 py-1 text-sm text-rose-300">Delete</button>
+
+      <div className="mt-6 flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={() => void setStatus("read")}
+          className={`${actionBtn} border-white/20 text-white/90 hover:bg-white/10`}
+        >
+          Mark read
+        </button>
+        <button
+          type="button"
+          onClick={() => void setStatus("archived")}
+          className={`${actionBtn} border-white/20 text-white/90 hover:bg-white/10`}
+        >
+          Archive
+        </button>
+        <button
+          type="button"
+          onClick={() => void remove()}
+          className={`${actionBtn} border-rose-400/30 text-rose-300 hover:bg-rose-500/10`}
+        >
+          Delete
+        </button>
         {mailto ? (
-          <button type="button" onClick={() => void copyReplyTemplate()} className="rounded border border-cyan-400/30 px-3 py-1 text-sm text-cyan-300">
+          <button
+            type="button"
+            onClick={() => void copyReplyTemplate()}
+            className={`${actionBtn} border-cyan-400/30 text-cyan-300 hover:bg-cyan-500/10`}
+          >
             Copy reply template
           </button>
         ) : null}
-        <Link href="/admin/submissions" className="rounded border border-white/15 px-3 py-1 text-sm">Back</Link>
+        <Link
+          href="/admin/submissions"
+          className={`${actionBtn} border-white/15 text-white/80 hover:bg-white/10`}
+        >
+          Back
+        </Link>
       </div>
 
-      <div className="admin-card mt-4 space-y-3">
-        {Object.entries(row.fields).map(([k, v]) => (
-          <div key={k}>
-            <p className="text-xs uppercase tracking-wide text-white/50">{k}</p>
-            <p className="text-sm text-white/90">{v}</p>
-          </div>
-        ))}
+      <div className="admin-card mt-6 space-y-5 p-5 sm:p-6">
+        <h2 className="text-sm font-semibold text-white/90">Fields</h2>
+        <dl className="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
+          {Object.entries(row.fields).map(([k, v]) => (
+            <div key={k} className="min-w-0">
+              <dt className="text-[11px] font-medium uppercase tracking-[0.14em] text-white/50">{k}</dt>
+              <dd className="mt-1 break-words text-sm text-white/90">{v || <span className="text-white/40">&mdash;</span>}</dd>
+            </div>
+          ))}
+        </dl>
       </div>
 
-      <div className="admin-card mt-4">
-        <p className="text-sm text-white/75">Notes</p>
-        <textarea value={row.notes} onChange={(e) => setRow((prev) => (prev ? { ...prev, notes: e.target.value } : prev))} className="mt-2 min-h-[120px] w-full rounded border border-white/15 bg-black/20 p-2 text-sm" />
-        <button type="button" onClick={() => void saveNote()} className="mt-2 rounded border border-white/20 px-3 py-1 text-sm">Save note</button>
+      <div className="admin-card mt-6 space-y-3 p-5 sm:p-6">
+        <h2 className="text-sm font-semibold text-white/90">Notes</h2>
+        <textarea
+          value={row.notes}
+          onChange={(e) => setRow((prev) => (prev ? { ...prev, notes: e.target.value } : prev))}
+          className="min-h-[140px] w-full rounded-lg border border-white/15 bg-black/30 p-3 text-sm text-white placeholder:text-white/40 focus:border-white/30 focus:outline-none"
+          placeholder="Internal notes about this submission (only admins see this)."
+        />
+        <button
+          type="button"
+          onClick={() => void saveNote()}
+          className="rounded-lg border border-white/20 px-4 py-2 text-sm text-white/90 hover:bg-white/10"
+        >
+          Save note
+        </button>
       </div>
     </div>
   );

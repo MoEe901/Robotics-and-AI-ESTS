@@ -232,6 +232,62 @@ export type ApplySocialLink = {
   url: string;
 };
 
+export type ApplyCommunityPlatform =
+  | "discord"
+  | "whatsapp"
+  | "telegram"
+  | "slack"
+  | "signal"
+  | "messenger"
+  | "instagram"
+  | "linkedin"
+  | "twitter"
+  | "email"
+  | "generic";
+
+export type ApplyCommunityColor =
+  | "indigo"
+  | "emerald"
+  | "sky"
+  | "violet"
+  | "cyan"
+  | "rose"
+  | "amber"
+  | "white"
+  | "blue"
+  | "teal"
+  | "green"
+  | "lime"
+  | "orange"
+  | "red"
+  | "pink"
+  | "fuchsia"
+  | "purple"
+  | "slate"
+  | "black"
+  | "custom";
+
+export type ApplyCommunityAction = {
+  id: string;
+  platform: ApplyCommunityPlatform;
+  label: string;
+  url: string;
+  color: ApplyCommunityColor;
+  /** Hex color like "#5865F2". Only used when color === "custom". */
+  customHex?: string;
+  isVisible: boolean;
+  order: number;
+};
+
+export type ApplyCommunityConfig = {
+  isVisible: boolean;
+  eyebrow: string;
+  titleLine: string;
+  titleAccent: string;
+  description: string;
+  actions: ApplyCommunityAction[];
+};
+
 export type ApplySectionConfig = {
   topLabel: string;
   heroLine1: string;
@@ -266,6 +322,7 @@ export type ApplySectionConfig = {
   submitButtonLabel: string;
   successTitle: string;
   successMessage: string;
+  community: ApplyCommunityConfig;
 };
 
 export const DEFAULT_TEAM_VISIBILITY: TeamMemberVisibility = {

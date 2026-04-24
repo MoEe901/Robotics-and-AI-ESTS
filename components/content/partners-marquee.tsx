@@ -1,14 +1,9 @@
 "use client";
 
 import { motion, useReducedMotion } from "framer-motion";
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import type { PartnerLogo } from "@/lib/firebase/types";
-import {
-  resolveSiteTheme,
-  subscribeSiteTheme,
-  type SiteThemeMode,
-} from "@/lib/theme/site-theme";
 
 type PartnersMarqueeProps = {
   logos: PartnerLogo[];
@@ -23,7 +18,6 @@ export function PartnersMarquee({ logos, gapPx, durationSec, logoBasis }: Partne
   const [shiftPx, setShiftPx] = useState(0);
   const [repeatCount, setRepeatCount] = useState(2);
   const reduceMotion = useReducedMotion();
-  const theme = useSyncExternalStore<SiteThemeMode>(subscribeSiteTheme, resolveSiteTheme, () => "dark");
 
   const prepared = useMemo(
     () =>
@@ -100,11 +94,7 @@ export function PartnersMarquee({ logos, gapPx, durationSec, logoBasis }: Partne
                   decoding="async"
                   className="h-14 w-full object-contain opacity-95 transition-[filter] duration-300"
                   style={{
-                    filter:
-                      (theme === "light" && (logo.sourceTone ?? "light") === "light") ||
-                      (theme === "dark" && (logo.sourceTone ?? "light") === "dark")
-                        ? "invert(1)"
-                        : "none",
+                    filter: (logo.sourceTone ?? "light") === "dark" ? "invert(1)" : "none",
                   }}
                 />
               </div>

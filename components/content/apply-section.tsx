@@ -10,6 +10,7 @@ import type {
   ApplySocialPlatform,
 } from "@/lib/firebase/types";
 import { DEFAULT_APPLY_CONFIG } from "@/lib/content/apply-defaults";
+import { CommunityCard } from "@/components/content/community-card";
 
 const TONE_ICON: Record<ApplyContactRow["tone"], string> = {
   blue: "bg-sky-500/10 text-sky-400",
@@ -311,18 +312,18 @@ export function ApplySection({ config }: ApplySectionProps) {
                 return (
                   <div
                     key={`${row.label}-${row.value.slice(0, 24)}`}
-                    className="flex gap-3.5 rounded-xl border border-violet-500/10 bg-violet-500/[0.03] px-4 py-3.5 transition-colors hover:border-violet-500/25 hover:bg-violet-500/[0.06]"
+                    className="flex items-start gap-3.5 rounded-xl border border-violet-500/10 bg-violet-500/[0.03] px-4 py-3.5 transition-colors hover:border-violet-500/25 hover:bg-violet-500/[0.06]"
                   >
                     <div
                       className={`flex size-9 shrink-0 items-center justify-center rounded-[10px] ${TONE_ICON[row.tone]}`}
                     >
                       <Icon className="size-4" strokeWidth={1.8} />
                     </div>
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       <p className="font-jetbrains mb-0.5 text-[10px] font-medium uppercase tracking-[0.1em] text-slate-500">
                         {row.label}
                       </p>
-                      <p className="text-[13px] font-normal leading-snug text-slate-300">
+                      <p className="text-[13px] font-normal leading-snug text-slate-300 [overflow-wrap:anywhere]">
                         {renderMultiline(row.value)}
                       </p>
                     </div>
@@ -521,6 +522,8 @@ export function ApplySection({ config }: ApplySectionProps) {
             )}
           </div>
         </div>
+
+        <CommunityCard config={c.community ?? DEFAULT_APPLY_CONFIG.community} />
       </div>
     </section>
   );

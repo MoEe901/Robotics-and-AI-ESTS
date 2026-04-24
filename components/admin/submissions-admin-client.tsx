@@ -86,44 +86,89 @@ export function SubmissionsAdminClient() {
     URL.revokeObjectURL(url);
   }
 
+  const inputCls =
+    "rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-sm text-white placeholder:text-white/40 focus:border-white/30 focus:outline-none";
+
   return (
     <div className="admin-page">
       <h1 className="admin-page-title">Submissions</h1>
-      <div className="admin-card mt-4 flex flex-wrap items-center gap-2">
-        <select value={formFilter} onChange={(e) => setFormFilter(e.target.value)} className="rounded border border-white/15 bg-black/30 px-2 py-1 text-sm">
-          <option value="all">All forms</option>
-          {forms.map((f) => <option key={f} value={f}>{f}</option>)}
-        </select>
-        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="rounded border border-white/15 bg-black/30 px-2 py-1 text-sm">
-          <option value="all">All statuses</option>
-          <option value="new">New</option>
-          <option value="read">Read</option>
-          <option value="archived">Archived</option>
-        </select>
-        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search" className="rounded border border-white/15 bg-black/30 px-2 py-1 text-sm" />
-        <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className="rounded border border-white/15 bg-black/30 px-2 py-1 text-sm" />
-        <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className="rounded border border-white/15 bg-black/30 px-2 py-1 text-sm" />
-        <button type="button" onClick={() => void exportCsv()} className="rounded border border-white/25 px-2 py-1 text-xs">Export CSV</button>
+      <p className="admin-page-subtitle">
+        Filter, search, and export form submissions received from the public site.
+      </p>
+
+      <div className="admin-card mt-8 p-5 sm:p-6">
+        <div className="flex flex-wrap items-center gap-3">
+          <select value={formFilter} onChange={(e) => setFormFilter(e.target.value)} className={inputCls}>
+            <option value="all">All forms</option>
+            {forms.map((f) => <option key={f} value={f}>{f}</option>)}
+          </select>
+          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className={inputCls}>
+            <option value="all">All statuses</option>
+            <option value="new">New</option>
+            <option value="read">Read</option>
+            <option value="archived">Archived</option>
+          </select>
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search"
+            className={`${inputCls} min-w-[200px] flex-1`}
+          />
+          <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className={inputCls} />
+          <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className={inputCls} />
+          <button
+            type="button"
+            onClick={() => void exportCsv()}
+            className="rounded-lg border border-white/25 px-4 py-2 text-sm text-white/90 hover:bg-white/10"
+          >
+            Export CSV
+          </button>
+        </div>
       </div>
 
-      <div className="admin-card mt-4 overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead><tr className="text-left text-white/60"><th>Status</th><th>Form</th><th>Submitted</th><th>Preview</th><th /></tr></thead>
-          <tbody>
-            {filtered.map((r) => {
-              const preview = Object.values(r.fields)[0] || "-";
-              return (
-                <tr key={r.id} className="border-t border-white/10">
-                  <td className="py-2"><span className="rounded-full border border-white/20 px-2 py-0.5 text-xs">{r.status}</span></td>
-                  <td>{r.formId}</td>
-                  <td className="text-xs text-white/60">{r.submittedAt ? new Date(r.submittedAt).toLocaleString() : "-"}</td>
-                  <td className="max-w-[260px] truncate">{preview}</td>
-                  <td className="py-2 text-right"><Link href={`/admin/submissions/${r.id}`} className="text-cyan-300">Open</Link></td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+      <div className="admin-card mt-6 overflow-x-auto p-5 sm:p-6">
+        {filtered.length === 0 ? (
+          <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/[0.02] px-6 py-12 text-center">
+            <p className="text-sm font-medium text-white/80">No submissions match your filters</p>
+            <p className="max-w-sm text-xs text-white/55">
+              Try clearing the date range or search term. New submissions appear here automatically within ~1 second.
+            </p>
+          </div>
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-xs uppercase tracking-wider text-white/60">
+                <th className="pb-3 pr-4">Status</th>
+                <th className="pb-3 pr-4">Form</th>
+                <th className="pb-3 pr-4">Submitted</th>
+                <th className="pb-3 pr-4">Preview</th>
+                <th className="pb-3" />
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((r) => {
+                const preview = Object.values(r.fields)[0] || "-";
+                return (
+                  <tr key={r.id} className="border-t border-white/10">
+                    <td className="py-3 pr-4">
+                      <span className="rounded-full border border-white/20 px-2.5 py-0.5 text-xs">{r.status}</span>
+                    </td>
+                    <td className="py-3 pr-4">{r.formId}</td>
+                    <td className="py-3 pr-4 text-xs text-white/60">
+                      {r.submittedAt ? new Date(r.submittedAt).toLocaleString() : "-"}
+                    </td>
+                    <td className="max-w-[260px] truncate py-3 pr-4">{preview}</td>
+                    <td className="py-3 text-right">
+                      <Link href={`/admin/submissions/${r.id}`} className="text-cyan-300 hover:text-cyan-200">
+                        Open
+                      </Link>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );

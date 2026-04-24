@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 test.describe("Public site", () => {
-  test("loads homepage, exposes theme toggle, and shows nav links", async ({ page }) => {
+  test("loads homepage, locks dark theme, and shows nav links", async ({ page }) => {
     await page.goto("/");
 
     await expect(page.getByText("Robotics & AI Club").first()).toBeVisible();
@@ -9,11 +9,11 @@ test.describe("Public site", () => {
     await expect(page.getByRole("link", { name: "Events" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Know us" })).toBeVisible();
 
-    const toggle = page.getByRole("button", { name: /switch to light mode|switch to dark mode/i }).first();
-    await expect(toggle).toBeVisible();
+    const theme = await page.evaluate(() => document.documentElement.getAttribute("data-theme"));
+    expect(theme).toBe("dark");
 
-    await toggle.click({ force: true });
-    await expect(toggle).toBeVisible();
+    const lightToggle = page.getByRole("button", { name: /switch to (light|dark) mode/i });
+    await expect(lightToggle).toHaveCount(0);
   });
 
   test("events carousel first three cards are rendered with loaded images", async ({ page }) => {

@@ -72,7 +72,12 @@ Hero now also stores:
 - `foundedYear: number | null` — club founded year, used by the `years-active` source. Colocated on `siteContent/hero` so it reuses the existing hero listener (no new `onSnapshot`).
 - Source aliases: legacy values `members`, `cellules`, `events`, `events-all`, `partners`, `faq-questions` are read-migrated to the new `-live` names by the parser; saves always write the new names.
 - `techStack.items`: ordered pill objects `{ id, label, accent, order, isVisible }`.
-- `growth`: `{ title, metric, months }` (`metric` currently supports `newMembers`).
+- `growth`: `{ title, metric, months }` (`metric` currently supports `newMembers`; `months` must be `3`, `6`, or `12`).
+- `heroCards`: per-card controls for the three floating hero cards. Each sub-object supports its own `isVisible` toggle and header overrides:
+  - `heroCards.activity`: `{ isVisible, eyebrow, title }` — header above the live activity posts.
+  - `heroCards.techStack`: `{ isVisible, eyebrow, title }` — header above the tech-stack pills.
+  - `heroCards.growth`: `{ isVisible, eyebrow }` — eyebrow for the growth chart (title still lives on `hero.growth.title`).
+  Defaults fall back to the legacy hardcoded strings (`"Live Activity"/"Club Updates"`, `"Tech Stack"/"What We Build With"`, `"Growth"`), so missing fields are forward-compatible. All of these are edited in one place at `/admin/activity` ("Hero cards" in the sidebar), alongside the `activity` post feed and the `techStack` pill editor.
 
 The `team-alumni` source requires team members with `status=="alumni"`. Today's `teamMembers` listener on the homepage filters `isActive==true AND isVisible==true` (to satisfy the current security rule), so alumni (typically `isActive==false`) are not loaded. Tiles bound to `team-alumni` fall back to `manualValue` until either the rule is relaxed or a dedicated alumni listener is added.
 

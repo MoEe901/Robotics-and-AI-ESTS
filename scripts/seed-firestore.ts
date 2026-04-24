@@ -150,6 +150,7 @@ async function main() {
     statsStrip: DEFAULT_HERO_PUBLIC.statsStrip,
     foundedYear: DEFAULT_HERO_PUBLIC.foundedYear,
     growth: DEFAULT_HERO_PUBLIC.growth,
+    heroCards: DEFAULT_HERO_PUBLIC.heroCards,
   };
   results.push(`siteContent/hero: ${await writeIfMissing("siteContent/hero", heroPayload)}`);
 

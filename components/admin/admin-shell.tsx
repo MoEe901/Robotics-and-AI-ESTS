@@ -69,7 +69,7 @@ export const ADMIN_NAV_ITEMS: readonly AdminNavItem[] = [
   { href: "/admin/faq", label: "FAQ", icon: HelpCircle },
   { href: "/admin/apply", label: "Apply", icon: FileEdit },
   { href: "/admin/submissions", label: "Submissions", icon: Inbox },
-  { href: "/admin/activity", label: "Activity", icon: Activity },
+  { href: "/admin/activity", label: "Hero cards", icon: Activity },
   { href: "/admin/layout", label: "Layout", icon: LayoutTemplate },
 ] as const;
 

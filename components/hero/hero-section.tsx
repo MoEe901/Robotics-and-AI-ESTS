@@ -391,7 +391,7 @@ export function HeroSection() {
           className="pointer-events-none relative z-[31] hidden min-w-0 w-full lg:flex lg:flex-col lg:w-auto lg:justify-center lg:self-center"
         >
         <div className="mx-auto flex w-full max-w-[300px] flex-col gap-4 lg:mx-0">
-          {!activityError && (activityLoading || activityRows.length > 0) ? (
+          {hero.heroCards.activity.isVisible && !activityError && (activityLoading || activityRows.length > 0) ? (
           <div
             className="w-full max-w-[300px] rounded-2xl border border-violet-500/20 bg-[rgba(13,15,26,0.85)] p-5 backdrop-blur-[20px] transition hover:-translate-x-1 hover:border-violet-500/40"
             style={{ animation: "heroFadeLeft 1s ease both 0.65s" }}
@@ -403,9 +403,9 @@ export function HeroSection() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="font-jetbrains text-[9px] font-medium uppercase tracking-[0.2em] text-slate-500">
-                    Live Activity
+                    {hero.heroCards.activity.eyebrow}
                   </p>
-                  <p className="text-sm font-semibold text-white">Club Updates</p>
+                  <p className="text-sm font-semibold text-white">{hero.heroCards.activity.title}</p>
                 </div>
                 <span
                   className="size-[5px] shrink-0 rounded-full bg-emerald-400 shadow-[0_0_6px_#10b981]"
@@ -427,6 +427,7 @@ export function HeroSection() {
           </div>
           ) : null}
 
+          {hero.heroCards.techStack.isVisible ? (
           <div
             className="w-full max-w-[300px] rounded-2xl border border-violet-500/20 bg-[rgba(13,15,26,0.85)] p-5 backdrop-blur-[20px] transition hover:-translate-x-1 hover:border-violet-500/40"
             style={{ animation: "heroFadeLeft 1s ease both 0.72s" }}
@@ -438,9 +439,9 @@ export function HeroSection() {
                 </div>
                 <div>
                   <p className="font-jetbrains text-[9px] font-medium uppercase tracking-[0.2em] text-slate-500">
-                    Tech Stack
+                    {hero.heroCards.techStack.eyebrow}
                   </p>
-                  <p className="text-sm font-semibold text-white">What We Build With</p>
+                  <p className="text-sm font-semibold text-white">{hero.heroCards.techStack.title}</p>
                 </div>
               </div>
               <div className="flex flex-wrap gap-1.5">
@@ -466,7 +467,9 @@ export function HeroSection() {
               </div>
             </div>
           </div>
+          ) : null}
 
+          {hero.heroCards.growth.isVisible ? (
           <div
             className="w-full max-w-[300px] rounded-2xl border border-violet-500/20 bg-[rgba(13,15,26,0.85)] p-5 backdrop-blur-[20px] transition hover:-translate-x-1 hover:border-violet-500/40"
             style={{ animation: "heroFadeLeft 1s ease both 0.78s" }}
@@ -478,7 +481,7 @@ export function HeroSection() {
                 </div>
                 <div>
                   <p className="font-jetbrains text-[9px] font-medium uppercase tracking-[0.2em] text-slate-500">
-                    Growth
+                    {hero.heroCards.growth.eyebrow}
                   </p>
                   <p className="text-sm font-semibold text-white">{hero.growth.title}</p>
                 </div>
@@ -511,6 +514,7 @@ export function HeroSection() {
               )}
             </div>
           </div>
+          ) : null}
         </div>
         </motion.aside>
         </div>

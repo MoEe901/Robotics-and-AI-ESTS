@@ -90,7 +90,7 @@ export function AdminShellConfigClient() {
         and Layout are locked so you can always get back here.
       </p>
 
-      <div className="admin-card mt-6 space-y-2">
+      <div className="admin-card mt-8 space-y-2.5 p-5 sm:p-6">
         {order.map((href, i) => {
           const item = byHref.get(href) as AdminNavItem | undefined;
           if (!item) return null;
@@ -100,39 +100,43 @@ export function AdminShellConfigClient() {
           return (
             <div
               key={href}
-              className="grid grid-cols-[auto_auto_1fr_auto] items-center gap-3 rounded-lg border border-white/10 bg-white/[0.02] p-2"
+              className="grid grid-cols-[auto_auto_1fr_auto] items-center gap-4 rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3 transition-colors hover:border-white/15 hover:bg-white/[0.035]"
             >
               <button
                 type="button"
                 onClick={() => move(i, -1)}
                 disabled={i === 0}
                 aria-label={`Move ${item.label} up`}
-                className="rounded border border-white/20 p-1 text-white/80 transition-colors hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
+                className="rounded-md border border-white/20 p-1.5 text-white/80 transition-colors hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
               >
-                <ArrowUp className="size-3" />
+                <ArrowUp className="size-3.5" />
               </button>
               <button
                 type="button"
                 onClick={() => move(i, 1)}
                 disabled={i === order.length - 1}
                 aria-label={`Move ${item.label} down`}
-                className="rounded border border-white/20 p-1 text-white/80 transition-colors hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
+                className="rounded-md border border-white/20 p-1.5 text-white/80 transition-colors hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
               >
-                <ArrowDown className="size-3" />
+                <ArrowDown className="size-3.5" />
               </button>
 
-              <div className="flex min-w-0 items-center gap-2">
+              <div className="flex min-w-0 items-center gap-3 pl-1">
                 <Icon className="size-4 shrink-0 text-white/70" />
-                <span className="truncate text-sm text-white/90">{item.label}</span>
-                <span className="truncate font-mono text-[10px] text-white/40">{href}</span>
+                <span className="truncate text-sm font-medium text-white/90">
+                  {item.label}
+                </span>
+                <span className="hidden truncate font-mono text-[10px] text-white/40 sm:inline">
+                  {href}
+                </span>
                 {locked ? (
-                  <span className="inline-flex items-center gap-1 rounded bg-white/10 px-1.5 py-0.5 text-[9px] uppercase tracking-wider text-white/60">
+                  <span className="inline-flex shrink-0 items-center gap-1 rounded bg-white/10 px-2 py-0.5 text-[9px] uppercase tracking-wider text-white/60">
                     <Lock className="size-2.5" /> locked
                   </span>
                 ) : null}
               </div>
 
-              <label className="flex items-center gap-2 text-xs text-white/80">
+              <label className="flex items-center gap-2 pr-1 text-xs text-white/80">
                 <input
                   type="checkbox"
                   checked={isVisible}
@@ -148,9 +152,9 @@ export function AdminShellConfigClient() {
         })}
       </div>
 
-      <div className="admin-card mt-4 space-y-2 text-sm">
+      <div className="admin-card mt-6 space-y-3 p-5 text-sm sm:p-6">
         <h2 className="text-sm font-semibold text-white/90">Footer</h2>
-        <label className="flex items-center gap-2 text-white/80">
+        <label className="flex items-center gap-2.5 text-white/80">
           <input
             type="checkbox"
             checked={showViewSite}
@@ -158,22 +162,22 @@ export function AdminShellConfigClient() {
           />
           Show &quot;View site&quot; link
         </label>
-        <label className="flex items-center gap-2 text-white/80">
+        <label className="flex items-center gap-2.5 text-white/80">
           <input
             type="checkbox"
             checked={showThemeToggle}
             onChange={(e) => setShowThemeToggle(e.target.checked)}
           />
-          Show theme toggle (light / dark mode)
+          Show theme toggle (admin-only, light / dark mode)
         </label>
       </div>
 
-      <div className="mt-4 flex items-center gap-3">
+      <div className="mt-6 flex flex-wrap items-center gap-4">
         <button
           type="button"
           onClick={() => void save()}
           disabled={saving}
-          className="rounded-full bg-blue-600 px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-500 disabled:opacity-60"
+          className="rounded-full bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-500 disabled:opacity-60"
         >
           {saving ? "Saving…" : "Save sidebar"}
         </button>

@@ -5,6 +5,10 @@ import { useEffect, useState } from "react";
 
 import { db } from "@/lib/firebase";
 import type {
+  ApplyCommunityAction,
+  ApplyCommunityColor,
+  ApplyCommunityConfig,
+  ApplyCommunityPlatform,
   ApplyContactRow,
   ApplyContactIconKey,
   ApplyContactTone,
@@ -12,7 +16,15 @@ import type {
   ApplySocialPlatform,
 } from "@/lib/firebase/types";
 import { mergeApplyCollectionDocs } from "@/lib/content/apply-docs-merge";
-import { DEFAULT_APPLY_CONFIG, mergeApplyFromFirestore } from "@/lib/content/apply-defaults";
+import {
+  COMMUNITY_COLORS,
+  COMMUNITY_PLATFORMS,
+  DEFAULT_APPLY_CONFIG,
+  DEFAULT_COMMUNITY_CONFIG,
+  mergeApplyFromFirestore,
+} from "@/lib/content/apply-defaults";
+import { CommunityPlatformIcon } from "@/components/content/community-card";
+import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 
 function safeTrim(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
@@ -37,6 +49,41 @@ const PLATFORM_ORDER: ApplySocialPlatform[] = ["instagram", "linkedin", "twitter
 function normalizeSocials(links: ApplySocialLink[]): ApplySocialLink[] {
   const by = new Map(links.map((l) => [l.platform, l]));
   return PLATFORM_ORDER.map((p) => ({ platform: p, url: by.get(p)?.url?.trim() ?? "" }));
+}
+
+const HEX_RE = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
+
+function isValidHex(value: string | undefined | null): boolean {
+  return typeof value === "string" && HEX_RE.test(value.trim());
+}
+
+const PRESET_PREVIEW: Record<Exclude<ApplyCommunityColor, "custom">, string> = {
+  indigo: "#4f46e5",
+  emerald: "#059669",
+  sky: "#0284c7",
+  violet: "#7c3aed",
+  cyan: "#0891b2",
+  rose: "#e11d48",
+  amber: "#f59e0b",
+  white: "#ffffff",
+  blue: "#2563eb",
+  teal: "#0d9488",
+  green: "#16a34a",
+  lime: "#84cc16",
+  orange: "#f97316",
+  red: "#dc2626",
+  pink: "#db2777",
+  fuchsia: "#c026d3",
+  purple: "#9333ea",
+  slate: "#334155",
+  black: "#000000",
+};
+
+function getActionPreviewColor(action: ApplyCommunityAction): string {
+  if (action.color === "custom") {
+    return isValidHex(action.customHex) ? (action.customHex as string) : "#334155";
+  }
+  return PRESET_PREVIEW[action.color] ?? "#334155";
 }
 
 export function ApplyConfigClient() {
@@ -83,6 +130,10 @@ export function ApplyConfigClient() {
   const [successTitle, setSuccessTitle] = useState(DEFAULT_APPLY_CONFIG.successTitle);
   const [successMessage, setSuccessMessage] = useState(DEFAULT_APPLY_CONFIG.successMessage);
 
+  const [community, setCommunity] = useState<ApplyCommunityConfig>(() =>
+    structuredClone(DEFAULT_COMMUNITY_CONFIG),
+  );
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -126,6 +177,7 @@ export function ApplyConfigClient() {
           setSubmitButtonLabel(merged.submitButtonLabel);
           setSuccessTitle(merged.successTitle);
           setSuccessMessage(merged.successMessage);
+          setCommunity(structuredClone(merged.community ?? DEFAULT_COMMUNITY_CONFIG));
         }
       } catch (err) {
         if (!cancelled) setError(err instanceof Error ? err.message : "Failed to load apply section.");
@@ -245,6 +297,29 @@ export function ApplyConfigClient() {
           },
           { merge: true },
         ),
+        setDoc(
+          doc(db(), "apply", "community"),
+          {
+            isVisible: community.isVisible,
+            eyebrow: safeTrim(community.eyebrow),
+            titleLine: safeTrim(community.titleLine) || DEFAULT_COMMUNITY_CONFIG.titleLine,
+            titleAccent: safeTrim(community.titleAccent) || DEFAULT_COMMUNITY_CONFIG.titleAccent,
+            description: safeTrim(community.description) || DEFAULT_COMMUNITY_CONFIG.description,
+            actions: community.actions
+              .map((a, idx) => ({
+                id: a.id || `${a.platform}-${idx}`,
+                platform: a.platform,
+                label: safeTrim(a.label),
+                url: safeTrim(a.url),
+                color: a.color,
+                customHex: isValidHex(a.customHex) ? safeTrim(a.customHex) : "",
+                isVisible: a.isVisible !== false,
+                order: idx,
+              }))
+              .filter((a) => a.label),
+          },
+          { merge: true },
+        ),
       ]);
       setSuccess("Apply section saved. The homepage updates live for visitors.");
     } catch (e) {
@@ -288,6 +363,58 @@ export function ApplyConfigClient() {
     setSocialLinks((prev) =>
       normalizeSocials(prev).map((l) => (l.platform === platform ? { ...l, url } : l)),
     );
+  }
+
+  function patchCommunityAction(index: number, patch: Partial<ApplyCommunityAction>) {
+    setCommunity((prev) => {
+      const next = [...prev.actions];
+      const cur = next[index];
+      if (!cur) return prev;
+      next[index] = { ...cur, ...patch };
+      return { ...prev, actions: next };
+    });
+  }
+
+  function moveCommunityAction(index: number, dir: -1 | 1) {
+    setCommunity((prev) => {
+      const target = index + dir;
+      if (target < 0 || target >= prev.actions.length) return prev;
+      const next = [...prev.actions];
+      [next[index], next[target]] = [next[target]!, next[index]!];
+      return {
+        ...prev,
+        actions: next.map((a, i) => ({ ...a, order: i })),
+      };
+    });
+  }
+
+  function addCommunityAction() {
+    setCommunity((prev) => {
+      if (prev.actions.length >= 8) return prev;
+      const id = `action-${Date.now()}`;
+      return {
+        ...prev,
+        actions: [
+          ...prev.actions,
+          {
+            id,
+            platform: "generic",
+            label: "New link",
+            url: "",
+            color: "violet",
+            isVisible: true,
+            order: prev.actions.length,
+          },
+        ],
+      };
+    });
+  }
+
+  function removeCommunityAction(index: number) {
+    setCommunity((prev) => ({
+      ...prev,
+      actions: prev.actions.filter((_, i) => i !== index).map((a, i) => ({ ...a, order: i })),
+    }));
   }
 
   if (loading) {
@@ -644,6 +771,234 @@ export function ApplyConfigClient() {
               className="mt-1 w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-white outline-none focus:border-white/35"
             />
           </label>
+        </div>
+
+        <div className="space-y-4 rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-medium text-white/80">Community card</p>
+              <p className="mt-0.5 text-xs text-white/50">
+                The &quot;Ready to join this Community?&quot; card below the apply form. Add Discord,
+                WhatsApp, Telegram, Slack, or any link with its own color.
+              </p>
+            </div>
+            <label className="flex items-center gap-2 text-xs text-white/80">
+              <input
+                type="checkbox"
+                checked={community.isVisible}
+                onChange={(e) => setCommunity((prev) => ({ ...prev, isVisible: e.target.checked }))}
+              />
+              Card visible
+            </label>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <label className="block text-sm">
+              <span className="text-white/70">Eyebrow (optional)</span>
+              <input
+                value={community.eyebrow}
+                onChange={(e) => setCommunity((prev) => ({ ...prev, eyebrow: e.target.value }))}
+                className="mt-1 w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-white outline-none focus:border-white/35"
+                placeholder="e.g. Community"
+              />
+            </label>
+            <label className="block text-sm">
+              <span className="text-white/70">Title line</span>
+              <input
+                value={community.titleLine}
+                onChange={(e) => setCommunity((prev) => ({ ...prev, titleLine: e.target.value }))}
+                className="mt-1 w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-white outline-none focus:border-white/35"
+                placeholder="Ready to join this"
+              />
+            </label>
+            <label className="block text-sm sm:col-span-2">
+              <span className="text-white/70">Title accent (gradient word)</span>
+              <input
+                value={community.titleAccent}
+                onChange={(e) => setCommunity((prev) => ({ ...prev, titleAccent: e.target.value }))}
+                className="mt-1 w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-white outline-none focus:border-white/35"
+                placeholder="Community?"
+              />
+            </label>
+          </div>
+
+          <label className="block text-sm">
+            <span className="text-white/70">Description</span>
+            <textarea
+              value={community.description}
+              onChange={(e) => setCommunity((prev) => ({ ...prev, description: e.target.value }))}
+              rows={3}
+              className="mt-1 w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-white outline-none focus:border-white/35"
+              placeholder="Join our vibrant communities! …"
+            />
+          </label>
+
+          <div className="space-y-3 border-t border-white/10 pt-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-sm font-medium text-white/80">Actions</p>
+              <button
+                type="button"
+                onClick={addCommunityAction}
+                disabled={community.actions.length >= 8}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-white/20 px-3 py-1.5 text-xs text-white/85 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Plus className="size-3.5" /> Add action
+              </button>
+            </div>
+            {community.actions.length === 0 ? (
+              <p className="rounded-lg border border-white/10 bg-white/[0.02] px-4 py-6 text-center text-xs text-white/55">
+                No actions yet. Add Discord / WhatsApp or any other link button.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {community.actions.map((action, i) => (
+                  <div
+                    key={action.id}
+                    className="space-y-3 rounded-xl border border-white/10 bg-black/20 p-3"
+                  >
+                    <div className="flex flex-wrap items-center gap-2">
+                      <div className="flex shrink-0 items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => moveCommunityAction(i, -1)}
+                          disabled={i === 0}
+                          aria-label="Move up"
+                          className="rounded-md border border-white/20 p-1.5 text-white/80 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          <ArrowUp className="size-3" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => moveCommunityAction(i, 1)}
+                          disabled={i === community.actions.length - 1}
+                          aria-label="Move down"
+                          className="rounded-md border border-white/20 p-1.5 text-white/80 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          <ArrowDown className="size-3" />
+                        </button>
+                      </div>
+                      <span className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-white/15 bg-black/40 text-white/85">
+                        <CommunityPlatformIcon platform={action.platform} className="size-4" />
+                      </span>
+                      <label className="flex items-center gap-1.5 text-xs text-white/70">
+                        <input
+                          type="checkbox"
+                          checked={action.isVisible}
+                          onChange={(e) => patchCommunityAction(i, { isVisible: e.target.checked })}
+                        />
+                        visible
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => removeCommunityAction(i)}
+                        aria-label="Remove action"
+                        className="ml-auto rounded-md border border-rose-400/30 p-1.5 text-rose-300 hover:bg-rose-500/10"
+                      >
+                        <Trash2 className="size-3.5" />
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      <label className="block text-xs text-white/70">
+                        <span>Button label</span>
+                        <input
+                          value={action.label}
+                          onChange={(e) => patchCommunityAction(i, { label: e.target.value })}
+                          placeholder="Join Discord"
+                          className="mt-1 w-full rounded-lg border border-white/15 bg-black/40 px-2.5 py-1.5 text-sm text-white"
+                        />
+                      </label>
+                      <label className="block text-xs text-white/70">
+                        <span>URL</span>
+                        <input
+                          value={action.url}
+                          onChange={(e) => patchCommunityAction(i, { url: e.target.value })}
+                          placeholder="https://discord.gg/…"
+                          className="mt-1 w-full rounded-lg border border-white/15 bg-black/40 px-2.5 py-1.5 text-sm text-white"
+                        />
+                      </label>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_1fr_auto_1fr]">
+                      <label className="block text-xs text-white/70">
+                        <span>Platform (icon)</span>
+                        <select
+                          value={action.platform}
+                          onChange={(e) =>
+                            patchCommunityAction(i, {
+                              platform: e.target.value as ApplyCommunityPlatform,
+                            })
+                          }
+                          className="mt-1 w-full rounded-lg border border-white/15 bg-black/40 px-2 py-1.5 text-sm text-white"
+                        >
+                          {COMMUNITY_PLATFORMS.map((p) => (
+                            <option key={p} value={p}>
+                              {p}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <label className="block text-xs text-white/70">
+                        <span>Color preset</span>
+                        <select
+                          value={action.color}
+                          onChange={(e) => {
+                            const next = e.target.value as ApplyCommunityColor;
+                            const patch: Partial<ApplyCommunityAction> = { color: next };
+                            if (next !== "custom") patch.customHex = "";
+                            patchCommunityAction(i, patch);
+                          }}
+                          className="mt-1 w-full rounded-lg border border-white/15 bg-black/40 px-2 py-1.5 text-sm text-white"
+                        >
+                          {COMMUNITY_COLORS.map((c) => (
+                            <option key={c} value={c}>
+                              {c === "custom" ? "— custom HEX —" : c}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <div className="block text-xs text-white/70">
+                        <span>Swatch</span>
+                        <div
+                          className="mt-1 h-[34px] w-full min-w-[44px] rounded-lg border border-white/15"
+                          style={{
+                            background: getActionPreviewColor(action),
+                          }}
+                          aria-label="Color preview"
+                        />
+                      </div>
+                      <label className="block text-xs text-white/70">
+                        <span>
+                          Custom HEX{" "}
+                          <span className="text-white/40">
+                            {action.color === "custom" ? "(in use)" : "(pick “custom” to use)"}
+                          </span>
+                        </span>
+                        <input
+                          value={action.customHex ?? ""}
+                          onChange={(e) => {
+                            const next = e.target.value.trim();
+                            const patch: Partial<ApplyCommunityAction> = { customHex: next };
+                            if (next.length > 0) patch.color = "custom";
+                            patchCommunityAction(i, patch);
+                          }}
+                          placeholder="#5865F2"
+                          spellCheck={false}
+                          className={`mt-1 w-full rounded-lg border bg-black/40 px-2.5 py-1.5 font-mono text-sm ${
+                            action.color === "custom"
+                              ? isValidHex(action.customHex)
+                                ? "border-white/15 text-white"
+                                : "border-rose-400/50 text-white"
+                              : "border-white/10 text-white/40"
+                          }`}
+                        />
+                      </label>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

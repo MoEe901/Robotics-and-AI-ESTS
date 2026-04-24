@@ -32,7 +32,6 @@ export function NavbarConfigClient() {
 
   const [logoText, setLogoText] = useState(DEFAULT_NAVBAR_CONFIG.logoText);
   const [logoUrl, setLogoUrl] = useState(DEFAULT_NAVBAR_CONFIG.logoUrl);
-  const [showThemeToggle, setShowThemeToggle] = useState(DEFAULT_NAVBAR_CONFIG.showThemeToggle);
   const [navItems, setNavItems] = useState<NavItem[]>([...DEFAULT_NAVBAR_CONFIG.links]);
   const [ctaText, setCtaText] = useState(DEFAULT_NAVBAR_CONFIG.ctaButton.label);
   const [ctaHref, setCtaHref] = useState(DEFAULT_NAVBAR_CONFIG.ctaButton.href);
@@ -71,7 +70,6 @@ export function NavbarConfigClient() {
           const ctaObj = r.ctaButton && typeof r.ctaButton === "object" ? (r.ctaButton as Record<string, unknown>) : {};
           setLogoUrl(str("logoUrl", DEFAULT_NAVBAR_CONFIG.logoUrl));
           setLogoText(str("logoText", DEFAULT_NAVBAR_CONFIG.logoText));
-          setShowThemeToggle(r.showThemeToggle !== false);
           setNavItems(items.length ? items : [...DEFAULT_NAVBAR_CONFIG.links]);
           setCtaText(
             str("ctaText", typeof ctaObj.label === "string" ? ctaObj.label : DEFAULT_NAVBAR_CONFIG.ctaButton.label),
@@ -135,7 +133,7 @@ export function NavbarConfigClient() {
           href: ctaHref.trim() || DEFAULT_NAVBAR_CONFIG.ctaButton.href,
           isVisible: ctaVisible,
         },
-        showThemeToggle,
+        showThemeToggle: false,
       }, { merge: true });
       setSuccess("Navigation config saved. Changes are live immediately.");
     } catch (e) {
@@ -177,14 +175,6 @@ export function NavbarConfigClient() {
                 placeholder="Robotics & AI Club"
                 className="mt-1 w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-sm text-white outline-none focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20"
               />
-            </label>
-            <label className="inline-flex items-center gap-2 text-xs text-white/80">
-              <input
-                type="checkbox"
-                checked={showThemeToggle}
-                onChange={(e) => setShowThemeToggle(e.target.checked)}
-              />
-              Show theme toggle in navbar
             </label>
           </div>
 
@@ -351,7 +341,6 @@ export function NavbarConfigClient() {
           onClick={() => {
             setLogoText(DEFAULT_NAVBAR_CONFIG.logoText);
             setLogoUrl(DEFAULT_NAVBAR_CONFIG.logoUrl);
-            setShowThemeToggle(DEFAULT_NAVBAR_CONFIG.showThemeToggle);
             setNavItems([...DEFAULT_NAVBAR_CONFIG.links]);
             setCtaText(DEFAULT_NAVBAR_CONFIG.ctaButton.label);
             setCtaHref(DEFAULT_NAVBAR_CONFIG.ctaButton.href);

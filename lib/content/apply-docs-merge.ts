@@ -1,5 +1,5 @@
 import type { ApplySectionConfig } from "@/lib/firebase/types";
-import { DEFAULT_APPLY_CONFIG } from "@/lib/content/apply-defaults";
+import { DEFAULT_APPLY_CONFIG, parseCommunityConfig } from "@/lib/content/apply-defaults";
 
 /**
  * Merges documents from the `apply` collection (ids: hero, leftPanel, contactRows, socialLinks, form, submitBlock)
@@ -95,6 +95,11 @@ export function mergeApplyCollectionDocs(docsById: Record<string, Record<string,
         })
         .filter(Boolean);
     }
+  }
+
+  const community = docsById.community;
+  if (community) {
+    d.community = parseCommunityConfig(community);
   }
 
   const sub = docsById.submitBlock;

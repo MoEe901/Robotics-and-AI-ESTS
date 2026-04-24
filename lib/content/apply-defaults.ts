@@ -1,4 +1,8 @@
 import type {
+  ApplyCommunityAction,
+  ApplyCommunityColor,
+  ApplyCommunityConfig,
+  ApplyCommunityPlatform,
   ApplyContactRow,
   ApplySectionConfig,
   ApplySocialLink,
@@ -8,6 +12,126 @@ import type {
 const ICON_KEYS = new Set(["map", "phone", "mail", "clock"]);
 const TONES = new Set(["blue", "violet", "pink", "green"]);
 const PLATFORMS = new Set(["instagram", "linkedin", "twitter", "youtube"]);
+
+export const COMMUNITY_PLATFORMS: readonly ApplyCommunityPlatform[] = [
+  "discord",
+  "whatsapp",
+  "telegram",
+  "slack",
+  "signal",
+  "messenger",
+  "instagram",
+  "linkedin",
+  "twitter",
+  "email",
+  "generic",
+] as const;
+
+export const COMMUNITY_COLORS: readonly ApplyCommunityColor[] = [
+  "indigo",
+  "emerald",
+  "sky",
+  "violet",
+  "cyan",
+  "rose",
+  "amber",
+  "white",
+  "blue",
+  "teal",
+  "green",
+  "lime",
+  "orange",
+  "red",
+  "pink",
+  "fuchsia",
+  "purple",
+  "slate",
+  "black",
+  "custom",
+] as const;
+
+const COMMUNITY_PLATFORM_SET = new Set<string>(COMMUNITY_PLATFORMS);
+const COMMUNITY_COLOR_SET = new Set<string>(COMMUNITY_COLORS);
+
+export const DEFAULT_COMMUNITY_CONFIG: ApplyCommunityConfig = {
+  isVisible: true,
+  eyebrow: "",
+  titleLine: "Ready to join this",
+  titleAccent: "Community?",
+  description:
+    "Join our vibrant communities! Connect, share, and grow with like-minded enthusiasts across every channel.",
+  actions: [
+    {
+      id: "discord",
+      platform: "discord",
+      label: "Join Discord",
+      url: "",
+      color: "indigo",
+      isVisible: true,
+      order: 0,
+    },
+    {
+      id: "whatsapp",
+      platform: "whatsapp",
+      label: "Join WhatsApp",
+      url: "",
+      color: "emerald",
+      isVisible: true,
+      order: 1,
+    },
+  ],
+};
+
+export function parseCommunityConfig(raw: unknown): ApplyCommunityConfig {
+  const base = structuredClone(DEFAULT_COMMUNITY_CONFIG);
+  if (!raw || typeof raw !== "object") return base;
+  const o = raw as Record<string, unknown>;
+
+  if (typeof o.isVisible === "boolean") base.isVisible = o.isVisible;
+  const s = (k: string) => (typeof o[k] === "string" ? (o[k] as string) : "");
+  if (typeof o.eyebrow === "string") base.eyebrow = s("eyebrow");
+  if (typeof o.titleLine === "string" && s("titleLine").trim()) base.titleLine = s("titleLine");
+  if (typeof o.titleAccent === "string" && s("titleAccent").trim()) base.titleAccent = s("titleAccent");
+  if (typeof o.description === "string" && s("description").trim()) base.description = s("description");
+
+  const actionsRaw = Array.isArray(o.actions) ? o.actions : [];
+  const parsed: ApplyCommunityAction[] = [];
+  actionsRaw.forEach((row, idx) => {
+    if (!row || typeof row !== "object") return;
+    const r = row as Record<string, unknown>;
+    const platformRaw = typeof r.platform === "string" ? r.platform.trim().toLowerCase() : "";
+    const colorRaw = typeof r.color === "string" ? r.color.trim().toLowerCase() : "";
+    const label = typeof r.label === "string" ? r.label.trim() : "";
+    const url = typeof r.url === "string" ? r.url.trim() : "";
+    const id =
+      typeof r.id === "string" && r.id.trim().length > 0
+        ? r.id.trim()
+        : `${platformRaw || "action"}-${idx}`;
+    if (!label) return;
+    const platform: ApplyCommunityPlatform = COMMUNITY_PLATFORM_SET.has(platformRaw)
+      ? (platformRaw as ApplyCommunityPlatform)
+      : "generic";
+    const color: ApplyCommunityColor = COMMUNITY_COLOR_SET.has(colorRaw)
+      ? (colorRaw as ApplyCommunityColor)
+      : "violet";
+    const rawHex = typeof r.customHex === "string" ? r.customHex.trim() : "";
+    const customHex = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(rawHex) ? rawHex : "";
+    parsed.push({
+      id,
+      platform,
+      label,
+      url,
+      color,
+      customHex: customHex || undefined,
+      isVisible: r.isVisible !== false,
+      order: typeof r.order === "number" ? r.order : idx,
+    });
+  });
+  if (parsed.length > 0) {
+    base.actions = parsed.sort((a, b) => a.order - b.order).slice(0, 8);
+  }
+  return base;
+}
 
 export const DEFAULT_APPLY_CONFIG: ApplySectionConfig = {
   topLabel: "Join the Mission",
@@ -81,6 +205,7 @@ export const DEFAULT_APPLY_CONFIG: ApplySectionConfig = {
   successTitle: "You're In!",
   successMessage:
     "Welcome to the Robotics & AI Club family. We'll be in touch soon with everything you need to get started.",
+  community: DEFAULT_COMMUNITY_CONFIG,
 };
 
 export function mergeApplyFromFirestore(raw: Record<string, unknown>): ApplySectionConfig {
@@ -163,6 +288,10 @@ export function mergeApplyFromFirestore(raw: Record<string, unknown>): ApplySect
     .filter(Boolean)
     .slice(0, 30);
   if (depts.length) d.departmentOptions = depts;
+
+  if (raw.community !== undefined) {
+    d.community = parseCommunityConfig(raw.community);
+  }
 
   return d;
 }
