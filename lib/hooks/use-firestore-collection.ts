@@ -71,16 +71,7 @@ export function useFirestoreCollection<T>(
         }
       },
       (err: FirestoreError) => {
-        if (process.env.NODE_ENV === "development") {
-          const path = String((queryRef as unknown as { _query?: { path?: unknown } })?._query?.path ?? "unknown");
-          console.error("[firestore]", {
-            path,
-            code: err.code,
-            message: err.message,
-          });
-        }
         logFirestoreListenerError(`useFirestoreCollection label=${listenerLabel}`, err);
-        console.error("[useFirestoreCollection] snapshot error", listenerLabel, err);
         setError(err);
         setLoading(false);
       },

@@ -1,13 +1,18 @@
 "use client";
 
 import { BarChart3, Calendar, ClipboardList, Code2, Zap } from "lucide-react";
+import { collection, limit, orderBy, query, where, Timestamp } from "firebase/firestore";
 import Link from "next/link";
 import { motion, useMotionValue, useScroll, useSpring, useTransform } from "framer-motion";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 
 import { HeroParticleCanvas } from "@/components/hero/hero-particle-canvas";
+import { HeroStatsStrip } from "@/components/hero/hero-stats-strip";
 import { DEFAULT_HERO_PUBLIC } from "@/lib/content/site-content-parser";
+import { db } from "@/lib/firebase";
+import { useFirestoreCollection } from "@/lib/hooks/use-firestore-collection";
 import { siteConfig } from "@/lib/site-config";
+import { relativeTime } from "@/lib/time";
 import { cn } from "@/lib/utils";
 import { useHomeContentStore } from "@/store/homeContentStore";
 
@@ -16,6 +21,10 @@ const NOISE_BG =
 
 export function HeroSection() {
   const publicHero = useHomeContentStore((s) => s.publicHero);
+  const cellulesConfig = useHomeContentStore((s) => s.cellulesConfig);
+  const partnersConfig = useHomeContentStore((s) => s.partnersConfig);
+  const events = useHomeContentStore((s) => s.events);
+  const faqConfig = useHomeContentStore((s) => s.faqConfig);
   const hero = publicHero ?? DEFAULT_HERO_PUBLIC;
   const sectionRef = useRef<HTMLElement>(null);
   const [heroVideoFailed, setHeroVideoFailed] = useState(false);
@@ -69,6 +78,95 @@ export function HeroSection() {
     rawX.set(0.5);
     rawY.set(0.5);
   }, [rawX, rawY]);
+
+  const activityQuery = useMemo(
+    () => query(collection(db(), "activity"), where("isVisible", "==", true), orderBy("createdAt", "desc"), limit(3)),
+    [],
+  );
+  const { data: activityRows, loading: activityLoading, error: activityError } = useFirestoreCollection(
+    activityQuery,
+    (raw, id) => {
+      const title = typeof raw.title === "string" ? raw.title.trim() : "";
+      if (!title) return null;
+      const created = raw.createdAt;
+      const createdAt =
+        created && typeof created === "object" && "toDate" in created && typeof (created as Timestamp).toDate === "function"
+          ? (created as Timestamp).toDate()
+          : null;
+      return { id, title, timeAgo: relativeTime(createdAt) };
+    },
+    "hero activity",
+  );
+
+  const membersQuery = useMemo(
+    () => query(collection(db(), "teamMembers"), where("isVisible", "==", true), where("isActive", "==", true), limit(500)),
+    [],
+  );
+  const { data: teamRows, loading: membersLoading, error: membersError } = useFirestoreCollection(
+    membersQuery,
+    (raw, id) => {
+      const academicYear = typeof raw.academicYear === "string" ? raw.academicYear.trim() : "";
+      const created = (raw.joinedAt ?? raw.createdAt) as unknown;
+      const createdAt =
+        created && typeof created === "object" && "toDate" in created && typeof (created as Timestamp).toDate === "function"
+          ? (created as Timestamp).toDate()
+          : null;
+      return { id, academicYear, createdAt };
+    },
+    "hero teamMembers",
+  );
+
+  const displayedTech = hero.techStack.filter((item) => item.isVisible).sort((a, b) => a.order - b.order);
+  const latestAcademicYear =
+    teamRows
+      .map((r) => r.academicYear)
+      .filter(Boolean)
+      .sort((a, b) => b.localeCompare(a))[0] ?? "";
+  const currentAcademicYear = latestAcademicYear;
+  const membersCount = teamRows.filter((row) => row.academicYear === currentAcademicYear).length;
+  const cellulesCount = cellulesConfig?.cards?.length ?? 0;
+  const partnersCount = partnersConfig?.logos?.filter((l) => l.visible !== false).length ?? 0;
+  const eventsAllCount = events.length;
+  const todayStartIso = useMemo(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d.toISOString();
+  }, []);
+  const eventsUpcomingCount = events.filter((ev) => typeof ev.date === "string" && ev.date && ev.date >= todayStartIso).length;
+  const eventsPastCount = events.filter((ev) => typeof ev.date === "string" && ev.date && ev.date < todayStartIso).length;
+  const faqQuestionsCount = faqConfig?.items?.length ?? 0;
+  const membersReady = !membersLoading && !membersError;
+  const heroStatsCounts = {
+    membersLive: membersReady ? membersCount : undefined,
+    cellulesLive: cellulesConfig ? cellulesCount : undefined,
+    eventsLive: eventsAllCount,
+    eventsUpcoming: eventsUpcomingCount,
+    eventsPast: eventsPastCount,
+    partnersLive: partnersConfig ? partnersCount : undefined,
+    faqLive: faqConfig ? faqQuestionsCount : undefined,
+    // team-alumni intentionally left undefined: it would require a dedicated
+    // listener (teamMembers where status=="alumni"), which we don't spin up
+    // on the homepage. Tile falls back to its manualValue.
+  } as const;
+
+  const growthMonths = hero.growth.months;
+  const growthMap = new Map<string, number>();
+  const now = new Date();
+  for (let i = growthMonths - 1; i >= 0; i -= 1) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    growthMap.set(`${d.getFullYear()}-${d.getMonth() + 1}`, 0);
+  }
+  for (const member of teamRows) {
+    if (!member.createdAt) continue;
+    const key = `${member.createdAt.getFullYear()}-${member.createdAt.getMonth() + 1}`;
+    if (growthMap.has(key)) growthMap.set(key, (growthMap.get(key) ?? 0) + 1);
+  }
+  const growthSeries = Array.from(growthMap.entries()).map(([key, count]) => {
+    const [y, m] = key.split("-").map((v) => Number(v));
+    return { label: new Date(y, m - 1, 1).toLocaleDateString(undefined, { month: "short", year: "numeric" }), count };
+  });
+  const growthActiveMonths = growthSeries.filter((x) => x.count > 0).length;
+  const growthMax = Math.max(1, ...growthSeries.map((x) => x.count));
 
   return (
     <section
@@ -293,6 +391,7 @@ export function HeroSection() {
           className="pointer-events-none relative z-[31] hidden min-w-0 w-full lg:flex lg:flex-col lg:w-auto lg:justify-center lg:self-center"
         >
         <div className="mx-auto flex w-full max-w-[300px] flex-col gap-4 lg:mx-0">
+          {!activityError && (activityLoading || activityRows.length > 0) ? (
           <div
             className="w-full max-w-[300px] rounded-2xl border border-violet-500/20 bg-[rgba(13,15,26,0.85)] p-5 backdrop-blur-[20px] transition hover:-translate-x-1 hover:border-violet-500/40"
             style={{ animation: "heroFadeLeft 1s ease both 0.65s" }}
@@ -314,7 +413,7 @@ export function HeroSection() {
                 />
               </div>
               <div className="flex flex-col">
-                {hero.liveActivity.map((row) => (
+                {(activityLoading ? hero.liveActivity : activityRows).map((row) => (
                   <div
                     key={row.id}
                     className="flex items-center justify-between gap-2 border-b border-white/[0.04] py-2.5 last:border-b-0"
@@ -326,6 +425,7 @@ export function HeroSection() {
               </div>
             </div>
           </div>
+          ) : null}
 
           <div
             className="w-full max-w-[300px] rounded-2xl border border-violet-500/20 bg-[rgba(13,15,26,0.85)] p-5 backdrop-blur-[20px] transition hover:-translate-x-1 hover:border-violet-500/40"
@@ -344,23 +444,22 @@ export function HeroSection() {
                 </div>
               </div>
               <div className="flex flex-wrap gap-1.5">
-                {hero.techStack.map((label, i) => {
-                  const palettes = [
-                    "border-cyan-400/25 bg-cyan-400/[0.08] text-cyan-400",
-                    "border-violet-500/25 bg-violet-500/[0.08] text-violet-300",
-                    "border-emerald-500/25 bg-emerald-500/[0.08] text-emerald-400",
-                    "border-fuchsia-400/25 bg-fuchsia-400/[0.08] text-fuchsia-300",
-                  ];
-                  const cls = palettes[i % palettes.length]!;
+                {displayedTech.map((item) => {
+                  const cls =
+                    item.accent === "cyan"
+                      ? "border-cyan-400/25 bg-cyan-400/[0.08] text-cyan-400"
+                      : item.accent === "violet"
+                        ? "border-violet-500/25 bg-violet-500/[0.08] text-violet-300"
+                        : "border-fuchsia-400/25 bg-fuchsia-400/[0.08] text-fuchsia-300";
                   return (
                     <span
-                      key={`${label}-${i}`}
+                      key={item.id}
                       className={cn(
                         "font-jetbrains inline-flex rounded-full border px-2.5 py-1 text-[10px] font-medium",
                         cls,
                       )}
                     >
-                      {label}
+                      {item.label}
                     </span>
                   );
                 })}
@@ -381,16 +480,20 @@ export function HeroSection() {
                   <p className="font-jetbrains text-[9px] font-medium uppercase tracking-[0.2em] text-slate-500">
                     Growth
                   </p>
-                  <p className="text-sm font-semibold text-white">Club stats</p>
+                  <p className="text-sm font-semibold text-white">{hero.growth.title}</p>
                 </div>
               </div>
-              <div className="flex h-10 items-end gap-[3px]">
-                {hero.growthStats.map((stat, i) => {
-                  const h = Math.min(100, 28 + (i + 1) * 11);
-                  const isLast = i === hero.growthStats.length - 1;
+              {growthActiveMonths < 2 ? (
+                <p className="text-xs text-slate-400">Not enough data yet</p>
+              ) : (
+                <div className="flex h-10 items-end gap-[3px]">
+                {growthSeries.map((stat, i) => {
+                  const h = Math.max(8, Math.round((stat.count / growthMax) * 100));
+                  const isLast = i === growthSeries.length - 1;
                   return (
                     <div
                       key={stat.label}
+                      title={`${stat.label} - ${stat.count} new members`}
                       className={cn(
                         "min-w-0 flex-1 rounded-t-[3px] bg-violet-500/25 transition-all",
                         isLast && "bg-gradient-to-t from-violet-600 to-cyan-500",
@@ -405,6 +508,7 @@ export function HeroSection() {
                   );
                 })}
               </div>
+              )}
             </div>
           </div>
         </div>
@@ -416,42 +520,16 @@ export function HeroSection() {
           className="relative z-[30] mt-10 w-full max-w-none sm:mt-14"
         >
           <div
-            className="relative left-1/2 grid grid-cols-2 gap-4 sm:flex sm:flex-row w-screen max-w-none -translate-x-1/2 sm:overflow-hidden border-y border-violet-500/10 bg-violet-500/[0.02]"
+            className="relative left-1/2 w-screen max-w-none -translate-x-1/2 sm:overflow-hidden"
             style={{ animation: "heroFadeUp 0.8s ease both 0.54s" }}
           >
-            {hero.growthStats.map((stat, i) => (
-              <div
-                key={stat.label}
-                className={cn(
-                  "group relative flex w-full sm:w-auto min-w-[50%] flex-1 flex-col items-center gap-1 border-r border-violet-500/[0.08] px-3 py-7 text-center transition-colors last:border-r-0 hover:bg-violet-500/[0.04] sm:min-w-0 sm:px-4 sm:py-10 max-[639px]:border-b max-[639px]:border-violet-500/[0.08] max-[639px]:py-7",
-                  i === 1 ? "max-[639px]:border-r max-[639px]:border-violet-500/[0.08]" : "",
-                  i === 2 ? "max-[639px]:border-b-0" : "",
-                  i === 3 ? "max-[639px]:border-r-0" : "",
-                )}
-              >
-                <span
-                  className="pointer-events-none absolute inset-x-0 top-0 h-0.5 origin-left scale-x-0 bg-gradient-to-r from-violet-600 to-cyan-400 transition-transform duration-500 ease-out group-hover:scale-x-100"
-                  aria-hidden
-                />
-                <span
-                  className={cn(
-                    "font-syne text-[clamp(1.65rem,8vw,2.8rem)] font-extrabold leading-none",
-                    i % 4 === 0
-                      ? "text-violet-500"
-                      : i % 4 === 1
-                        ? "text-cyan-400"
-                        : i % 4 === 2
-                          ? "text-emerald-400"
-                          : "text-fuchsia-400",
-                  )}
-                >
-                  {stat.value}
-                </span>
-                <span className="font-jetbrains text-[10px] font-medium uppercase tracking-[0.16em] text-slate-500 sm:text-[11px] sm:tracking-[0.25em]">
-                  {stat.label}
-                </span>
-              </div>
-            ))}
+            <HeroStatsStrip
+              config={hero.statsStrip}
+              tiles={hero.stats.tiles}
+              counts={heroStatsCounts}
+              foundedYear={hero.foundedYear}
+              roundDerivedTo={hero.stats.roundDerivedTo}
+            />
           </div>
         </motion.div>
 

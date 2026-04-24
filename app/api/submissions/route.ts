@@ -86,28 +86,45 @@ export async function POST(request: Request) {
   const uaKey = `${ua}#${ipHash(ip)}`;
 
   const oneHourAgo = Date.now() - 60 * 60 * 1000;
-  const recent = await getDocs(query(collection(db(), "submissions"), where("userAgent", "==", uaKey), limit(25)));
   let recentCount = 0;
-  for (const d of recent.docs) {
-    const t = d.data().submittedAt;
-    if (typeof t?.toMillis === "function" && t.toMillis() >= oneHourAgo) recentCount += 1;
+  try {
+    const recent = await getDocs(
+      query(collection(db(), "submissions"), where("userAgent", "==", uaKey), limit(25)),
+    );
+    for (const d of recent.docs) {
+      const t = d.data().submittedAt;
+      if (typeof t?.toMillis === "function" && t.toMillis() >= oneHourAgo) recentCount += 1;
+    }
+  } catch (e) {
+    // Rules may intentionally block anonymous reads on submissions.
+    // Keep create path functional; stronger rate limiting should move to Redis/service layer.
+    if (process.env.NODE_ENV === "development") {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.warn("[submissions] rate-limit read skipped:", msg);
+    }
   }
   // Production-grade rate limiting needs Redis; this MVP is Firestore-based only.
   if (recentCount >= 5) {
     return NextResponse.json({ ok: false, error: "Too many submissions.", status: 429 }, { status: 429 });
   }
 
-  const ref = await addDoc(collection(db(), "submissions"), {
-    formId: parsed.data.formId,
-    fields: parsed.data.fields,
-    submittedAt: serverTimestamp(),
-    userAgent: uaKey,
-    status: "new",
-    readAt: null,
-    notes: "",
-    notificationSent: false,
-    notificationError: "",
-  });
+  let ref;
+  try {
+    ref = await addDoc(collection(db(), "submissions"), {
+      formId: parsed.data.formId,
+      fields: parsed.data.fields,
+      submittedAt: serverTimestamp(),
+      userAgent: uaKey,
+      status: "new",
+      readAt: null,
+      notes: "",
+      notificationSent: false,
+      notificationError: "",
+    });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return NextResponse.json({ ok: false, error: msg, status: 403 }, { status: 403 });
+  }
 
   void sendNotification(ref.id, parsed.data.formId, parsed.data.fields)
     .then(async () => {

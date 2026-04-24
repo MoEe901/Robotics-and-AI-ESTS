@@ -49,6 +49,44 @@ Document **`siteConfig/sections`** controls homepage section order and visibilit
 
 The `siteContent/hero` document is extended with **`backgroundMedia`** (type, videoUrl, videoPosterUrl, imageUrl, loop, muted, autoplay), **`mask`** (enabled, opacity 0–1, color hex, gradient), and **`datashow`** (enabled, imageUrl, caption, position). When `backgroundMedia.type == "none"` (the default), the hero falls back to the legacy `videoUrl` field and hardcoded overlay, preserving backward compatibility.
 
+Hero now also stores:
+- `stats.tiles[]`: ordered tile objects. Each tile:
+  - `id: string`, `label: string`, `labelSingular: string | null` (used when count === 1)
+  - `source`: `"manual" | "members-live" | "cellules-live" | "events-live" | "events-upcoming" | "events-past" | "partners-live" | "faq-live" | "team-alumni" | "years-active" | "projects" | "awards"`
+  - `manualValue: string` — free text for manual sources or fallback while derived data loads
+  - `prefix: string`, `suffix: string` — rendered adjacent to the number, no spaces
+  - `color: "violet" | "cyan" | "emerald" | "fuchsia" | "amber" | "white"` — restricted palette
+  - `size: "sm" | "md" | "lg"`, `emphasis: "number" | "label" | "balanced"`
+  - `format: "plain" | "compact" | "padded"` — compact formats large numbers as K/M/B; padded zero-pads to 3 digits
+  - `animate: "none" | "count-up" | "pulse"` — count-up runs once via IntersectionObserver; respects `prefers-reduced-motion`
+  - `href: string | null` — if non-empty, wraps the tile in a link
+  - `order: number`, `isVisible: boolean`
+- `stats.roundDerivedTo: number` — round derived counts down to nearest 1/5/10/25/50/100.
+- `statsStrip`: strip-wide controls.
+  - `isVisible: boolean` — master switch for the whole strip.
+  - `layout: "row" | "grid-2" | "grid-4"` — row wraps on mobile; grid-4 scrolls horizontally on narrow screens.
+  - `separator: "line" | "dot" | "none"` — only visually effective in row layout (grids rely on gap).
+  - `alignment: "left" | "center" | "right"`
+  - `background: "transparent" | "panel" | "glow"`
+  - `animateOnScroll: boolean` — master switch for count-up animations across the strip. Ignored when `prefers-reduced-motion` is set.
+- `foundedYear: number | null` — club founded year, used by the `years-active` source. Colocated on `siteContent/hero` so it reuses the existing hero listener (no new `onSnapshot`).
+- Source aliases: legacy values `members`, `cellules`, `events`, `events-all`, `partners`, `faq-questions` are read-migrated to the new `-live` names by the parser; saves always write the new names.
+- `techStack.items`: ordered pill objects `{ id, label, accent, order, isVisible }`.
+- `growth`: `{ title, metric, months }` (`metric` currently supports `newMembers`).
+
+The `team-alumni` source requires team members with `status=="alumni"`. Today's `teamMembers` listener on the homepage filters `isActive==true AND isVisible==true` (to satisfy the current security rule), so alumni (typically `isActive==false`) are not loaded. Tiles bound to `team-alumni` fall back to `manualValue` until either the rule is relaxed or a dedicated alumni listener is added.
+
+## `activity` collection
+
+- Path: `activity/{autoId}`
+- Fields:
+  - `title: string`
+  - `createdAt: Timestamp`
+  - `isVisible: boolean`
+  - `order?: number` (reserved; current public query uses `createdAt desc`)
+- Public read query must include `where("isVisible","==",true)`.
+- Writes are admin-only.
+
 ## `submissions` (collection)
 
 One document per public form submission (auto-ID). Fields: `formId`, `fields` (map of label→value), `submittedAt` (serverTimestamp), `userAgent` (UA+IP hash), `status` ("new"|"read"|"archived"), `readAt`, `notes`, `notificationSent`, `notificationError`. Created via **POST `/api/submissions`** (client-side Firebase SDK, no Admin SDK needed). Rules: anonymous create allowed if status=="new", fields non-empty (<50 keys), and no extra fields (hasOnly). Read/update/delete: admins only.
@@ -66,6 +104,20 @@ Navbar rendering is fully Firestore-driven. Fields: `logoUrl`, `logoText`, `link
 ## `siteConfig/sections` (document)
 
 Homepage ordering/visibility control. Fields: `order` (array of section IDs) and `visibility` (sectionId -> boolean). Known IDs: `hero`, `events`, `knowUs`, `whyJoin`, `cellules`, `processSteps`, `faq`, `apply`, `footer`. Unknown IDs are ignored so future sections can be added without runtime crashes.
+
+## `siteConfig/adminShell` (document)
+
+Controls the admin sidebar — which links appear, in what order, and whether the footer "View site" link and light/dark theme toggle are shown. Admin-only surface; still stored under `siteConfig` (publicly readable) since it contains no sensitive data.
+
+Fields:
+- `order`: string array of admin hrefs in display order (e.g. `"/admin/events"`). Unknown hrefs are ignored; missing known hrefs are appended in their default position (forward-compatible).
+- `visibility`: map of href -> boolean. `false` hides the entry in the sidebar.
+- `showViewSite`: boolean. Hides the "View site" link in the sidebar footer when `false`.
+- `showThemeToggle`: boolean. Hides the light/dark theme toggle button when `false`.
+
+**Locked items** (never hidden, regardless of config): `/admin/dashboard` and `/admin/layout`. This prevents admins from locking themselves out of the settings surface. Locked items can still be reordered.
+
+Edited from the "Admin sidebar" block on `/admin/layout`. Applied in real time via a single `onSnapshot` listener on `siteConfig/adminShell` inside `AdminShell`.
 
 ## Rule–query coupling
 

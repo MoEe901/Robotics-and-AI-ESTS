@@ -59,6 +59,11 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
+    match /activity/{docId} {
+      allow read: if isAdmin() || resource.data.isVisible == true;
+      allow create, update, delete: if isAdmin();
+    }
+
     match /rsvps/{docId} {
       allow read: if isAdmin();
       allow create: if true;

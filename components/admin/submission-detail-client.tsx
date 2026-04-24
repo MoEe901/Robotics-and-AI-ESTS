@@ -89,7 +89,9 @@ export function SubmissionDetailClient({ id }: { id: string }) {
   return (
     <div className="admin-page">
       <h1 className="admin-page-title">Submission</h1>
-      <p className="admin-page-subtitle">{row.formId} • {row.submittedAt ? new Date(row.submittedAt).toLocaleString() : ""}</p>
+      <p className="admin-page-subtitle">
+        {row.formId} - {row.submittedAt ? new Date(row.submittedAt).toLocaleString() : ""}
+      </p>
       <div className="mt-4 flex flex-wrap gap-2">
         <button type="button" onClick={() => void setStatus("read")} className="rounded border border-white/20 px-3 py-1 text-sm">Mark read</button>
         <button type="button" onClick={() => void setStatus("archived")} className="rounded border border-white/20 px-3 py-1 text-sm">Archive</button>

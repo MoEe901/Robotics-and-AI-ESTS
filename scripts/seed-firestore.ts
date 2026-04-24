@@ -144,8 +144,12 @@ async function main() {
     mask: DEFAULT_HERO_PUBLIC.mask,
     datashow: DEFAULT_HERO_PUBLIC.datashow,
     liveActivity: DEFAULT_HERO_PUBLIC.liveActivity,
-    techStack: DEFAULT_HERO_PUBLIC.techStack,
+    techStack: { items: DEFAULT_HERO_PUBLIC.techStack },
     growthStats: DEFAULT_HERO_PUBLIC.growthStats,
+    stats: DEFAULT_HERO_PUBLIC.stats,
+    statsStrip: DEFAULT_HERO_PUBLIC.statsStrip,
+    foundedYear: DEFAULT_HERO_PUBLIC.foundedYear,
+    growth: DEFAULT_HERO_PUBLIC.growth,
   };
   results.push(`siteContent/hero: ${await writeIfMissing("siteContent/hero", heroPayload)}`);
 
@@ -274,6 +278,41 @@ async function main() {
         hero: true, events: true, knowUs: true, whyJoin: true,
         cellules: true, processSteps: true, faq: true, apply: true, footer: true,
       },
+    })}`,
+  );
+
+  results.push(
+    `siteConfig/adminShell: ${await writeIfMissing("siteConfig/adminShell", {
+      order: [
+        "/admin/dashboard",
+        "/admin/hero",
+        "/admin/team",
+        "/admin/team/taxonomy",
+        "/admin/events",
+        "/admin/basic",
+        "/admin/navbar",
+        "/admin/faq",
+        "/admin/apply",
+        "/admin/submissions",
+        "/admin/activity",
+        "/admin/layout",
+      ],
+      visibility: {
+        "/admin/dashboard": true,
+        "/admin/hero": true,
+        "/admin/team": true,
+        "/admin/team/taxonomy": true,
+        "/admin/events": true,
+        "/admin/basic": true,
+        "/admin/navbar": true,
+        "/admin/faq": true,
+        "/admin/apply": true,
+        "/admin/submissions": true,
+        "/admin/activity": true,
+        "/admin/layout": true,
+      },
+      showViewSite: true,
+      showThemeToggle: true,
     })}`,
   );
 

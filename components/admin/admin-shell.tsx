@@ -1,7 +1,7 @@
 "use client";
 
 import { signOut } from "firebase/auth";
-import { collection, onSnapshot, query, where } from "firebase/firestore";
+import { collection, doc, onSnapshot, query, where } from "firebase/firestore";
 import {
   Calendar,
   ExternalLink,
@@ -9,20 +9,23 @@ import {
   HelpCircle,
   Info,
   Inbox,
+  Activity,
   LayoutDashboard,
   LayoutTemplate,
   LogOut,
   Menu,
   Moon,
   SlidersHorizontal,
+  Sparkles,
   Sun,
   Users,
   X,
+  type LucideIcon,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 
 import { auth, db } from "@/lib/firebase";
 
@@ -53,8 +56,11 @@ function subscribeAdminTheme(onStoreChange: () => void): () => void {
   };
 }
 
-const NAV_ITEMS = [
+export type AdminNavItem = { href: string; label: string; icon: LucideIcon };
+
+export const ADMIN_NAV_ITEMS: readonly AdminNavItem[] = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/admin/hero", label: "Hero & stats", icon: Sparkles },
   { href: "/admin/team", label: "Team members", icon: Users },
   { href: "/admin/team/taxonomy", label: "Roles & cells", icon: SlidersHorizontal },
   { href: "/admin/events", label: "Events", icon: Calendar },
@@ -63,8 +69,49 @@ const NAV_ITEMS = [
   { href: "/admin/faq", label: "FAQ", icon: HelpCircle },
   { href: "/admin/apply", label: "Apply", icon: FileEdit },
   { href: "/admin/submissions", label: "Submissions", icon: Inbox },
+  { href: "/admin/activity", label: "Activity", icon: Activity },
   { href: "/admin/layout", label: "Layout", icon: LayoutTemplate },
 ] as const;
+
+// Items that can never be hidden (otherwise an admin can lock themselves
+// out of the settings surface). Reorderable, but always visible.
+export const ADMIN_NAV_LOCKED: ReadonlySet<string> = new Set([
+  "/admin/dashboard",
+  "/admin/layout",
+]);
+
+export type AdminShellConfig = {
+  order: string[];
+  visibility: Record<string, boolean>;
+  showViewSite: boolean;
+  showThemeToggle: boolean;
+};
+
+export const DEFAULT_ADMIN_SHELL_CONFIG: AdminShellConfig = {
+  order: ADMIN_NAV_ITEMS.map((i) => i.href),
+  visibility: Object.fromEntries(ADMIN_NAV_ITEMS.map((i) => [i.href, true])),
+  showViewSite: true,
+  showThemeToggle: true,
+};
+
+function parseAdminShellConfig(raw: unknown): AdminShellConfig {
+  const data = raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
+  const orderRaw = Array.isArray(data.order)
+    ? (data.order.filter((x) => typeof x === "string") as string[])
+    : [];
+  const visRaw =
+    data.visibility && typeof data.visibility === "object"
+      ? (data.visibility as Record<string, unknown>)
+      : {};
+  return {
+    order: orderRaw,
+    visibility: Object.fromEntries(
+      ADMIN_NAV_ITEMS.map((i) => [i.href, visRaw[i.href] !== false]),
+    ),
+    showViewSite: data.showViewSite !== false,
+    showThemeToggle: data.showThemeToggle !== false,
+  };
+}
 
 function isActivePath(pathname: string, href: string) {
   if (href === "/admin/dashboard") return pathname === href;
@@ -76,11 +123,44 @@ export function AdminShell({ children }: Props) {
   const hideNav = pathname === "/admin/login";
   const [mobileOpen, setMobileOpen] = useState(false);
   const [newSubmissionsCount, setNewSubmissionsCount] = useState(0);
+  const [shellConfig, setShellConfig] = useState<AdminShellConfig>(DEFAULT_ADMIN_SHELL_CONFIG);
 
   useEffect(() => {
     const q = query(collection(db(), "submissions"), where("status", "==", "new"));
     return onSnapshot(q, (snap) => setNewSubmissionsCount(snap.size), () => {});
   }, []);
+
+  useEffect(() => {
+    const ref = doc(db(), "siteConfig", "adminShell");
+    return onSnapshot(
+      ref,
+      (snap) => {
+        if (!snap.exists()) {
+          setShellConfig(DEFAULT_ADMIN_SHELL_CONFIG);
+          return;
+        }
+        setShellConfig(parseAdminShellConfig(snap.data()));
+      },
+      () => {},
+    );
+  }, []);
+
+  const displayedNavItems = useMemo<AdminNavItem[]>(() => {
+    const byHref = new Map(ADMIN_NAV_ITEMS.map((i) => [i.href, i]));
+    const ordered: string[] = [];
+    for (const h of shellConfig.order) {
+      if (byHref.has(h) && !ordered.includes(h)) ordered.push(h);
+    }
+    for (const item of ADMIN_NAV_ITEMS) {
+      if (!ordered.includes(item.href)) ordered.push(item.href);
+    }
+    return ordered
+      .map((h) => byHref.get(h))
+      .filter((i): i is AdminNavItem => Boolean(i))
+      .filter(
+        (i) => ADMIN_NAV_LOCKED.has(i.href) || shellConfig.visibility[i.href] !== false,
+      );
+  }, [shellConfig]);
 
   const theme = useSyncExternalStore<AdminThemeMode>(
     subscribeAdminTheme,
@@ -139,7 +219,7 @@ export function AdminShell({ children }: Props) {
         <span className="font-jetbrains px-3 pb-2 text-[10px] uppercase tracking-[0.2em] text-white/40">
           Manage
         </span>
-        {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
+        {displayedNavItems.map(({ href, label, icon: Icon }) => {
           const active = isActivePath(pathname, href);
           const badge = href === "/admin/submissions" && newSubmissionsCount > 0 ? newSubmissionsCount : 0;
           return (
@@ -167,23 +247,27 @@ export function AdminShell({ children }: Props) {
       </nav>
 
       <div className="flex flex-col gap-1 border-t border-[rgba(124,58,237,0.18)] px-3 py-4">
-        <Link
-          href="/"
-          onClick={() => setMobileOpen(false)}
-          className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-white/75 transition-colors hover:bg-[rgba(6,182,212,0.1)] hover:text-white"
-        >
-          <ExternalLink className="size-4" />
-          <span>View site</span>
-        </Link>
-        <button
-          type="button"
-          onClick={toggleTheme}
-          aria-label={theme === "dark" ? "Switch admin to light mode" : "Switch admin to dark mode"}
-          className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-white/75 transition-colors hover:bg-[rgba(124,58,237,0.08)] hover:text-white"
-        >
-          {theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
-          <span>{theme === "dark" ? "Light mode" : "Dark mode"}</span>
-        </button>
+        {shellConfig.showViewSite ? (
+          <Link
+            href="/"
+            onClick={() => setMobileOpen(false)}
+            className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-white/75 transition-colors hover:bg-[rgba(6,182,212,0.1)] hover:text-white"
+          >
+            <ExternalLink className="size-4" />
+            <span>View site</span>
+          </Link>
+        ) : null}
+        {shellConfig.showThemeToggle ? (
+          <button
+            type="button"
+            onClick={toggleTheme}
+            aria-label={theme === "dark" ? "Switch admin to light mode" : "Switch admin to dark mode"}
+            className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-white/75 transition-colors hover:bg-[rgba(124,58,237,0.08)] hover:text-white"
+          >
+            {theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
+            <span>{theme === "dark" ? "Light mode" : "Dark mode"}</span>
+          </button>
+        ) : null}
         <button
           type="button"
           onClick={handleSignOut}

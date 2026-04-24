@@ -80,15 +80,7 @@ export function useFirestoreDoc<T>(
         }
       },
       (err: FirestoreError) => {
-        if (process.env.NODE_ENV === "development") {
-          console.error("[firestore]", {
-            path: ref.path,
-            code: err.code,
-            message: err.message,
-          });
-        }
         logFirestoreListenerError(`useFirestoreDoc path=${path ?? "null"}`, err);
-        console.error("[useFirestoreDoc] snapshot error", path, err);
         setError(err);
         setLoading(false);
       },

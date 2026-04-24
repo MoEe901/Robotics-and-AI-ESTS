@@ -69,13 +69,75 @@ const heroSchema = z
     liveActivity: z
       .array(z.object({ id: z.string(), title: z.string(), timeAgo: z.string() }))
       .optional(),
-    techStack: z.array(z.string()).optional(),
+    techStack: z.unknown().optional(),
     growthStats: z.array(z.object({ label: z.string(), value: z.string() })).optional(),
     backgroundMedia: heroBackgroundMediaSchema,
     mask: heroMaskSchema,
     datashow: heroDatashowSchema,
   })
   .passthrough();
+
+export type HeroStatSource =
+  | "manual"
+  | "members-live"
+  | "cellules-live"
+  | "events-live"
+  | "events-upcoming"
+  | "events-past"
+  | "partners-live"
+  | "faq-live"
+  | "team-alumni"
+  | "years-active"
+  | "projects"
+  | "awards";
+
+export type HeroStatColor = "violet" | "cyan" | "emerald" | "fuchsia" | "amber" | "white";
+export type HeroStatSize = "sm" | "md" | "lg";
+export type HeroStatEmphasis = "number" | "label" | "balanced";
+export type HeroStatFormat = "plain" | "compact" | "padded";
+export type HeroStatAnimate = "none" | "count-up" | "pulse";
+export type HeroStatsStripLayout = "row" | "grid-2" | "grid-4";
+export type HeroStatsStripSeparator = "line" | "dot" | "none";
+export type HeroStatsStripAlignment = "left" | "center" | "right";
+export type HeroStatsStripBackground = "transparent" | "panel" | "glow";
+
+export const HERO_STAT_COLORS: HeroStatColor[] = ["violet", "cyan", "emerald", "fuchsia", "amber", "white"];
+export const HERO_STAT_SIZES: HeroStatSize[] = ["sm", "md", "lg"];
+export const HERO_STAT_EMPHASES: HeroStatEmphasis[] = ["number", "label", "balanced"];
+export const HERO_STAT_FORMATS: HeroStatFormat[] = ["plain", "compact", "padded"];
+export const HERO_STAT_ANIMATES: HeroStatAnimate[] = ["none", "count-up", "pulse"];
+
+export const HERO_STAT_SOURCES: Array<{ value: HeroStatSource; label: string; derivable: boolean; requires?: "foundedYear" }> = [
+  { value: "manual", label: "Manual (free text)", derivable: false },
+  { value: "members-live", label: "Members — active (live count)", derivable: true },
+  { value: "cellules-live", label: "Cellules (live count)", derivable: true },
+  { value: "events-live", label: "Events — all active (live count)", derivable: true },
+  { value: "events-upcoming", label: "Events — upcoming (live count)", derivable: true },
+  { value: "events-past", label: "Events — past (live count)", derivable: true },
+  { value: "partners-live", label: "Partners (live count)", derivable: true },
+  { value: "faq-live", label: "FAQ questions (live count)", derivable: true },
+  { value: "team-alumni", label: "Team alumni (live count)", derivable: true },
+  { value: "years-active", label: "Years active (from founded year)", derivable: true, requires: "foundedYear" },
+  { value: "projects", label: "Projects (manual)", derivable: false },
+  { value: "awards", label: "Awards (manual)", derivable: false },
+];
+
+const LEGACY_SOURCE_MAP: Record<string, HeroStatSource> = {
+  members: "members-live",
+  cellules: "cellules-live",
+  events: "events-live",
+  "events-all": "events-live",
+  partners: "partners-live",
+  "faq-questions": "faq-live",
+};
+
+export function normalizeHeroStatSource(raw: unknown): HeroStatSource {
+  const s = typeof raw === "string" ? raw.trim() : "";
+  if (!s) return "manual";
+  if (s in LEGACY_SOURCE_MAP) return LEGACY_SOURCE_MAP[s];
+  const allowed = HERO_STAT_SOURCES.map((src) => src.value) as string[];
+  return (allowed.includes(s) ? s : "manual") as HeroStatSource;
+}
 
 export type PublicHeroContent = {
   eyebrow: string;
@@ -108,8 +170,48 @@ export type PublicHeroContent = {
     position: "center" | "left" | "right";
   };
   liveActivity: Array<{ id: string; title: string; timeAgo: string }>;
-  techStack: string[];
+  techStack: Array<{
+    id: string;
+    label: string;
+    accent: "violet" | "cyan" | "mixed";
+    order: number;
+    isVisible: boolean;
+  }>;
   growthStats: Array<{ label: string; value: string }>;
+  stats: {
+    tiles: Array<{
+      id: string;
+      label: string;
+      labelSingular: string | null;
+      source: HeroStatSource;
+      manualValue: string;
+      prefix: string;
+      suffix: string;
+      color: HeroStatColor;
+      size: HeroStatSize;
+      emphasis: HeroStatEmphasis;
+      format: HeroStatFormat;
+      animate: HeroStatAnimate;
+      href: string | null;
+      order: number;
+      isVisible: boolean;
+    }>;
+    roundDerivedTo: number;
+  };
+  statsStrip: {
+    isVisible: boolean;
+    layout: HeroStatsStripLayout;
+    separator: HeroStatsStripSeparator;
+    alignment: HeroStatsStripAlignment;
+    background: HeroStatsStripBackground;
+    animateOnScroll: boolean;
+  };
+  foundedYear: number | null;
+  growth: {
+    title: string;
+    metric: "newMembers";
+    months: number;
+  };
 };
 
 export const DEFAULT_HERO_PUBLIC: PublicHeroContent = {
@@ -148,13 +250,40 @@ export const DEFAULT_HERO_PUBLIC: PublicHeroContent = {
     { id: "2", title: "Member joined Design Cellule", timeAgo: "1h ago" },
     { id: "3", title: "Competition results published", timeAgo: "3h ago" },
   ],
-  techStack: ["Python", "ROS2", "Arduino", "TensorFlow", "OpenCV", "MATLAB"],
+  techStack: [
+    { id: "python", label: "Python", accent: "cyan", order: 0, isVisible: true },
+    { id: "ros2", label: "ROS2", accent: "violet", order: 1, isVisible: true },
+    { id: "arduino", label: "Arduino", accent: "mixed", order: 2, isVisible: true },
+    { id: "tensorflow", label: "TensorFlow", accent: "violet", order: 3, isVisible: true },
+    { id: "opencv", label: "OpenCV", accent: "cyan", order: 4, isVisible: true },
+    { id: "matlab", label: "MATLAB", accent: "mixed", order: 5, isVisible: true },
+  ],
   growthStats: [
     { label: "Members", value: "200+" },
     { label: "Cellules", value: "6" },
     { label: "Projects", value: "14" },
     { label: "Awards", value: "8+" },
   ],
+  stats: {
+    tiles: [
+      { id: "members", label: "Members", labelSingular: "Member", source: "members-live", manualValue: "200", prefix: "", suffix: "", color: "violet", size: "md", emphasis: "number", format: "plain", animate: "none", href: null, order: 0, isVisible: true },
+      { id: "cellules", label: "Cellules", labelSingular: "Cellule", source: "cellules-live", manualValue: "6", prefix: "", suffix: "", color: "cyan", size: "md", emphasis: "number", format: "plain", animate: "none", href: null, order: 1, isVisible: true },
+      { id: "events", label: "Events", labelSingular: "Event", source: "events-live", manualValue: "0", prefix: "", suffix: "", color: "emerald", size: "md", emphasis: "number", format: "plain", animate: "none", href: null, order: 2, isVisible: true },
+      { id: "projects", label: "Projects", labelSingular: "Project", source: "projects", manualValue: "14", prefix: "", suffix: "", color: "fuchsia", size: "md", emphasis: "number", format: "plain", animate: "none", href: null, order: 3, isVisible: true },
+      { id: "awards", label: "Awards", labelSingular: "Award", source: "awards", manualValue: "8", prefix: "", suffix: "", color: "amber", size: "md", emphasis: "number", format: "plain", animate: "none", href: null, order: 4, isVisible: true },
+    ],
+    roundDerivedTo: 1,
+  },
+  statsStrip: {
+    isVisible: true,
+    layout: "row",
+    separator: "line",
+    alignment: "center",
+    background: "transparent",
+    animateOnScroll: true,
+  },
+  foundedYear: null,
+  growth: { title: "Club stats", metric: "newMembers", months: 6 },
 };
 
 export function parseHeroDoc(raw: Record<string, unknown>): PublicHeroContent {
@@ -164,6 +293,8 @@ export function parseHeroDoc(raw: Record<string, unknown>): PublicHeroContent {
     return { ...DEFAULT_HERO_PUBLIC };
   }
   const d = r.data;
+  const statsRaw = raw.stats && typeof raw.stats === "object" ? (raw.stats as Record<string, unknown>) : {};
+  const growthRaw = raw.growth && typeof raw.growth === "object" ? (raw.growth as Record<string, unknown>) : {};
   const mediaRaw = raw.backgroundMedia && typeof raw.backgroundMedia === "object"
     ? (raw.backgroundMedia as Record<string, unknown>)
     : {};
@@ -182,6 +313,104 @@ export function parseHeroDoc(raw: Record<string, unknown>): PublicHeroContent {
   const datashowPosition = datashowPosRaw === "left" || datashowPosRaw === "right" ? datashowPosRaw : "center";
   const maskOpacityValue = typeof maskRaw.opacity === "number" && Number.isFinite(maskRaw.opacity) ? maskRaw.opacity : 0.6;
   const maskOpacity = Math.min(1, Math.max(0, maskOpacityValue));
+  const pickEnum = <T extends string>(raw: unknown, allowed: readonly T[], fallback: T): T =>
+    (typeof raw === "string" && (allowed as readonly string[]).includes(raw) ? (raw as T) : fallback);
+  const parseTile = (row: unknown, idx: number): PublicHeroContent["stats"]["tiles"][number] | null => {
+    if (!row || typeof row !== "object") return null;
+    const o = row as Record<string, unknown>;
+    const label = typeof o.label === "string" ? o.label.trim() : "";
+    const source = normalizeHeroStatSource(o.source);
+    const singularRaw = typeof o.labelSingular === "string" ? o.labelSingular.trim() : "";
+    const fallback = DEFAULT_HERO_PUBLIC.stats.tiles[idx] ?? DEFAULT_HERO_PUBLIC.stats.tiles[0];
+    const hrefRaw = typeof o.href === "string" ? o.href.trim() : "";
+    return {
+      id: typeof o.id === "string" && o.id.trim() ? o.id.trim() : `tile-${idx}`,
+      label: label || "Stat",
+      labelSingular: singularRaw || null,
+      source,
+      manualValue: typeof o.manualValue === "string" ? o.manualValue : typeof o.value === "string" ? o.value : "",
+      prefix: typeof o.prefix === "string" ? o.prefix : "",
+      suffix: typeof o.suffix === "string" ? o.suffix : "",
+      color: pickEnum(o.color, HERO_STAT_COLORS, fallback.color),
+      size: pickEnum(o.size, HERO_STAT_SIZES, fallback.size),
+      emphasis: pickEnum(o.emphasis, HERO_STAT_EMPHASES, fallback.emphasis),
+      format: pickEnum(o.format, HERO_STAT_FORMATS, fallback.format),
+      animate: pickEnum(o.animate, HERO_STAT_ANIMATES, fallback.animate),
+      href: hrefRaw || null,
+      order: typeof o.order === "number" ? o.order : idx,
+      isVisible: o.isVisible !== false,
+    };
+  };
+  let tiles: PublicHeroContent["stats"]["tiles"] = [];
+  if (Array.isArray(statsRaw.tiles)) {
+    tiles = (statsRaw.tiles as unknown[])
+      .map((row, idx) => parseTile(row, idx))
+      .filter((t): t is NonNullable<typeof t> => Boolean(t))
+      .sort((a, b) => a.order - b.order);
+  } else {
+    const legacyKeys: Array<"members" | "cellules" | "projects" | "awards"> = ["members", "cellules", "projects", "awards"];
+    tiles = legacyKeys
+      .map((key, idx) => {
+        const legacy = statsRaw[key] && typeof statsRaw[key] === "object" ? (statsRaw[key] as Record<string, unknown>) : null;
+        const fallback = DEFAULT_HERO_PUBLIC.stats.tiles[idx];
+        if (!legacy) return fallback;
+        const source: HeroStatSource = legacy.mode === "manual" ? "manual" : normalizeHeroStatSource(key);
+        return {
+          ...fallback,
+          id: key,
+          source,
+          manualValue: typeof legacy.value === "string" ? legacy.value : fallback.manualValue,
+          suffix: legacy.showPlus === true ? "+" : "",
+          order: idx,
+          isVisible: true,
+        };
+      });
+  }
+  const stripRaw = raw.statsStrip && typeof raw.statsStrip === "object" ? (raw.statsStrip as Record<string, unknown>) : {};
+  const statsStrip: PublicHeroContent["statsStrip"] = {
+    isVisible: stripRaw.isVisible !== false,
+    layout: pickEnum(stripRaw.layout, ["row", "grid-2", "grid-4"] as const, DEFAULT_HERO_PUBLIC.statsStrip.layout),
+    separator: pickEnum(stripRaw.separator, ["line", "dot", "none"] as const, DEFAULT_HERO_PUBLIC.statsStrip.separator),
+    alignment: pickEnum(stripRaw.alignment, ["left", "center", "right"] as const, DEFAULT_HERO_PUBLIC.statsStrip.alignment),
+    background: pickEnum(stripRaw.background, ["transparent", "panel", "glow"] as const, DEFAULT_HERO_PUBLIC.statsStrip.background),
+    animateOnScroll: stripRaw.animateOnScroll !== false,
+  };
+  const foundedYearRaw = raw.foundedYear;
+  const foundedYearNum = typeof foundedYearRaw === "number" && Number.isFinite(foundedYearRaw)
+    ? Math.floor(foundedYearRaw)
+    : typeof foundedYearRaw === "string" && foundedYearRaw.trim()
+      ? Number.parseInt(foundedYearRaw.trim(), 10)
+      : null;
+  const foundedYear = foundedYearNum && foundedYearNum >= 1900 && foundedYearNum <= 3000 ? foundedYearNum : null;
+  const roundRaw = typeof statsRaw.roundDerivedTo === "number" ? statsRaw.roundDerivedTo : DEFAULT_HERO_PUBLIC.stats.roundDerivedTo;
+  const roundDerivedTo = [1, 5, 10, 25, 50, 100].includes(roundRaw) ? roundRaw : 1;
+  const rawTech = Array.isArray(raw.techStack)
+    ? raw.techStack
+    : raw.techStack && typeof raw.techStack === "object" && Array.isArray((raw.techStack as Record<string, unknown>).items)
+      ? ((raw.techStack as Record<string, unknown>).items as unknown[])
+      : [];
+  const techItems = sortByOrder(
+    rawTech
+      .map((row, idx) => {
+        if (typeof row === "string" && row.trim()) {
+          return { id: `ts-${idx}`, label: row.trim(), accent: "mixed" as const, order: idx, isVisible: true };
+        }
+        if (!row || typeof row !== "object") return null;
+        const o = row as Record<string, unknown>;
+        const label = typeof o.label === "string" ? o.label.trim() : "";
+        if (!label) return null;
+        const accentRaw = typeof o.accent === "string" ? o.accent.trim().toLowerCase() : "mixed";
+        const accent = accentRaw === "violet" || accentRaw === "cyan" ? accentRaw : "mixed";
+        return {
+          id: typeof o.id === "string" && o.id.trim() ? o.id.trim() : `ts-${idx}`,
+          label,
+          accent: accent as "violet" | "cyan" | "mixed",
+          order: typeof o.order === "number" ? o.order : idx,
+          isVisible: o.isVisible !== false,
+        };
+      })
+      .filter((v): v is NonNullable<typeof v> => Boolean(v)),
+  );
   return {
     eyebrow: d.eyebrow?.trim() || DEFAULT_HERO_PUBLIC.eyebrow,
     location: d.location?.trim() || DEFAULT_HERO_PUBLIC.location,
@@ -238,9 +467,26 @@ export function parseHeroDoc(raw: Record<string, unknown>): PublicHeroContent {
     },
     liveActivity:
       Array.isArray(d.liveActivity) && d.liveActivity.length ? d.liveActivity : DEFAULT_HERO_PUBLIC.liveActivity,
-    techStack: Array.isArray(d.techStack) && d.techStack.length ? d.techStack : DEFAULT_HERO_PUBLIC.techStack,
+    techStack: techItems.length ? techItems : DEFAULT_HERO_PUBLIC.techStack,
     growthStats:
       Array.isArray(d.growthStats) && d.growthStats.length ? d.growthStats : DEFAULT_HERO_PUBLIC.growthStats,
+    stats: {
+      tiles: tiles.length ? tiles : DEFAULT_HERO_PUBLIC.stats.tiles,
+      roundDerivedTo,
+    },
+    statsStrip,
+    foundedYear,
+    growth: {
+      title:
+        typeof growthRaw.title === "string" && growthRaw.title.trim()
+          ? growthRaw.title.trim()
+          : DEFAULT_HERO_PUBLIC.growth.title,
+      metric: "newMembers",
+      months:
+        typeof growthRaw.months === "number" && [3, 6, 12].includes(growthRaw.months)
+          ? growthRaw.months
+          : DEFAULT_HERO_PUBLIC.growth.months,
+    },
   };
 }
 
