@@ -14,6 +14,7 @@ const ALL_HREFS = [
   "/admin/activity",
   "/admin/footer-config",
   "/admin/notifications",
+  "/admin/access",
   "/admin/layout",
 ] as const;
 
