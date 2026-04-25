@@ -55,11 +55,7 @@ export default function AdminLoginPage() {
   return (
     <div className="mx-auto flex min-h-[70vh] max-w-md flex-col justify-center px-6 py-16">
       <h1 className="text-2xl font-semibold tracking-tight text-white">Admin sign-in</h1>
-      <p className="mt-3 text-sm text-white/55">
-        Email/password sign-in requires{" "}
-        <span className="font-mono text-white/75">NEXT_PUBLIC_ADMIN_EMAILS</span> to be configured and the account
-        to exist in Firebase Authentication.
-      </p>
+
 
       {!allowPasswordConfigured ? (
         <p className="rounded-xl border border-amber-500/35 bg-amber-500/10 px-4 py-3 text-sm text-amber-100/90">
