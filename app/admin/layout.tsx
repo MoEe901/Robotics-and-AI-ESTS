@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { AdminShell } from "@/components/admin/admin-shell";
+import { AdminRootLayoutClient } from "@/app/admin/admin-root-layout-client";
 
 export const metadata: Metadata = {
   title: "Admin · Robotics & AI Club",
@@ -12,5 +12,5 @@ export default function AdminLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return <AdminShell>{children}</AdminShell>;
+  return <AdminRootLayoutClient>{children}</AdminRootLayoutClient>;
 }

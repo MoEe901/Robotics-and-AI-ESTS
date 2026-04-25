@@ -1,122 +1,10 @@
 "use client";
 
-import {
-  Atom,
-  Award,
-  Badge,
-  Blocks,
-  Bot,
-  Brain,
-  Brush,
-  Calendar,
-  Camera,
-  CircleCheck as CheckCircle,
-  CirclePlay as PlayCircle,
-  CircuitBoard,
-  Clipboard,
-  Code,
-  Cpu,
-  Database,
-  Dna,
-  FileText,
-  Flag,
-  FlaskConical,
-  Folder,
-  GitBranch,
-  GraduationCap,
-  Image,
-  Layers,
-  Lightbulb,
-  Mail,
-  Megaphone,
-  Mic,
-  Microscope,
-  Palette,
-  PenTool,
-  Rocket,
-  Send,
-  Server,
-  Settings,
-  Sparkles,
-  Star,
-  Target,
-  Terminal,
-  Trophy,
-  User,
-  UserCheck,
-  UserPlus,
-  Users,
-  Video,
-  Wallet,
-  Wifi,
-  Wrench,
-  Zap,
-} from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import type { ProcessStepsConfig } from "@/lib/firebase/types";
 import { DEFAULT_PROCESS_STEPS_CONFIG } from "@/lib/content/process-steps-defaults";
-
-const processIcons = {
-  // People
-  "users":          Users,
-  "user":           User,
-  "user-plus":      UserPlus,
-  "user-check":     UserCheck,
-  "graduation-cap": GraduationCap,
-  "badge":          Badge,
-  // Actions / Progress
-  "rocket":         Rocket,
-  "target":         Target,
-  "award":          Award,
-  "trophy":         Trophy,
-  "star":           Star,
-  "zap":            Zap,
-  "flag":           Flag,
-  "send":           Send,
-  "check-circle":   CheckCircle,
-  "play-circle":    PlayCircle,
-  // Tech / Build
-  "lightbulb":      Lightbulb,
-  "sparkles":       Sparkles,
-  "cpu":            Cpu,
-  "circuit-board":  CircuitBoard,
-  "bot":            Bot,
-  "code":           Code,
-  "terminal":       Terminal,
-  "git-branch":     GitBranch,
-  "database":       Database,
-  "server":         Server,
-  "wifi":           Wifi,
-  "layers":         Layers,
-  "blocks":         Blocks,
-  // Creativity / Design
-  "palette":        Palette,
-  "pen-tool":       PenTool,
-  "brush":          Brush,
-  "image":          Image,
-  "video":          Video,
-  "camera":         Camera,
-  "mic":            Mic,
-  // Organisation / Admin
-  "calendar":       Calendar,
-  "file-text":      FileText,
-  "clipboard":      Clipboard,
-  "folder":         Folder,
-  "wallet":         Wallet,
-  "megaphone":      Megaphone,
-  "mail":           Mail,
-  // Science / Innovation
-  "flask-conical":  FlaskConical,
-  "microscope":     Microscope,
-  "atom":           Atom,
-  "brain":          Brain,
-  "dna":            Dna,
-  "wrench":         Wrench,
-  "settings":       Settings,
-} as const;
-
-type IconKey = keyof typeof processIcons;
+import { resolveSectionIcon } from "@/lib/icons/section-icon-pack";
 
 const ACCENT = [
   {
@@ -150,8 +38,7 @@ const ACCENT = [
 ] as const;
 
 function resolveIcon(key: string) {
-  const k = key.trim().toLowerCase() as IconKey;
-  return processIcons[k] ?? Users;
+  return resolveSectionIcon(key);
 }
 
 type ProcessStepsSectionProps = {

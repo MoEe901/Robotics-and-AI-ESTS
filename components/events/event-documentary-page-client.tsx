@@ -6,6 +6,8 @@ import {
   Calendar,
   Check,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Clock,
   Lightbulb,
   MapPin,
@@ -25,7 +27,7 @@ import {
   presetAccent,
   splitHeroTitle,
 } from "@/lib/events/event-page-accent";
-import { eventLocationHref, youtubeEmbedSrc } from "@/lib/events/public";
+import { eventLocationHref, formatEventDate, youtubeEmbedSrc } from "@/lib/events/public";
 import { parseWebsiteCtaHex } from "@/lib/events/website-cta-color";
 import { cn } from "@/lib/utils";
 
@@ -47,10 +49,7 @@ type Props = {
   pathSegment: string;
 };
 
-type SelectedGalleryMedia = {
-  item: NonNullable<EventItem["gallery"]>[number];
-  title: string;
-};
+type GalleryItem = NonNullable<EventItem["gallery"]>[number];
 
 function coverSrc(imageUrl: string | null | undefined): string {
   if (imageUrl && imageUrl.trim()) return imageUrl.trim();
@@ -58,13 +57,8 @@ function coverSrc(imageUrl: string | null | undefined): string {
 }
 
 function formatDateLabel(date?: string): string {
-  if (!date?.trim()) return "Date TBA";
-  const t = Date.parse(date);
-  if (Number.isNaN(t)) return date.trim();
-  return new Date(t).toLocaleDateString(undefined, {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
+  return formatEventDate(date, {
+    formatOptions: { month: "long", day: "numeric", year: "numeric" },
   });
 }
 
@@ -94,8 +88,38 @@ function firstParagraph(text: string): { lead: string; rest: string } {
 
 export function EventDocumentaryPageClient({ pathSegment }: Props) {
   const [event, setEvent] = useState<EventItem | null | undefined>(undefined);
-  const [selectedMedia, setSelectedMedia] = useState<SelectedGalleryMedia | null>(null);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [nowMs, setNowMs] = useState(() => Date.now());
+
+  /* Lifted to top-level so the keyboard navigation effect and the openMedia
+     helper can both index into the same filtered list the lightbox renders. */
+  const gallery = useMemo<GalleryItem[]>(
+    () =>
+      (event?.gallery ?? []).filter(
+        (g) => (g.visible === undefined || g.visible === true) && g.url.trim(),
+      ),
+    [event?.gallery],
+  );
+
+  const openMediaAt = useCallback(
+    (item: GalleryItem | null | undefined) => {
+      if (!item) return;
+      const idx = gallery.findIndex((g) => g.url === item.url && g.kind === item.kind);
+      if (idx >= 0) setSelectedIndex(idx);
+    },
+    [gallery],
+  );
+
+  const stepMedia = useCallback(
+    (delta: number) => {
+      setSelectedIndex((prev) => {
+        if (prev == null || gallery.length === 0) return prev;
+        const next = (prev + delta + gallery.length) % gallery.length;
+        return next;
+      });
+    },
+    [gallery.length],
+  );
 
   useEffect(() => {
     const unsub = subscribeToPublishedEventBySlugOrId(
@@ -123,13 +147,15 @@ export function EventDocumentaryPageClient({ pathSegment }: Props) {
   }, [event]);
 
   useEffect(() => {
-    if (!selectedMedia) return;
+    if (selectedIndex == null) return;
     const onKeyDown = (ev: KeyboardEvent) => {
-      if (ev.key === "Escape") setSelectedMedia(null);
+      if (ev.key === "Escape") setSelectedIndex(null);
+      else if (ev.key === "ArrowRight") stepMedia(1);
+      else if (ev.key === "ArrowLeft") stepMedia(-1);
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [selectedMedia]);
+  }, [selectedIndex, stepMedia]);
 
   useEffect(() => {
     const preloadGallery =
@@ -246,8 +272,7 @@ export function EventDocumentaryPageClient({ pathSegment }: Props) {
     event.attachments?.filter(
       (a) => (a.visible === undefined || a.visible === true) && a.label.trim() && a.url.trim(),
     ) ?? [];
-  const gallery =
-    event.gallery?.filter((g) => (g.visible === undefined || g.visible === true) && g.url.trim()) ?? [];
+  /* gallery is computed via useMemo at component top-level; reuse it here. */
   const websiteUrl = event.eventWebsiteUrl?.trim() ?? "";
   const showWebsiteCta = Boolean(websiteUrl) && event.showEventWebsite !== false;
   const customHex = parseWebsiteCtaHex(event.eventWebsiteButtonColor);
@@ -263,7 +288,11 @@ export function EventDocumentaryPageClient({ pathSegment }: Props) {
   const { line1, line2 } = splitHeroTitle(event.title);
   const timePill = formatTimeLabel(event.date);
   const imageGallery = gallery.filter((g) => g.kind === "image");
-  const moreGalleryCount = Math.max(0, gallery.length - 3);
+  /* The 3-up grid only renders images; videos and other kinds are listed
+     separately below. So the "+N more" badge must reflect images we hid,
+     not the total gallery length, otherwise the count is misleading. */
+  const moreGalleryCount = Math.max(0, imageGallery.length - 3);
+  const selectedItem = selectedIndex != null ? gallery[selectedIndex] ?? null : null;
 
   const heroCoverUrl = coverSrc(event.imageUrl);
   const heroBgPosX = event.imageFocusX ?? 50;
@@ -633,12 +662,7 @@ export function EventDocumentaryPageClient({ pathSegment }: Props) {
                   <button
                     type="button"
                     className="group relative h-[min(420px,52vh)] w-full overflow-hidden rounded-[14px] border border-[var(--border)] bg-[#121220] text-left"
-                    onClick={() =>
-                      setSelectedMedia({
-                        item: imageGallery[0]!,
-                        title: imageGallery[0]!.caption || event.title,
-                      })
-                    }
+                    onClick={() => openMediaAt(imageGallery[0])}
                   >
                     <img
                       src={imageGallery[0]!.url}
@@ -656,7 +680,7 @@ export function EventDocumentaryPageClient({ pathSegment }: Props) {
                         key={`event-gallery-image-${imgIdx}`}
                         type="button"
                         className="group relative h-[220px] overflow-hidden rounded-[14px] border border-[var(--border)] bg-[#121220] sm:h-[260px]"
-                        onClick={() => setSelectedMedia({ item, title: item.caption || event.title })}
+                        onClick={() => openMediaAt(item)}
                       >
                         <img
                           src={item.url}
@@ -675,12 +699,7 @@ export function EventDocumentaryPageClient({ pathSegment }: Props) {
                       <button
                         type="button"
                         className="group relative overflow-hidden rounded-[14px] border border-[var(--border)] bg-[#121220] text-left sm:row-span-2"
-                        onClick={() =>
-                          setSelectedMedia({
-                            item: imageGallery[0]!,
-                            title: imageGallery[0]!.caption || event.title,
-                          })
-                        }
+                        onClick={() => openMediaAt(imageGallery[0])}
                       >
                         <img
                           src={imageGallery[0]!.url}
@@ -700,7 +719,7 @@ export function EventDocumentaryPageClient({ pathSegment }: Props) {
                         key={`event-gallery-image-${sliceIdx + 1}`}
                         type="button"
                         className="group relative h-[200px] overflow-hidden rounded-[14px] border border-[var(--border)] bg-[#121220] sm:h-auto"
-                        onClick={() => setSelectedMedia({ item, title: item.caption || event.title })}
+                        onClick={() => openMediaAt(item)}
                       >
                         <img
                           src={item.url}
@@ -716,10 +735,8 @@ export function EventDocumentaryPageClient({ pathSegment }: Props) {
                       <button
                         type="button"
                         className="flex h-[200px] flex-col items-center justify-center gap-2 rounded-[14px] border border-[var(--border)] bg-[#121220] transition hover:bg-[#0e0e18] sm:h-auto"
-                        onClick={() => {
-                          const next = gallery[3];
-                          if (next) setSelectedMedia({ item: next, title: next.caption || event.title });
-                        }}
+                        aria-label={`Open gallery — ${moreGalleryCount} more ${moreGalleryCount === 1 ? "image" : "images"}`}
+                        onClick={() => openMediaAt(imageGallery[3])}
                       >
                         <span
                           className={cn("text-4xl leading-none", fontDisplay.className)}
@@ -745,7 +762,7 @@ export function EventDocumentaryPageClient({ pathSegment }: Props) {
                         key={`${item.url}-${idx}`}
                         type="button"
                         className="w-full overflow-hidden rounded-[14px] border border-[var(--border)] bg-black/40 text-left"
-                        onClick={() => setSelectedMedia({ item, title: item.caption || event.title })}
+                        onClick={() => openMediaAt(item)}
                       >
                         {youtubeEmbedSrc(item.url) ? (
                           <div className="aspect-video w-full bg-black">
@@ -937,55 +954,92 @@ export function EventDocumentaryPageClient({ pathSegment }: Props) {
             </div>
           </div>
 
-          <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[#0e0e18]">
-            <div className="flex items-center gap-2 border-b border-[var(--border)] px-5 py-3.5 text-[9px] font-semibold uppercase tracking-[0.2em] text-[var(--muted)]">
-              <span className="size-1.5 rounded-full" style={{ background: "var(--ev-accent)" }} />
-              Topics
+          {event?.topics && event.topics.length > 0 ? (
+            <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[#0e0e18]">
+              <div className="flex items-center gap-2 border-b border-[var(--border)] px-5 py-3.5 text-[9px] font-semibold uppercase tracking-[0.2em] text-[var(--muted)]">
+                <span className="size-1.5 rounded-full" style={{ background: "var(--ev-accent)" }} />
+                Topics
+              </div>
+              <div className="flex flex-wrap gap-2 p-5">
+                {event.topics.map((tag, ti) => (
+                  <span
+                    key={`${ti}-${tag}`}
+                    className="cursor-default rounded-full border border-[var(--border)] bg-white/[0.03] px-3 py-1 text-[11px] text-[var(--muted)] transition hover:border-[var(--ev-accent-border)] hover:text-[var(--ev-accent)]"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
             </div>
-            <div className="flex flex-wrap gap-2 p-5">
-              {["Robotics", "AI", "EST Safi", "Students"].map((tag) => (
-                <span
-                  key={tag}
-                  className="cursor-default rounded-full border border-[var(--border)] bg-white/[0.03] px-3 py-1 text-[11px] text-[var(--muted)] transition hover:border-[var(--ev-accent-border)] hover:text-[var(--ev-accent)]"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-          </div>
+          ) : null}
         </aside>
         </div>
       </div>
 
-      {/* Lightbox */}
-      {selectedMedia ? (
+      {/* Lightbox — navigable carousel over the full visible gallery */}
+      {selectedItem ? (
         <div
           className="fixed inset-0 z-[300] flex items-center justify-center bg-[#09090f]/96 p-8 backdrop-blur-xl"
           role="dialog"
           aria-modal="true"
           aria-label="Media preview"
-          onClick={() => setSelectedMedia(null)}
+          onClick={() => setSelectedIndex(null)}
         >
           <button
             type="button"
-            className="absolute right-6 top-6 flex size-11 items-center justify-center rounded-full border border-[var(--border2)] bg-white/[0.07] text-[#f0eff5] transition hover:bg-white/[0.14]"
-            onClick={() => setSelectedMedia(null)}
+            className="absolute right-6 top-6 z-10 flex size-11 items-center justify-center rounded-full border border-[var(--border2)] bg-white/[0.07] text-[#f0eff5] transition hover:bg-white/[0.14]"
+            onClick={() => setSelectedIndex(null)}
             aria-label="Close"
           >
             <X className="size-[18px]" strokeWidth={2} />
           </button>
-          <div className="max-h-[84vh] max-w-[88vw] overflow-hidden rounded-2xl border border-[var(--border2)] shadow-[0_40px_100px_rgba(0,0,0,0.9)]" onClick={(e) => e.stopPropagation()}>
-            {selectedMedia.item.kind === "image" ? (
+          {gallery.length > 1 ? (
+            <>
+              <button
+                type="button"
+                className="absolute left-4 top-1/2 z-10 flex size-11 -translate-y-1/2 items-center justify-center rounded-full border border-[var(--border2)] bg-white/[0.07] text-[#f0eff5] transition hover:bg-white/[0.14] sm:left-6"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  stepMedia(-1);
+                }}
+                aria-label="Previous media"
+              >
+                <ChevronLeft className="size-[20px]" strokeWidth={2} />
+              </button>
+              <button
+                type="button"
+                className="absolute right-4 top-1/2 z-10 flex size-11 -translate-y-1/2 items-center justify-center rounded-full border border-[var(--border2)] bg-white/[0.07] text-[#f0eff5] transition hover:bg-white/[0.14] sm:right-6"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  stepMedia(1);
+                }}
+                aria-label="Next media"
+              >
+                <ChevronRight className="size-[20px]" strokeWidth={2} />
+              </button>
+              <span
+                className="pointer-events-none absolute bottom-6 left-1/2 z-10 -translate-x-1/2 rounded-full border border-[var(--border2)] bg-black/50 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-[#f0eff5]/85 backdrop-blur"
+                aria-live="polite"
+              >
+                {(selectedIndex ?? 0) + 1} / {gallery.length}
+              </span>
+            </>
+          ) : null}
+          <div
+            className="max-h-[84vh] max-w-[88vw] overflow-hidden rounded-2xl border border-[var(--border2)] shadow-[0_40px_100px_rgba(0,0,0,0.9)]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {selectedItem.kind === "image" ? (
               <img
-                src={selectedMedia.item.url}
-                alt={selectedMedia.title}
+                src={selectedItem.url}
+                alt={selectedItem.caption || event.title}
                 className="max-h-[84vh] w-auto object-contain"
               />
-            ) : youtubeEmbedSrc(selectedMedia.item.url) ? (
+            ) : youtubeEmbedSrc(selectedItem.url) ? (
               <div className="aspect-video w-[min(100vw-2rem,960px)] bg-black">
                 <iframe
-                  title={selectedMedia.title}
-                  src={youtubeEmbedSrc(selectedMedia.item.url) ?? ""}
+                  title={selectedItem.caption || event.title}
+                  src={youtubeEmbedSrc(selectedItem.url) ?? ""}
                   className="size-full border-0"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
@@ -997,7 +1051,7 @@ export function EventDocumentaryPageClient({ pathSegment }: Props) {
                 autoPlay
                 playsInline
                 className="max-h-[84vh] w-full object-contain"
-                src={selectedMedia.item.url}
+                src={selectedItem.url}
               />
             )}
           </div>

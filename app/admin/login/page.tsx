@@ -5,7 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import { isAllowlistedAdmin, parseAdminEmails } from "@/lib/admin-allowlist";
+import { resolveAdminSession } from "@/lib/admin-access-client";
+import { parseAdminEmails } from "@/lib/admin-allowlist";
 import { auth } from "@/lib/firebase";
 
 export default function AdminLoginPage() {
@@ -15,21 +16,34 @@ export default function AdminLoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
-  const allowConfigured = parseAdminEmails().size > 0;
+  const allowPasswordConfigured = parseAdminEmails().size > 0;
+
+  async function afterFirebaseSignIn() {
+    const u = auth().currentUser;
+    const session = await resolveAdminSession(u);
+    if (!session.ok) {
+      await signOut(auth());
+      if (session.reason === "not_provisioned") {
+        setError(
+          "This account is not in NEXT_PUBLIC_ADMIN_EMAILS or is not provisioned for admin access.",
+        );
+      } else {
+        setError("Sign-in required.");
+      }
+      return false;
+    }
+    router.replace("/admin/dashboard");
+    router.refresh();
+    return true;
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setPending(true);
     try {
-      const cred = await signInWithEmailAndPassword(auth(), email.trim(), password);
-      if (!isAllowlistedAdmin(cred.user.email)) {
-        await signOut(auth());
-        setError("This account is not in NEXT_PUBLIC_ADMIN_EMAILS.");
-        return;
-      }
-      router.replace("/admin/dashboard");
-      router.refresh();
+      await signInWithEmailAndPassword(auth(), email.trim(), password);
+      await afterFirebaseSignIn();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Sign-in failed.";
       setError(msg);
@@ -41,11 +55,16 @@ export default function AdminLoginPage() {
   return (
     <div className="mx-auto flex min-h-[70vh] max-w-md flex-col justify-center px-6 py-16">
       <h1 className="text-2xl font-semibold tracking-tight text-white">Admin sign-in</h1>
+      <p className="mt-3 text-sm text-white/55">
+        Email/password sign-in requires{" "}
+        <span className="font-mono text-white/75">NEXT_PUBLIC_ADMIN_EMAILS</span> to be configured and the account
+        to exist in Firebase Authentication.
+      </p>
 
-      {!allowConfigured ? (
-        <p className="mt-6 rounded-xl border border-amber-500/35 bg-amber-500/10 px-4 py-3 text-sm text-amber-100/90">
-          No admin emails configured — add <span className="font-mono">NEXT_PUBLIC_ADMIN_EMAILS</span>{" "}
-          to <span className="font-mono">.env.local</span> and restart the dev server.
+      {!allowPasswordConfigured ? (
+        <p className="rounded-xl border border-amber-500/35 bg-amber-500/10 px-4 py-3 text-sm text-amber-100/90">
+          Email/password sign-in is disabled until you set{" "}
+          <span className="font-mono">NEXT_PUBLIC_ADMIN_EMAILS</span> in <span className="font-mono">.env.local</span>.
         </p>
       ) : null}
 
@@ -83,7 +102,7 @@ export default function AdminLoginPage() {
         ) : null}
         <button
           type="submit"
-          disabled={pending || !allowConfigured}
+          disabled={pending || !allowPasswordConfigured}
           className="w-full rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {pending ? "Signing in…" : "Sign in"}

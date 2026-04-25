@@ -15,7 +15,11 @@ import { DEFAULT_APPLY_CONFIG } from "../lib/content/apply-defaults";
 import { DEFAULT_FAQ_CONFIG } from "../lib/content/faq-defaults";
 import { DEFAULT_PROCESS_STEPS_CONFIG } from "../lib/content/process-steps-defaults";
 import { DEFAULT_HERO_PUBLIC } from "../lib/content/site-content-parser";
-import { DEFAULT_FOOTER_CONFIG, DEFAULT_NAVBAR_CONFIG } from "../lib/firebase/types";
+import {
+  DEFAULT_FOOTER_CONFIG,
+  DEFAULT_FOOTER_COLUMNS,
+  DEFAULT_NAVBAR_CONFIG,
+} from "../lib/firebase/types";
 import { getAdminFirestore } from "../lib/server/firebase-admin";
 
 const force = process.argv.includes("--force");
@@ -242,26 +246,30 @@ async function main() {
   };
   results.push(`siteContent/processSteps: ${await writeIfMissing("siteContent/processSteps", processPayload)}`);
 
-  const footerColumns = [
-    {
-      heading: "Club",
-      links: DEFAULT_FOOTER_CONFIG.footerNav.filter((_, i) => i < 2),
-    },
-    {
-      heading: "Explore",
-      links: DEFAULT_FOOTER_CONFIG.footerNav.filter((_, i) => i >= 2),
-    },
-  ];
+  const footerColumns = DEFAULT_FOOTER_COLUMNS.map((c) => ({
+    heading: c.heading,
+    isVisible: true,
+    links: c.links.map((l) => ({ ...l })),
+  }));
   const footerPayload = {
     tagline: DEFAULT_FOOTER_CONFIG.tagline,
     address: DEFAULT_FOOTER_CONFIG.contactLocation,
     phone: "+212 68444912",
     email: DEFAULT_FOOTER_CONFIG.contactEmail,
     hours: "Monday – Friday · 9AM – 5PM",
+    contactEmail: DEFAULT_FOOTER_CONFIG.contactEmail,
+    contactLocation: DEFAULT_FOOTER_CONFIG.contactLocation,
     columns: footerColumns,
+    footerNav: footerColumns[0]?.links ?? DEFAULT_FOOTER_CONFIG.footerNav,
     socials: DEFAULT_FOOTER_CONFIG.socialLinks.map((s) => ({ platform: s.platform, url: s.url })),
+    socialLinks: DEFAULT_FOOTER_CONFIG.socialLinks.map((s) => ({ platform: s.platform, url: s.url })),
+    socialHeading: DEFAULT_FOOTER_CONFIG.socialHeading ?? "Social",
     copyrightText: DEFAULT_FOOTER_CONFIG.copyrightText,
     versionLine: DEFAULT_FOOTER_CONFIG.versionLine,
+    isVisible: true,
+    showBrandColumn: true,
+    showSocialColumn: true,
+    showBottomBar: true,
   };
   results.push(`siteContent/footer: ${await writeIfMissing("siteContent/footer", footerPayload)}`);
 
@@ -295,8 +303,11 @@ async function main() {
         "/admin/faq",
         "/admin/apply",
         "/admin/submissions",
+        "/admin/notifications",
         "/admin/activity",
+        "/admin/footer-config",
         "/admin/layout",
+        "/admin/access",
       ],
       visibility: {
         "/admin/dashboard": true,
@@ -309,11 +320,20 @@ async function main() {
         "/admin/faq": true,
         "/admin/apply": true,
         "/admin/submissions": true,
+        "/admin/notifications": true,
         "/admin/activity": true,
+        "/admin/footer-config": true,
         "/admin/layout": true,
+        "/admin/access": true,
       },
       showViewSite: true,
       showThemeToggle: true,
+    })}`,
+  );
+
+  results.push(
+    `siteConfig/submissionNotifications: ${await writeIfMissing("siteConfig/submissionNotifications", {
+      applyFormRecipientEmails: [],
     })}`,
   );
 

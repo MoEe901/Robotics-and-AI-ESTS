@@ -2,7 +2,7 @@
 
 import { ArrowRight, Check, Clock, Mail, MapPin, Phone } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import type {
   ApplyContactRow,
@@ -11,6 +11,10 @@ import type {
 } from "@/lib/firebase/types";
 import { DEFAULT_APPLY_CONFIG } from "@/lib/content/apply-defaults";
 import { CommunityCard } from "@/components/content/community-card";
+import {
+  applyEducationYearDepartmentMode,
+  departmentOptionsForApplyEducationYear,
+} from "@/lib/team/school-taxonomy";
 
 const TONE_ICON: Record<ApplyContactRow["tone"], string> = {
   blue: "bg-sky-500/10 text-sky-400",
@@ -147,28 +151,74 @@ export function ApplySection({ config }: ApplySectionProps) {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  /** Avoid SSR/client hydration mismatches on the department `<select>` (option list + disabled vary with year). */
+  const [deptFieldReady, setDeptFieldReady] = useState(false);
+  useEffect(() => {
+    setDeptFieldReady(true);
+  }, []);
+
+  const deptMode = useMemo(
+    () => (educationYear ? applyEducationYearDepartmentMode(educationYear) : "unknown"),
+    [educationYear],
+  );
+  const requiresDepartment = deptMode !== "none";
+
+  const filteredDepts = useMemo(
+    () => departmentOptionsForApplyEducationYear(educationYear, depts),
+    [educationYear, depts],
+  );
+
+  useEffect(() => {
+    if (!department) return;
+    if (filteredDepts.length > 0 && !filteredDepts.includes(department)) {
+      setDepartment("");
+    }
+  }, [educationYear, filteredDepts, department]);
+
+  useEffect(() => {
+    if (!requiresDepartment && department) {
+      setDepartment("");
+    }
+  }, [requiresDepartment, department]);
+
+  const requiredSlots = requiresDepartment ? 6 : 5;
+
   const filledRequired = useMemo(() => {
     let n = 0;
     if (firstName.trim()) n++;
     if (lastName.trim()) n++;
     if (educationYear) n++;
-    if (department) n++;
+    if (requiresDepartment && department) n++;
     if (email.trim()) n++;
     if (phone.trim()) n++;
     return n;
-  }, [firstName, lastName, educationYear, department, email, phone]);
+  }, [firstName, lastName, educationYear, department, email, phone, requiresDepartment]);
 
-  const progressPct = Math.min(100, Math.round((filledRequired / 6) * 100));
+  const progressPct = Math.min(100, Math.round((filledRequired / requiredSlots) * 100));
 
   const validate = useCallback(() => {
     if (!firstName.trim()) return "First name is required.";
     if (!lastName.trim()) return "Last name is required.";
     if (!educationYear) return "Education year is required.";
-    if (!department) return "Department is required.";
+    if (requiresDepartment) {
+      if (!department) return "Department is required.";
+      if (filteredDepts.length > 0 && !filteredDepts.includes(department)) {
+        return "Pick a department that matches your education year.";
+      }
+    }
     if (!email.trim()) return "Email is required.";
     if (!phone.trim()) return "Phone number is required.";
     return null;
-  }, [firstName, lastName, educationYear, department, email, phone]);
+  }, [
+    firstName,
+    lastName,
+    educationYear,
+    department,
+    email,
+    phone,
+    requiresDepartment,
+    filteredDepts,
+  ]);
 
   async function handleSubmit() {
     setSubmitError(null);
@@ -189,7 +239,7 @@ export function ApplySection({ config }: ApplySectionProps) {
             firstName: firstName.trim(),
             lastName: lastName.trim(),
             educationYear,
-            department,
+            department: requiresDepartment ? department : "",
             email: email.trim(),
             phone: phone.trim(),
             message: message.trim(),
@@ -422,25 +472,42 @@ export function ApplySection({ config }: ApplySectionProps) {
                       ))}
                     </select>
                   </label>
-                  <label className="flex flex-col gap-1.5">
-                    <span className="font-jetbrains text-[10px] font-medium uppercase tracking-[0.1em] text-slate-500">
-                      {c.departmentLabel} <span className="text-fuchsia-400">*</span>
-                    </span>
-                    <select
-                      value={department}
-                      onChange={(e) => setDepartment(e.target.value)}
-                      className="w-full rounded-[10px] border border-violet-500/15 bg-white/[0.03] px-3.5 py-2.5 text-[13.5px] text-slate-200 outline-none transition focus:border-violet-400/50 focus:shadow-[0_0_0_3px_rgba(124,58,237,0.12)]"
-                    >
-                      <option value="" disabled>
-                        Select your department
-                      </option>
-                      {depts.map((d) => (
-                        <option key={d} value={d} className="bg-[#0d0f1a]">
-                          {d}
+                  {requiresDepartment ? (
+                    <label className="flex flex-col gap-1.5">
+                      <span className="font-jetbrains text-[10px] font-medium uppercase tracking-[0.1em] text-slate-500">
+                        {c.departmentLabel} <span className="text-fuchsia-400">*</span>
+                      </span>
+                      <select
+                        value={deptFieldReady ? department : ""}
+                        onChange={(e) => setDepartment(e.target.value)}
+                        disabled={!deptFieldReady || !educationYear}
+                        suppressHydrationWarning
+                        className="w-full rounded-[10px] border border-violet-500/15 bg-white/[0.03] px-3.5 py-2.5 text-[13.5px] text-slate-200 outline-none transition focus:border-violet-400/50 focus:shadow-[0_0_0_3px_rgba(124,58,237,0.12)] disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <option value="" disabled>
+                          {deptFieldReady && educationYear
+                            ? "Select your department"
+                            : "Select your year first"}
                         </option>
-                      ))}
-                    </select>
-                  </label>
+                        {deptFieldReady
+                          ? filteredDepts.map((d) => (
+                              <option key={d} value={d} className="bg-[#0d0f1a]">
+                                {d}
+                              </option>
+                            ))
+                          : null}
+                      </select>
+                    </label>
+                  ) : (
+                    <div className="flex flex-col gap-1.5 rounded-[10px] border border-violet-500/10 bg-white/[0.02] px-3.5 py-3">
+                      <span className="font-jetbrains text-[10px] font-medium uppercase tracking-[0.1em] text-slate-500">
+                        {c.departmentLabel}
+                      </span>
+                      <p className="text-[12.5px] leading-relaxed text-slate-500">
+                        Not required for the level you selected (e.g. Master, Doctoral, Professor).
+                      </p>
+                    </div>
+                  )}
                   <label className="flex flex-col gap-1.5">
                     <span className="font-jetbrains text-[10px] font-medium uppercase tracking-[0.1em] text-slate-500">
                       {c.emailLabel} <span className="text-fuchsia-400">*</span>

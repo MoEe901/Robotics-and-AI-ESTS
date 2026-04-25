@@ -2,11 +2,15 @@
 
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
-import { FileText, Megaphone, Palette, Users, Video, Wallet } from "lucide-react";
 
 import { db } from "@/lib/firebase";
 import type { ProcessStepItem } from "@/lib/firebase/types";
 import { DEFAULT_PROCESS_STEPS_CONFIG } from "@/lib/content/process-steps-defaults";
+import {
+  resolveSectionIcon,
+  SECTION_ICON_KEYS,
+  SECTION_ICON_OPTIONS,
+} from "@/lib/icons/section-icon-pack";
 
 type PartnerLogoRow = {
   imageUrl: string;
@@ -61,79 +65,17 @@ const WHY_JOIN_DEFAULT = {
   ] as WhyJoinCardRow[],
 };
 
-const ICON_OPTIONS = [
-  { key: "users", label: "Users", icon: Users },
-  { key: "palette", label: "Palette", icon: Palette },
-  { key: "video", label: "Video", icon: Video },
-  { key: "file", label: "File", icon: FileText },
-  { key: "wallet", label: "Wallet", icon: Wallet },
-  { key: "megaphone", label: "Megaphone", icon: Megaphone },
-] as const;
-
-const PROCESS_STEP_ICON_OPTIONS = [
-  // ── People ──────────────────────────────────────────
-  { key: "users",          label: "Users"          },
-  { key: "user",           label: "User"           },
-  { key: "user-plus",      label: "User Plus"      },
-  { key: "user-check",     label: "User Check"     },
-  { key: "graduation-cap", label: "Graduation Cap" },
-  { key: "badge",          label: "Badge"          },
-  // ── Actions / Progress ──────────────────────────────
-  { key: "rocket",         label: "Rocket"         },
-  { key: "target",         label: "Target"         },
-  { key: "award",          label: "Award"          },
-  { key: "trophy",         label: "Trophy"         },
-  { key: "star",           label: "Star"           },
-  { key: "zap",            label: "Zap"            },
-  { key: "flag",           label: "Flag"           },
-  { key: "send",           label: "Send"           },
-  { key: "check-circle",   label: "Check Circle"   },
-  { key: "play-circle",    label: "Play Circle"    },
-  // ── Tech / Build ────────────────────────────────────
-  { key: "lightbulb",      label: "Lightbulb"      },
-  { key: "sparkles",       label: "Sparkles"       },
-  { key: "cpu",            label: "CPU"            },
-  { key: "circuit-board",  label: "Circuit Board"  },
-  { key: "bot",            label: "Bot"            },
-  { key: "code",           label: "Code"           },
-  { key: "terminal",       label: "Terminal"       },
-  { key: "git-branch",     label: "Git Branch"     },
-  { key: "database",       label: "Database"       },
-  { key: "server",         label: "Server"         },
-  { key: "wifi",           label: "Wifi"           },
-  { key: "layers",         label: "Layers"         },
-  { key: "blocks",         label: "Blocks"         },
-  // ── Creativity / Design ─────────────────────────────
-  { key: "palette",        label: "Palette"        },
-  { key: "pen-tool",       label: "Pen Tool"       },
-  { key: "brush",          label: "Brush"          },
-  { key: "image",          label: "Image"          },
-  { key: "video",          label: "Video"          },
-  { key: "camera",         label: "Camera"         },
-  { key: "mic",            label: "Mic"            },
-  // ── Organisation / Admin ────────────────────────────
-  { key: "calendar",       label: "Calendar"       },
-  { key: "file-text",      label: "File Text"      },
-  { key: "clipboard",      label: "Clipboard"      },
-  { key: "folder",         label: "Folder"         },
-  { key: "wallet",         label: "Wallet"         },
-  { key: "megaphone",      label: "Megaphone"      },
-  { key: "mail",           label: "Mail"           },
-  // ── Science / Innovation ────────────────────────────
-  { key: "flask-conical",  label: "Flask"          },
-  { key: "microscope",     label: "Microscope"     },
-  { key: "atom",           label: "Atom"           },
-  { key: "brain",          label: "Brain"          },
-  { key: "dna",            label: "DNA"            },
-  { key: "wrench",         label: "Wrench"         },
-  { key: "settings",       label: "Settings"       },
-] as const;
+/* Cellules and Process Steps now share the same 50-icon pack. The pack is
+   defined once in lib/icons/section-icon-pack.ts so the dropdown options,
+   the parser whitelist, and the runtime icon map cannot drift apart. */
 
 function guessIconKeyFromTitle(title: string): string {
   const text = title.toLowerCase();
   if (text.includes("design")) return "palette";
   if (text.includes("media") || text.includes("video")) return "video";
-  if (text.includes("secret") || text.includes("doc") || text.includes("record")) return "file";
+  /* Canonical key is "file-text" since the icon pack consolidation; legacy
+     "file" still resolves at render time but new picks emit the canonical key. */
+  if (text.includes("secret") || text.includes("doc") || text.includes("record")) return "file-text";
   if (text.includes("treasury") || text.includes("finance") || text.includes("budget")) return "wallet";
   if (text.includes("communic") || text.includes("social") || text.includes("partnership")) return "megaphone";
   return "users";
@@ -142,9 +84,43 @@ function guessIconKeyFromTitle(title: string): string {
 function regenerateIconKey(currentKey: string, title: string): string {
   const guessed = guessIconKeyFromTitle(title);
   if (guessed !== currentKey) return guessed;
-  const idx = ICON_OPTIONS.findIndex((opt) => opt.key === currentKey);
-  const next = idx >= 0 ? ICON_OPTIONS[(idx + 1) % ICON_OPTIONS.length] : ICON_OPTIONS[0];
+  const idx = SECTION_ICON_OPTIONS.findIndex((opt) => opt.key === currentKey);
+  const next = idx >= 0 ? SECTION_ICON_OPTIONS[(idx + 1) % SECTION_ICON_OPTIONS.length] : SECTION_ICON_OPTIONS[0];
   return next?.key ?? "users";
+}
+
+/* Group options under <optgroup> so 50-entry dropdowns stay scannable. The
+   group order is fixed by SECTION_ICON_OPTIONS; we just bucket them into
+   an ordered map without re-sorting. */
+const SECTION_ICON_GROUPS = (() => {
+  const order: Array<SectionIconGroup> = [];
+  const buckets = new Map<SectionIconGroup, typeof SECTION_ICON_OPTIONS[number][]>();
+  for (const opt of SECTION_ICON_OPTIONS) {
+    if (!buckets.has(opt.group)) {
+      buckets.set(opt.group, []);
+      order.push(opt.group);
+    }
+    buckets.get(opt.group)!.push(opt);
+  }
+  return order.map((g) => ({ group: g, options: buckets.get(g)! }));
+})();
+
+type SectionIconGroup = (typeof SECTION_ICON_OPTIONS)[number]["group"];
+
+function SectionIconOptionList() {
+  return (
+    <>
+      {SECTION_ICON_GROUPS.map(({ group, options }) => (
+        <optgroup key={group} label={group}>
+          {options.map((opt) => (
+            <option key={opt.key} value={opt.key}>
+              {opt.label}
+            </option>
+          ))}
+        </optgroup>
+      ))}
+    </>
+  );
 }
 
 function safeTrim(value: unknown): string {
@@ -306,9 +282,12 @@ export function KnowUsConfigClient() {
               const cardDescription = typeof o.description === "string" ? o.description.trim() : "";
               if (!cardTitle || !cardDescription) return null;
               const iconRaw = typeof o.iconKey === "string" ? o.iconKey.trim().toLowerCase() : "";
-              const iconKey = ICON_OPTIONS.some((opt) => opt.key === iconRaw)
-                ? iconRaw
-                : guessIconKeyFromTitle(cardTitle);
+              /* Accept legacy "file" alias even though it's not in the dropdown
+                 — the render side resolves it via resolveSectionIcon. */
+              const iconKey =
+                SECTION_ICON_KEYS.has(iconRaw) || iconRaw === "file"
+                  ? iconRaw
+                  : guessIconKeyFromTitle(cardTitle);
               const iconImageUrl =
                 typeof o.iconImageUrl === "string" && o.iconImageUrl.trim() ? o.iconImageUrl.trim() : "";
               return { title: cardTitle, description: cardDescription, iconKey, iconImageUrl };
@@ -338,7 +317,7 @@ export function KnowUsConfigClient() {
               const title = typeof o.title === "string" ? o.title.trim() : "";
               const description = typeof o.description === "string" ? o.description.trim() : "";
               const ik = typeof o.iconKey === "string" ? o.iconKey.trim().toLowerCase() : "";
-              const iconKey = PROCESS_STEP_ICON_OPTIONS.some((x) => x.key === ik) ? ik : "users";
+              const iconKey = SECTION_ICON_KEYS.has(ik) ? ik : "users";
               if (!badge || !title || !description) return null;
               return { badge, title, description, iconKey };
             })
@@ -396,7 +375,10 @@ export function KnowUsConfigClient() {
         .map((row) => ({
           title: safeTrim(row?.title),
           description: safeTrim(row?.description),
-          iconKey: ICON_OPTIONS.some((opt) => opt.key === row?.iconKey) ? row.iconKey : guessIconKeyFromTitle(safeTrim(row?.title)),
+          iconKey:
+            SECTION_ICON_KEYS.has(row?.iconKey ?? "") || row?.iconKey === "file"
+              ? row.iconKey
+              : guessIconKeyFromTitle(safeTrim(row?.title)),
           iconImageUrl: safeTrim(row?.iconImageUrl),
         }))
         .filter((row) => row.title && row.description)
@@ -410,7 +392,7 @@ export function KnowUsConfigClient() {
           badge: safeTrim(row?.badge),
           title: safeTrim(row?.title),
           description: safeTrim(row?.description),
-          iconKey: PROCESS_STEP_ICON_OPTIONS.some((o) => o.key === row?.iconKey) ? row.iconKey : "users",
+          iconKey: SECTION_ICON_KEYS.has(row?.iconKey ?? "") ? row.iconKey : "users",
         }))
         .filter((row) => row.badge && row.title && row.description)
         .slice(0, 8);
@@ -677,8 +659,7 @@ export function KnowUsConfigClient() {
 
           <div className="space-y-3">
             {cellulesCards.map((row, i) => {
-              const OptionIcon =
-                ICON_OPTIONS.find((opt) => opt.key === row.iconKey)?.icon ?? Users;
+              const OptionIcon = resolveSectionIcon(row.iconKey);
               return (
                 <div key={i} className="rounded-xl border border-white/10 bg-black/20 p-3">
                   <div className="flex items-center justify-between gap-2">
@@ -746,11 +727,7 @@ export function KnowUsConfigClient() {
                           }}
                           className="rounded-lg border border-white/15 bg-black/30 px-2 py-1 text-xs text-white outline-none focus:border-white/35"
                         >
-                          {ICON_OPTIONS.map((opt) => (
-                            <option key={opt.key} value={opt.key}>
-                              {opt.label}
-                            </option>
-                          ))}
+                          <SectionIconOptionList />
                         </select>
                         <button
                           type="button"
@@ -897,11 +874,7 @@ export function KnowUsConfigClient() {
                     }}
                     className="w-full rounded-lg border border-white/15 bg-black/30 px-2 py-1.5 text-sm text-white outline-none focus:border-white/35"
                   >
-                    {PROCESS_STEP_ICON_OPTIONS.map((opt) => (
-                      <option key={opt.key} value={opt.key}>
-                        {opt.label}
-                      </option>
-                    ))}
+                    <SectionIconOptionList />
                   </select>
                 </label>
               </div>

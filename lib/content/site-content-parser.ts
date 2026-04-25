@@ -17,6 +17,7 @@ import type {
 import { DEFAULT_FOOTER_CONFIG } from "@/lib/firebase/types";
 import { DEFAULT_NAVBAR_CONFIG } from "@/lib/firebase/types";
 import { DEFAULT_PROCESS_STEPS_CONFIG } from "@/lib/content/process-steps-defaults";
+import { SECTION_ICON_KEYS } from "@/lib/icons/section-icon-pack";
 
 const heroCtaSchema = z.object({
   label: z.string(),
@@ -765,22 +766,9 @@ export function parseCellulesDoc(raw: Record<string, unknown>): CellulesConfig |
   return { eyebrow: eyebrow || "Robotics & AI Club", title: title || "Our Cellules", subtitle: intro, cards };
 }
 
-const STEP_ICONS = new Set([
-  // People
-  "users", "user", "user-plus", "user-check", "graduation-cap", "badge",
-  // Actions / Progress
-  "rocket", "target", "award", "trophy", "star", "zap",
-  "flag", "send", "check-circle", "play-circle",
-  // Tech / Build
-  "lightbulb", "sparkles", "cpu", "circuit-board", "bot", "code",
-  "terminal", "git-branch", "database", "server", "wifi", "layers", "blocks",
-  // Creativity / Design
-  "palette", "pen-tool", "brush", "image", "video", "camera", "mic",
-  // Organisation / Admin
-  "calendar", "file-text", "clipboard", "folder", "wallet", "megaphone", "mail",
-  // Science / Innovation
-  "flask-conical", "microscope", "atom", "brain", "dna", "wrench", "settings",
-]);
+/* Single source of truth for the section icon whitelist — same set powers
+   the Process Steps and Cellules dropdowns and the runtime icon map. */
+const STEP_ICONS = SECTION_ICON_KEYS;
 
 export function parseProcessStepsDoc(raw: Record<string, unknown>): ProcessStepsConfig | null {
   const eyebrow = typeof raw.eyebrow === "string" ? raw.eyebrow.trim() : "";
@@ -858,11 +846,19 @@ export function parseFooterDoc(raw: Record<string, unknown>): FooterConfig {
         })
         .filter((x): x is FooterNavItem => Boolean(x));
       if (!heading || !links.length) return null;
-      return { heading, links };
+      const isVisible = o.isVisible !== false;
+      return { heading, links, isVisible };
     })
-    .filter((c): c is { heading: string; links: FooterNavItem[] } => Boolean(c));
+    .filter(
+      (c): c is { heading: string; links: FooterNavItem[]; isVisible: boolean } =>
+        Boolean(c),
+    );
 
-  const socialsRaw = Array.isArray(raw.socials) ? raw.socials : [];
+  const socialsRaw = Array.isArray(raw.socials)
+    ? raw.socials
+    : Array.isArray(raw.socialLinks)
+      ? raw.socialLinks
+      : [];
   const socialLinks: FooterSocialLink[] = socialsRaw
     .map((row) => {
       if (!row || typeof row !== "object") return null;
@@ -876,6 +872,11 @@ export function parseFooterDoc(raw: Record<string, unknown>): FooterConfig {
 
   const footerNav =
     columns[0]?.links?.length ? columns[0].links : [...DEFAULT_FOOTER_CONFIG.footerNav];
+
+  const socialHeading =
+    typeof raw.socialHeading === "string" && raw.socialHeading.trim()
+      ? raw.socialHeading.trim()
+      : DEFAULT_FOOTER_CONFIG.socialHeading ?? "Social";
 
   return {
     tagline: tagline || DEFAULT_FOOTER_CONFIG.tagline,
@@ -892,6 +893,11 @@ export function parseFooterDoc(raw: Record<string, unknown>): FooterConfig {
         ? raw.versionLine.trim()
         : DEFAULT_FOOTER_CONFIG.versionLine,
     footerColumns: columns.length ? columns : undefined,
+    isVisible: raw.isVisible !== false,
+    showBrandColumn: raw.showBrandColumn !== false,
+    showSocialColumn: raw.showSocialColumn !== false,
+    socialHeading,
+    showBottomBar: raw.showBottomBar !== false,
   };
 }
 

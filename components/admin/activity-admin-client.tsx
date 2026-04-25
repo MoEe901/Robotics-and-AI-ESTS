@@ -98,41 +98,52 @@ export function ActivityAdminClient() {
 
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState<number | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // Subscribe to activity posts (same collection as the hero live-activity card).
   useEffect(() => {
     const q = query(collection(db(), "activity"), orderBy("createdAt", "desc"));
-    return onSnapshot(q, (snap) => {
-      setRows(
-        snap.docs.map((d) => {
-          const data = d.data() as Record<string, unknown>;
-          const ts = data.createdAt as { toDate?: () => Date } | undefined;
-          return {
-            id: d.id,
-            title: typeof data.title === "string" ? data.title : "",
-            isVisible: data.isVisible !== false,
-            createdAt: ts?.toDate ? ts.toDate().toISOString() : "",
-          };
-        }),
-      );
-    });
+    return onSnapshot(
+      q,
+      (snap) => {
+        setRows(
+          snap.docs.map((d) => {
+            const data = d.data() as Record<string, unknown>;
+            const ts = data.createdAt as { toDate?: () => Date } | undefined;
+            return {
+              id: d.id,
+              title: typeof data.title === "string" ? data.title : "",
+              isVisible: data.isVisible !== false,
+              createdAt: ts?.toDate ? ts.toDate().toISOString() : "",
+            };
+          }),
+        );
+        setLoadError(null);
+      },
+      (e) => {
+        setRows([]);
+        setLoadError(e instanceof Error ? e.message : "Could not load activity posts.");
+      },
+    );
   }, []);
 
   // Subscribe to hero doc — single source of truth for the three card configs.
   useEffect(() => {
-    return onSnapshot(doc(db(), "siteContent", "hero"), (snap) => {
-      if (!snap.exists()) return;
-      const data = snap.data() as Record<string, unknown>;
-      const cards =
-        data.heroCards && typeof data.heroCards === "object"
-          ? (data.heroCards as Record<string, unknown>)
-          : {};
-      const a = (cards.activity ?? {}) as Record<string, unknown>;
-      const t = (cards.techStack ?? {}) as Record<string, unknown>;
-      const g = (cards.growth ?? {}) as Record<string, unknown>;
-      const growthRaw = (data.growth && typeof data.growth === "object"
-        ? (data.growth as Record<string, unknown>)
-        : {}) as Record<string, unknown>;
+    return onSnapshot(
+      doc(db(), "siteContent", "hero"),
+      (snap) => {
+        if (!snap.exists()) return;
+        const data = snap.data() as Record<string, unknown>;
+        const cards =
+          data.heroCards && typeof data.heroCards === "object"
+            ? (data.heroCards as Record<string, unknown>)
+            : {};
+        const a = (cards.activity ?? {}) as Record<string, unknown>;
+        const t = (cards.techStack ?? {}) as Record<string, unknown>;
+        const g = (cards.growth ?? {}) as Record<string, unknown>;
+        const growthRaw = (data.growth && typeof data.growth === "object"
+          ? (data.growth as Record<string, unknown>)
+          : {}) as Record<string, unknown>;
 
       setActivityHeader({
         isVisible: a.isVisible !== false,
@@ -157,24 +168,27 @@ export function ActivityAdminClient() {
         : data.techStack && typeof data.techStack === "object" && Array.isArray((data.techStack as Record<string, unknown>).items)
           ? ((data.techStack as Record<string, unknown>).items as unknown[])
           : null;
-      if (Array.isArray(rawTech) && rawTech.length > 0) {
-        const parsed: TechPill[] = [];
-        rawTech.forEach((item, idx) => {
-          if (!item || typeof item !== "object") return;
-          const obj = item as Record<string, unknown>;
-          const id = typeof obj.id === "string" && obj.id ? obj.id : makePillId();
-          const label = typeof obj.label === "string" ? obj.label.trim() : "";
-          if (!label) return;
-          const accentRaw = typeof obj.accent === "string" ? obj.accent : "violet";
-          const accent: TechPill["accent"] = accentRaw === "cyan" || accentRaw === "mixed" || accentRaw === "violet" ? accentRaw : "violet";
-          const order = typeof obj.order === "number" ? obj.order : idx;
-          const isVisible = obj.isVisible !== false;
-          parsed.push({ id, label, accent, order, isVisible });
-        });
-        parsed.sort((x, y) => x.order - y.order);
-        if (parsed.length) setTechPills(parsed);
-      }
-    });
+        if (Array.isArray(rawTech) && rawTech.length > 0) {
+          const parsed: TechPill[] = [];
+          rawTech.forEach((item, idx) => {
+            if (!item || typeof item !== "object") return;
+            const obj = item as Record<string, unknown>;
+            const id = typeof obj.id === "string" && obj.id ? obj.id : makePillId();
+            const label = typeof obj.label === "string" ? obj.label.trim() : "";
+            if (!label) return;
+            const accentRaw = typeof obj.accent === "string" ? obj.accent : "violet";
+            const accent: TechPill["accent"] = accentRaw === "cyan" || accentRaw === "mixed" || accentRaw === "violet" ? accentRaw : "violet";
+            const order = typeof obj.order === "number" ? obj.order : idx;
+            const isVisible = obj.isVisible !== false;
+            parsed.push({ id, label, accent, order, isVisible });
+          });
+          parsed.sort((x, y) => x.order - y.order);
+          if (parsed.length) setTechPills(parsed);
+        }
+        setLoadError(null);
+      },
+      (e) => setLoadError(e instanceof Error ? e.message : "Could not load hero card config."),
+    );
   }, []);
 
   const sortedPills = useMemo(() => [...techPills].sort((a, b) => a.order - b.order), [techPills]);
@@ -267,6 +281,11 @@ export function ActivityAdminClient() {
         Growth. Toggle visibility, change headers, manage posts and pills. Changes appear on
         the homepage within ~1 second.
       </p>
+      {loadError ? (
+        <p className="mt-4 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-100/90">
+          {loadError}
+        </p>
+      ) : null}
 
       {/* Live Activity */}
       <section className="admin-card mt-8 space-y-5 p-5 sm:p-6">

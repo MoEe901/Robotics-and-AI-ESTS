@@ -2,79 +2,173 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    /** Null-safe: never touch request.auth.token until auth is non-null. */
-    function isAdmin() {
+
+    /** Keep in sync with deployment: same addresses as `NEXT_PUBLIC_ADMIN_EMAILS` (lowercase). */
+    function legacyAdminEmails() {
+      return [
+        "admin123@gmail.com",
+      ];
+    }
+
+    /**
+     * Emergency bootstrap UIDs with full admin until RBAC is fully stable.
+     * Keep only trusted owners here, then remove once all adminUsers are provisioned.
+     */
+    function bootstrapAdminUids() {
+      // Include both spellings: UID is case-sensitive; a typo here blocks all admin writes.
+      return [
+        "CQ5PMN8qGYbaLYmwNYQaZiF6E4r2",
+        "CQ5PMN8qGYbaLYmwNYQaZIf6E4r2",
+      ];
+    }
+
+    function bootstrapAdminEmails() {
+      return [
+        "m.talbani0481@uca.ac.ma",
+      ];
+    }
+
+    function isLegacyAdmin() {
       return request.auth != null
-        && request.auth.token.email in ["admin123@gmail.com"];
+        && request.auth.token.email is string
+        && request.auth.token.email in legacyAdminEmails();
+    }
+
+    function isBootstrapAdmin() {
+      return request.auth != null
+        && (
+          request.auth.uid in bootstrapAdminUids()
+          || (request.auth.token.email is string
+            && request.auth.token.email in bootstrapAdminEmails())
+        );
+    }
+
+    function adminUserDoc() {
+      return get(/databases/$(database)/documents/adminUsers/$(request.auth.uid));
+    }
+
+    function isRbacProvisioned() {
+      return request.auth != null
+        && adminUserDoc().exists
+        && adminUserDoc().data.active != false
+        && adminUserDoc().data.role in ['admin', 'editor', 'moderator', 'viewer'];
+    }
+
+    function rbacRole() {
+      return adminUserDoc().data.role;
+    }
+
+    function provisioned() {
+      return isLegacyAdmin() || isBootstrapAdmin() || isRbacProvisioned();
+    }
+
+    /** Super-admin: legacy list or Firestore role `admin`. */
+    function isAdminFull() {
+      return isLegacyAdmin()
+        || isBootstrapAdmin()
+        || (isRbacProvisioned() && rbacRole() == 'admin');
+    }
+
+    function isEditor() {
+      return isRbacProvisioned() && rbacRole() == 'editor';
+    }
+
+    function isModerator() {
+      return isRbacProvisioned() && rbacRole() == 'moderator';
+    }
+
+    function isViewer() {
+      return isRbacProvisioned() && rbacRole() == 'viewer';
+    }
+
+    function canWriteContent() {
+      return isAdminFull() || isEditor();
+    }
+
+    function canModerateSubmissions() {
+      return isAdminFull() || isModerator();
+    }
+
+    function canReadSubmissions() {
+      return isAdminFull() || isModerator() || isViewer();
+    }
+
+    function canWriteSiteConfig(docId) {
+      return (docId == 'adminShell' && isAdminFull())
+        || (docId == 'submissionNotifications' && isAdminFull())
+        || (docId != 'adminShell' && docId != 'submissionNotifications' && canWriteContent());
+    }
+
+    match /adminUsers/{userId} {
+      allow read: if request.auth != null
+        && (request.auth.uid == userId || isAdminFull());
+      allow create, update, delete: if isAdminFull();
     }
 
     match /teamMembers/{docId} {
-      allow read: if isAdmin()
+      allow read: if canWriteContent()
+        || provisioned()
         || (resource.data.isActive == true && resource.data.isVisible == true);
-      allow create, update, delete: if isAdmin();
+      allow create, update, delete: if canWriteContent();
     }
 
     match /events/{docId} {
-      allow read: if isAdmin() || resource.data.isActive == true;
-      allow create, update, delete: if isAdmin();
+      allow read: if canWriteContent() || provisioned() || resource.data.isActive == true;
+      allow create, update, delete: if canWriteContent();
     }
 
     match /pageSections/{docId} {
       allow read: if true;
-      allow create, update, delete: if isAdmin();
+      allow create, update, delete: if canWriteContent();
     }
 
     match /teamConfig/{docId} {
       allow read: if true;
-      allow create, update, delete: if isAdmin();
+      allow create, update, delete: if canWriteContent();
     }
 
     match /siteConfig/{docId} {
       allow read: if true;
-      allow create, update, delete: if isAdmin();
+      allow create, update, delete: if canWriteSiteConfig(docId);
     }
 
     match /siteContent/{docId} {
       allow read: if true;
-      allow create, update, delete: if isAdmin();
+      allow create, update, delete: if canWriteContent();
     }
 
     match /faq/config {
       allow read: if true;
-      allow create, update, delete: if isAdmin();
+      allow create, update, delete: if canWriteContent();
     }
 
     match /faq/config/questions/{qid} {
-      allow read: if isAdmin() || resource.data.isVisible == true;
-      allow create, update, delete: if isAdmin();
+      allow read: if canWriteContent() || provisioned() || resource.data.isVisible == true;
+      allow create, update, delete: if canWriteContent();
     }
 
     match /apply/{docId} {
       allow read: if true;
-      allow create, update, delete: if isAdmin();
+      allow create, update, delete: if canWriteContent();
     }
 
     match /eventsConfig/{docId} {
       allow read: if true;
-      allow create, update, delete: if isAdmin();
+      allow create, update, delete: if canWriteContent();
     }
 
     match /activity/{docId} {
-      allow read: if isAdmin() || resource.data.isVisible == true;
-      allow create, update, delete: if isAdmin();
+      allow read: if canWriteContent() || provisioned() || resource.data.isVisible == true;
+      allow create, update, delete: if canWriteContent();
     }
 
     match /rsvps/{docId} {
-      allow read: if isAdmin();
+      allow read: if provisioned();
       allow create: if true;
-      allow update, delete: if isAdmin();
+      allow update, delete: if isAdminFull();
     }
 
     match /submissions/{docId} {
-      // Create constraints:
-      // - status pinning prevents clients from writing already-archived spam.
-      // - size limits prevent payload bombs on deeply nested maps.
-      // - keys allowlist blocks unknown fields the admin UI does not understand.
       allow create: if request.resource.data.status == "new"
         && request.resource.data.formId is string
         && request.resource.data.userAgent is string
@@ -92,13 +186,14 @@ service cloud.firestore {
           "notificationSent",
           "notificationError",
         ]);
-      allow read, update, delete: if isAdmin();
+      allow read: if canReadSubmissions();
+      allow update, delete: if canModerateSubmissions();
     }
 
     match /applySubmissions/{docId} {
-      allow read: if isAdmin();
+      allow read: if canModerateSubmissions();
       allow create: if true;
-      allow update, delete: if isAdmin();
+      allow update, delete: if canModerateSubmissions();
     }
 
     match /{document=**} {

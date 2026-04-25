@@ -9,12 +9,14 @@ import {
   HelpCircle,
   Info,
   Inbox,
+  Mail,
   Activity,
   LayoutDashboard,
   LayoutTemplate,
   LogOut,
   Menu,
   Moon,
+  PanelBottom,
   SlidersHorizontal,
   Sparkles,
   Sun,
@@ -27,6 +29,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 
+import { useAdminSession } from "@/components/admin/admin-session-context";
+import { filterAdminNavForRole } from "@/lib/admin-nav-rbac";
 import { auth, db } from "@/lib/firebase";
 
 type Props = { children: React.ReactNode };
@@ -69,7 +73,9 @@ export const ADMIN_NAV_ITEMS: readonly AdminNavItem[] = [
   { href: "/admin/faq", label: "FAQ", icon: HelpCircle },
   { href: "/admin/apply", label: "Apply", icon: FileEdit },
   { href: "/admin/submissions", label: "Submissions", icon: Inbox },
+  { href: "/admin/notifications", label: "Notifications", icon: Mail },
   { href: "/admin/activity", label: "Hero cards", icon: Activity },
+  { href: "/admin/footer-config", label: "Footer", icon: PanelBottom },
   { href: "/admin/layout", label: "Layout", icon: LayoutTemplate },
 ] as const;
 
@@ -124,11 +130,21 @@ export function AdminShell({ children }: Props) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [newSubmissionsCount, setNewSubmissionsCount] = useState(0);
   const [shellConfig, setShellConfig] = useState<AdminShellConfig>(DEFAULT_ADMIN_SHELL_CONFIG);
+  const { ready: sessionReady, session } = useAdminSession();
+
+  const showSubmissionsBadge =
+    sessionReady &&
+    session?.ok &&
+    (session.mode === "legacy" || session.role === "admin" || session.role === "moderator");
 
   useEffect(() => {
+    if (!showSubmissionsBadge) {
+      setNewSubmissionsCount(0);
+      return;
+    }
     const q = query(collection(db(), "submissions"), where("status", "==", "new"));
     return onSnapshot(q, (snap) => setNewSubmissionsCount(snap.size), () => {});
-  }, []);
+  }, [showSubmissionsBadge]);
 
   useEffect(() => {
     const ref = doc(db(), "siteConfig", "adminShell");
@@ -154,13 +170,18 @@ export function AdminShell({ children }: Props) {
     for (const item of ADMIN_NAV_ITEMS) {
       if (!ordered.includes(item.href)) ordered.push(item.href);
     }
-    return ordered
+    const fromShell = ordered
       .map((h) => byHref.get(h))
       .filter((i): i is AdminNavItem => Boolean(i))
       .filter(
         (i) => ADMIN_NAV_LOCKED.has(i.href) || shellConfig.visibility[i.href] !== false,
       );
-  }, [shellConfig]);
+    if (!sessionReady || !session?.ok) {
+      return fromShell;
+    }
+    const full = session.mode === "legacy" || session.role === "admin";
+    return filterAdminNavForRole(session.role, full, fromShell);
+  }, [shellConfig, session, sessionReady]);
 
   const theme = useSyncExternalStore<AdminThemeMode>(
     subscribeAdminTheme,

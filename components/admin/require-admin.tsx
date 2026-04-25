@@ -1,10 +1,11 @@
 "use client";
 
-import { onAuthStateChanged, signOut } from "firebase/auth";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { signOut } from "firebase/auth";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect } from "react";
 
-import { isAllowlistedAdmin } from "@/lib/admin-allowlist";
+import { useAdminSession } from "@/components/admin/admin-session-context";
+import { isAdminPathAllowedForRole } from "@/lib/admin-route-access";
 import { auth } from "@/lib/firebase";
 
 type Props = {
@@ -13,23 +14,28 @@ type Props = {
 
 export function RequireAdmin({ children }: Props) {
   const router = useRouter();
-  const [ready, setReady] = useState(false);
-  const [allowed, setAllowed] = useState(false);
+  const pathname = usePathname();
+  const { ready, session } = useAdminSession();
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth(), async (user) => {
-      if (!user?.email || !isAllowlistedAdmin(user.email)) {
-        if (user) await signOut(auth());
-        setAllowed(false);
-        setReady(true);
+    if (!ready) return;
+
+    void (async () => {
+      if (!session) {
         router.replace("/admin/login");
         return;
       }
-      setAllowed(true);
-      setReady(true);
-    });
-    return () => unsub();
-  }, [router]);
+      if (!session.ok) {
+        if (session.user) await signOut(auth());
+        router.replace("/admin/login");
+        return;
+      }
+      const full = session.mode === "legacy" || session.role === "admin";
+      if (!isAdminPathAllowedForRole(pathname, session.role, full)) {
+        router.replace("/admin/dashboard");
+      }
+    })();
+  }, [ready, session, pathname, router]);
 
   if (!ready) {
     return (
@@ -39,7 +45,18 @@ export function RequireAdmin({ children }: Props) {
     );
   }
 
-  if (!allowed) return null;
+  if (!session?.ok) {
+    return null;
+  }
+
+  const full = session.mode === "legacy" || session.role === "admin";
+  if (!isAdminPathAllowedForRole(pathname, session.role, full)) {
+    return (
+      <p className="px-6 py-16 text-sm text-white/60">
+        Redirecting…
+      </p>
+    );
+  }
 
   return <>{children}</>;
 }

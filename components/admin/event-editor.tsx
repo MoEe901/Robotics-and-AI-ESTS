@@ -62,6 +62,15 @@ function readGallery(data: Record<string, unknown>): EventGalleryItem[] {
   return out;
 }
 
+function readTopics(data: Record<string, unknown>): string[] {
+  const raw = data.topics;
+  if (!Array.isArray(raw)) return [""];
+  const out = raw
+    .filter((x): x is string => typeof x === "string" && x.trim().length > 0)
+    .map((x) => x.trim());
+  return out.length ? out : [""];
+}
+
 export function EventEditor({ eventId }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -86,6 +95,7 @@ export function EventEditor({ eventId }: Props) {
   const [isFeatured, setIsFeatured] = useState(false);
   const [attachments, setAttachments] = useState<EventAttachment[]>([{ label: "", url: "", visible: true }]);
   const [gallery, setGallery] = useState<EventGalleryItem[]>([{ url: "", kind: "image", caption: "", visible: true }]);
+  const [topics, setTopics] = useState<string[]>([""]);
   const [eventWebsiteUrl, setEventWebsiteUrl] = useState("");
   const [showEventWebsite, setShowEventWebsite] = useState(true);
   const [websiteButtonColor, setWebsiteButtonColor] = useState("");
@@ -125,6 +135,7 @@ export function EventEditor({ eventId }: Props) {
         setEventWebsiteUrl(readString(data, "eventWebsiteUrl"));
         setShowEventWebsite(data.showEventWebsite !== false);
         setWebsiteButtonColor(parseWebsiteCtaHex(readString(data, "eventWebsiteButtonColor")) ?? "");
+        setTopics(readTopics(data));
       } catch (e) {
         if (!cancelled) setLoadError(e instanceof Error ? e.message : "Failed to load");
       } finally {
@@ -196,6 +207,12 @@ export function EventEditor({ eventId }: Props) {
       const galForStore = galClean.map(({ caption, ...rest }) => (caption ? { ...rest, caption } : rest));
       payload.gallery = galForStore.length ? galForStore : deleteField();
 
+      const topicsClean = topics
+        .map((t) => t.trim())
+        .filter(Boolean)
+        .slice(0, 16);
+      payload.topics = topicsClean.length ? topicsClean : deleteField();
+
       await updateDoc(doc(db(), "events", eventId), payload as Partial<EventDoc>);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Save failed");
@@ -222,6 +239,7 @@ export function EventEditor({ eventId }: Props) {
     eventWebsiteUrl,
     showEventWebsite,
     websiteButtonColor,
+    topics,
     eventId,
   ]);
 
@@ -326,6 +344,45 @@ export function EventEditor({ eventId }: Props) {
         </div>
         <label className="block text-sm"><span className="text-white/70">Short description (optional)</span><textarea value={description} onChange={(e)=>setDescription(e.target.value)} rows={3} className="mt-1 w-full resize-y rounded-xl border border-white/15 bg-black/30 px-3 py-2 text-white outline-none focus:border-white/35"/></label>
         <label className="block text-sm"><span className="text-white/70">Event story / documentary</span><textarea value={documentary} onChange={(e)=>setDocumentary(e.target.value)} rows={10} className="mt-1 w-full resize-y rounded-xl border border-white/15 bg-black/30 px-3 py-2 text-white outline-none focus:border-white/35"/></label>
+
+        <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+          <h2 className="text-sm font-semibold text-white">Documentary topics</h2>
+          <p className="mt-1 text-xs text-white/45">
+            Short chips on the public event page sidebar (max 16). Add custom labels — not limited to
+            presets.
+          </p>
+          <ul className="mt-4 space-y-2">
+            {topics.map((t, i) => (
+              <li key={i} className="flex gap-2">
+                <input
+                  value={t}
+                  onChange={(e) => {
+                    const next = [...topics];
+                    next[i] = e.target.value;
+                    setTopics(next);
+                  }}
+                  placeholder="e.g. Robotics, Workshop, EST Safi"
+                  className="min-w-0 flex-1 rounded-lg border border-white/12 bg-black/30 px-3 py-2 text-sm text-white outline-none focus:border-white/35"
+                />
+                <button
+                  type="button"
+                  className="shrink-0 rounded-lg border border-white/15 px-3 py-2 text-xs text-white/70 hover:border-red-500/40 hover:text-red-200"
+                  onClick={() => setTopics(topics.filter((_, j) => j !== i))}
+                >
+                  Remove
+                </button>
+              </li>
+            ))}
+          </ul>
+          <button
+            type="button"
+            className="mt-3 text-xs font-medium text-sky-300 hover:text-sky-200"
+            disabled={topics.length >= 16}
+            onClick={() => setTopics([...topics, ""])}
+          >
+            + Add topic
+          </button>
+        </div>
 
         <div className="border-t border-white/10 pt-6">
           <h2 className="text-sm font-semibold text-white">Downloads</h2>

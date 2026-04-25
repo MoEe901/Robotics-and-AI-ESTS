@@ -26,6 +26,7 @@ function toCsv(rows: Row[]): string {
 
 export function SubmissionsAdminClient() {
   const [rows, setRows] = useState<Row[]>([]);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState("all");
   const [formFilter, setFormFilter] = useState("all");
   const [search, setSearch] = useState("");
@@ -34,20 +35,28 @@ export function SubmissionsAdminClient() {
 
   useEffect(() => {
     const q = query(collection(db(), "submissions"), orderBy("submittedAt", "desc"));
-    return onSnapshot(q, (snap) => {
-      const next: Row[] = snap.docs.map((d) => {
-        const r = d.data() as Record<string, unknown>;
-        const ts = r.submittedAt as { toDate?: () => Date } | undefined;
-        return {
-          id: d.id,
-          formId: typeof r.formId === "string" ? r.formId : "unknown",
-          status: r.status === "read" || r.status === "archived" ? r.status : "new",
-          submittedAt: ts?.toDate ? ts.toDate().toISOString() : "",
-          fields: r.fields && typeof r.fields === "object" ? (r.fields as Record<string, string>) : {},
-        };
-      });
-      setRows(next);
-    });
+    return onSnapshot(
+      q,
+      (snap) => {
+        const next: Row[] = snap.docs.map((d) => {
+          const r = d.data() as Record<string, unknown>;
+          const ts = r.submittedAt as { toDate?: () => Date } | undefined;
+          return {
+            id: d.id,
+            formId: typeof r.formId === "string" ? r.formId : "unknown",
+            status: r.status === "read" || r.status === "archived" ? r.status : "new",
+            submittedAt: ts?.toDate ? ts.toDate().toISOString() : "",
+            fields: r.fields && typeof r.fields === "object" ? (r.fields as Record<string, string>) : {},
+          };
+        });
+        setRows(next);
+        setLoadError(null);
+      },
+      (e) => {
+        setRows([]);
+        setLoadError(e instanceof Error ? e.message : "Could not load submissions.");
+      },
+    );
   }, []);
 
   const forms = useMemo(() => Array.from(new Set(rows.map((r) => r.formId))), [rows]);
@@ -127,6 +136,11 @@ export function SubmissionsAdminClient() {
       </div>
 
       <div className="admin-card mt-6 overflow-x-auto p-5 sm:p-6">
+        {loadError ? (
+          <p className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-100/90">
+            {loadError}
+          </p>
+        ) : null}
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/[0.02] px-6 py-12 text-center">
             <p className="text-sm font-medium text-white/80">No submissions match your filters</p>

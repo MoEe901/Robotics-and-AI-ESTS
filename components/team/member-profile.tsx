@@ -4,7 +4,6 @@ import { Bebas_Neue, DM_Sans } from "next/font/google";
 import {
   ArrowLeft,
   BookOpen,
-  Briefcase,
   Calendar,
   Camera,
   ChevronRight,
@@ -170,13 +169,23 @@ export function MemberProfile({ member }: MemberProfileProps) {
       .filter((t): t is string => Boolean(t));
   })();
 
+  const adminExpertise = (member.expertise ?? [])
+    .map((e) => ({
+      title: typeof e?.title === "string" ? e.title.trim() : "",
+      pct: Math.max(0, Math.min(100, Math.round(Number(e?.level) || 0))),
+    }))
+    .filter((e) => e.title.length > 0)
+    .slice(0, 12);
+
   const skills =
-    roleTitles.length > 0
-      ? roleTitles.slice(0, 8).map((title, i) => ({
-          title,
-          pct: skillWidthPct(title, i),
-        }))
-      : [{ title: "Club member", pct: 72 }];
+    adminExpertise.length > 0
+      ? adminExpertise
+      : roleTitles.length > 0
+        ? roleTitles.slice(0, 8).map((title, i) => ({
+            title,
+            pct: skillWidthPct(title, i),
+          }))
+        : [{ title: "Club member", pct: 72 }];
 
   const interestTags = [
     ...new Set(
@@ -221,12 +230,13 @@ export function MemberProfile({ member }: MemberProfileProps) {
 
   const sidebarContacts = [...direct, ...socialSlots];
 
+  const startedYearDisplay = member.startedYear?.trim()
+    ? member.startedYear.trim()
+    : "—";
+
   const stats = [
     { n: String(roleTitles.length || 0), l: "Roles" },
-    {
-      n: member.academicYear?.trim() ? (member.academicYear.trim().split("-")[0] ?? "—") : "—",
-      l: "Cohort",
-    },
+    { n: startedYearDisplay, l: "Started" },
     {
       n: typeof member.order === "number" && Number.isFinite(member.order) ? String(member.order) : "—",
       l: "Order",
@@ -547,24 +557,15 @@ export function MemberProfile({ member }: MemberProfileProps) {
             <div className="flex flex-col gap-3.5 p-5">
               <div className="flex gap-3 border-b border-white/[0.07] pb-3.5">
                 <div className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-sky-500/15 bg-sky-500/10 text-sky-400">
-                  <Briefcase className="size-3.5" strokeWidth={1.8} />
+                  <BookOpen className="size-3.5" strokeWidth={1.8} />
                 </div>
                 <div className="min-w-0">
-                  <p className="mb-0.5 text-[10px] text-[#6b6a80]">Role</p>
-                  <p className="text-[13px] leading-snug text-[#f0eff5]">{roleLine}</p>
+                  <p className="mb-0.5 text-[10px] text-[#6b6a80]">Department</p>
+                  <p className="text-[13px] leading-snug text-[#f0eff5]">
+                    {departmentLabel || "—"}
+                  </p>
                 </div>
               </div>
-              {departmentLabel ? (
-                <div className="flex gap-3 border-b border-white/[0.07] pb-3.5">
-                  <div className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-sky-500/15 bg-sky-500/10 text-sky-400">
-                    <BookOpen className="size-3.5" strokeWidth={1.8} />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="mb-0.5 text-[10px] text-[#6b6a80]">Department</p>
-                    <p className="text-[13px] leading-snug text-[#f0eff5]">{departmentLabel}</p>
-                  </div>
-                </div>
-              ) : null}
               <div className="flex gap-3 border-b border-white/[0.07] pb-3.5">
                 <div className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-sky-500/15 bg-sky-500/10 text-sky-400">
                   <MapPin className="size-3.5" strokeWidth={1.8} />

@@ -12,6 +12,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
+import { useAdminSession } from "@/components/admin/admin-session-context";
 import { DEFAULT_TEAM_VISIBILITY, type TeamMemberVisibility } from "@/lib/firebase/types";
 import { db } from "@/lib/firebase";
 import { SOCIAL_PLATFORMS } from "@/lib/team/contacts";
@@ -32,6 +33,27 @@ type ContactDraft = {
   value: string;
   visible: boolean;
 };
+
+type ExpertiseDraft = {
+  title: string;
+  level: number;
+};
+
+function parseExpertiseFromDoc(data: DocumentData): ExpertiseDraft[] {
+  const e = (data as { expertise?: unknown }).expertise;
+  if (!Array.isArray(e)) return [];
+  const out: ExpertiseDraft[] = [];
+  for (const row of e) {
+    if (!row || typeof row !== "object") continue;
+    const o = row as Record<string, unknown>;
+    const title = typeof o.title === "string" ? o.title.trim() : "";
+    if (!title) continue;
+    const raw = typeof o.level === "number" ? o.level : Number(o.level);
+    const level = Number.isFinite(raw) ? Math.max(0, Math.min(100, Math.round(raw))) : 0;
+    out.push({ title, level });
+  }
+  return out;
+}
 
 type Props = {
   memberId: string;
@@ -90,6 +112,7 @@ function dedupeCaseInsensitive(values: string[]): string[] {
 
 export function TeamMemberEditor({ memberId }: Props) {
   const router = useRouter();
+  const { ready: sessionReady, session } = useAdminSession();
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -100,6 +123,9 @@ export function TeamMemberEditor({ memberId }: Props) {
   const [slug, setSlug] = useState("");
   const [academicYear, setAcademicYear] = useState("");
   const [department, setDepartment] = useState("GI");
+  /** When true, ignore the constrained dropdown and save `customDepartment` instead. */
+  const [useCustomDepartment, setUseCustomDepartment] = useState(false);
+  const [customDepartment, setCustomDepartment] = useState("");
   const [schoolStatus, setSchoolStatus] = useState("DUT 1st year");
   const [cellName, setCellName] = useState("Member");
   const [selectedRole, setSelectedRole] = useState("");
@@ -110,6 +136,8 @@ export function TeamMemberEditor({ memberId }: Props) {
   const [bio, setBio] = useState("");
   const [fullDescription, setFullDescription] = useState("");
   const [birthday, setBirthday] = useState("");
+  const [startedYear, setStartedYear] = useState("");
+  const [expertise, setExpertise] = useState<ExpertiseDraft[]>([]);
   const [contacts, setContacts] = useState<ContactDraft[]>([
     { type: "", value: "", visible: true },
   ]);
@@ -122,6 +150,13 @@ export function TeamMemberEditor({ memberId }: Props) {
   const [customCellInput, setCustomCellInput] = useState("");
 
   useEffect(() => {
+    if (!sessionReady) return;
+    if (!session?.ok) {
+      setLoading(false);
+      setLoadError("Admin session is not active.");
+      return;
+    }
+
     let cancelled = false;
 
     void (async () => {
@@ -166,9 +201,20 @@ export function TeamMemberEditor({ memberId }: Props) {
         const rawDept = typeof data.department === "string" ? data.department.trim() : "";
         if (departmentMustBeEmpty(effectiveStatus)) {
           setDepartment("");
+          setUseCustomDepartment(Boolean(rawDept));
+          setCustomDepartment(rawDept);
         } else {
           const allowed = departmentsForSchoolStatus(effectiveStatus);
-          setDepartment(rawDept && allowed.includes(rawDept) ? rawDept : (allowed[0] ?? ""));
+          if (rawDept && !allowed.includes(rawDept)) {
+            // Department is free-text (admin override). Drive the editor in custom mode.
+            setUseCustomDepartment(true);
+            setCustomDepartment(rawDept);
+            setDepartment(allowed[0] ?? "");
+          } else {
+            setUseCustomDepartment(false);
+            setCustomDepartment("");
+            setDepartment(rawDept || (allowed[0] ?? ""));
+          }
         }
 
         setBirthday(
@@ -180,6 +226,10 @@ export function TeamMemberEditor({ memberId }: Props) {
         setShortBio(typeof data.shortBio === "string" ? data.shortBio : "");
         setBio(typeof data.bio === "string" ? data.bio : "");
         setFullDescription(typeof data.fullDescription === "string" ? data.fullDescription : "");
+        setStartedYear(
+          typeof data.startedYear === "string" ? data.startedYear.trim() : "",
+        );
+        setExpertise(parseExpertiseFromDoc(data));
         setContacts(parseContactsFromDoc(data));
         setVisibility(mergeVisibilityDoc(data.visibility));
 
@@ -205,7 +255,7 @@ export function TeamMemberEditor({ memberId }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [memberId]);
+  }, [memberId, sessionReady, session]);
 
   const contactTypeSuggestions = [...SOCIAL_PLATFORMS, "Email", "Phone", "Discord", "Other"];
   const roleChoices = useMemo(
@@ -298,7 +348,13 @@ export function TeamMemberEditor({ memberId }: Props) {
     }
 
     let deptOut = department.trim();
-    if (departmentMustBeEmpty(statusTrim)) {
+    const customDeptTrim = customDepartment.trim();
+
+    if (useCustomDepartment) {
+      // Free-text override — admin bypasses the constrained dropdown.
+      // Allow empty (e.g. "Faculty / Director" school status) or any custom string.
+      deptOut = customDeptTrim;
+    } else if (departmentMustBeEmpty(statusTrim)) {
       deptOut = "";
     } else {
       const allowed = departmentsForSchoolStatus(statusTrim);
@@ -308,6 +364,15 @@ export function TeamMemberEditor({ memberId }: Props) {
         return;
       }
     }
+
+    const expertiseClean = expertise
+      .map((e) => ({
+        title: e.title.trim(),
+        level: Math.max(0, Math.min(100, Math.round(Number(e.level) || 0))),
+      }))
+      .filter((e) => e.title.length > 0);
+
+    const startedYearTrim = startedYear.trim();
 
     const payload: Record<string, unknown> = {
       name: name.trim(),
@@ -326,6 +391,8 @@ export function TeamMemberEditor({ memberId }: Props) {
       fullDescription: fullDescription.trim() || "",
       contacts: contactsClean,
       birthday: birthday.trim() ? birthday.trim() : deleteField(),
+      startedYear: startedYearTrim ? startedYearTrim : deleteField(),
+      expertise: expertiseClean.length > 0 ? expertiseClean : deleteField(),
       visibility: {
         showEmail: visibility.showEmail,
         showPhone: visibility.showPhone,
@@ -464,27 +531,69 @@ export function TeamMemberEditor({ memberId }: Props) {
               ))}
             </select>
           </label>
+          <div className="block sm:col-span-2">
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-white/45">
+                Department
+              </span>
+              <label className="flex cursor-pointer items-center gap-2 text-[11px] text-white/55">
+                <input
+                  type="checkbox"
+                  checked={useCustomDepartment}
+                  onChange={(e) => setUseCustomDepartment(e.target.checked)}
+                  className="h-3.5 w-3.5 rounded border-white/30"
+                />
+                Use custom department text
+              </label>
+            </div>
+            {useCustomDepartment ? (
+              <input
+                value={customDepartment}
+                onChange={(e) => setCustomDepartment(e.target.value)}
+                placeholder="e.g. Computer Science, Mechatronics, …"
+                className="mt-1.5 w-full rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm text-white outline-none focus:border-blue-500/50"
+              />
+            ) : (
+              <select
+                value={department}
+                disabled={departmentMustBeEmpty(schoolStatus)}
+                onChange={(e) => setDepartment(e.target.value)}
+                className="[color-scheme:dark] mt-1.5 w-full rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 font-mono text-sm text-white outline-none focus:border-blue-500/50 disabled:cursor-not-allowed disabled:opacity-45"
+              >
+                {departmentMustBeEmpty(schoolStatus) ? (
+                  <option value="">Not applicable</option>
+                ) : (
+                  <>
+                    {department && !departmentsForSchoolStatus(schoolStatus).includes(department) ? (
+                      <option value={department}>{department} (stored)</option>
+                    ) : null}
+                    {departmentsForSchoolStatus(schoolStatus).map((d) => (
+                      <option key={d} value={d}>{d}</option>
+                    ))}
+                  </>
+                )}
+              </select>
+            )}
+            <p className="mt-1.5 text-[11px] text-white/40">
+              Custom mode lets you save any free-text department (e.g. for Professors / Doctoral
+              students). When off, the dropdown is constrained to the school status options.
+            </p>
+          </div>
+
           <label className="block sm:col-span-2">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-white/45">Department</span>
-            <select
-              value={department}
-              disabled={departmentMustBeEmpty(schoolStatus)}
-              onChange={(e) => setDepartment(e.target.value)}
-              className="[color-scheme:dark] mt-1.5 w-full rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 font-mono text-sm text-white outline-none focus:border-blue-500/50 disabled:cursor-not-allowed disabled:opacity-45"
-            >
-              {departmentMustBeEmpty(schoolStatus) ? (
-                <option value="">Not applicable</option>
-              ) : (
-                <>
-                  {department && !departmentsForSchoolStatus(schoolStatus).includes(department) ? (
-                    <option value={department}>{department} (stored)</option>
-                  ) : null}
-                  {departmentsForSchoolStatus(schoolStatus).map((d) => (
-                    <option key={d} value={d}>{d}</option>
-                  ))}
-                </>
-              )}
-            </select>
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-white/45">
+              Started year (Professor / Doctoral)
+            </span>
+            <input
+              value={startedYear}
+              onChange={(e) => setStartedYear(e.target.value)}
+              placeholder="e.g. 2022 or 2022-2023"
+              className="mt-1.5 w-full rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 font-mono text-sm text-white outline-none focus:border-blue-500/50"
+            />
+            <p className="mt-1.5 text-[11px] text-white/40">
+              Shown in the public profile&apos;s Impact card in place of the old &ldquo;Cohort&rdquo; tile.
+              Free-text — leave empty to display &ldquo;—&rdquo;.
+            </p>
           </label>
         </div>
       </section>
@@ -627,6 +736,125 @@ export function TeamMemberEditor({ memberId }: Props) {
             className="mt-1.5 w-full rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm text-white outline-none focus:border-blue-500/50"
           />
         </label>
+      </section>
+
+      <section className="mt-10 space-y-4">
+        <div className="flex flex-wrap items-baseline justify-between gap-3">
+          <div>
+            <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-white/45">
+              Expertise
+            </h2>
+            <p className="mt-1 text-[11px] text-white/40">
+              Independent of Role. Each entry has a title and a progress-bar value (0–100%).
+              Leave the list empty to fall back to derived role titles on the public profile.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() =>
+              setExpertise((prev) => [...prev, { title: "", level: 60 }])
+            }
+            className="rounded-xl border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/15"
+          >
+            + Add expertise
+          </button>
+        </div>
+
+        {expertise.length === 0 ? (
+          <p className="rounded-xl border border-dashed border-white/15 bg-white/[0.02] px-4 py-6 text-center text-sm text-white/55">
+            No expertise added yet. The public profile will fall back to this member&apos;s role
+            titles.
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {expertise.map((row, i) => (
+              <div
+                key={`exp-${i}`}
+                className="grid gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-4 sm:grid-cols-[1fr_auto_auto]"
+              >
+                <label className="block">
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-white/40">
+                    Title
+                  </span>
+                  <input
+                    value={row.title}
+                    onChange={(e) => {
+                      const next = [...expertise];
+                      next[i] = { ...next[i]!, title: e.target.value };
+                      setExpertise(next);
+                    }}
+                    placeholder="e.g. Embedded Systems"
+                    className="mt-1 w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-sm text-white outline-none focus:border-blue-500/50"
+                  />
+                </label>
+                <label className="block min-w-[180px]">
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-white/40">
+                    Level ({row.level}%)
+                  </span>
+                  <input
+                    type="range"
+                    min={0}
+                    max={100}
+                    step={1}
+                    value={row.level}
+                    onChange={(e) => {
+                      const next = [...expertise];
+                      next[i] = {
+                        ...next[i]!,
+                        level: Number.parseInt(e.target.value, 10) || 0,
+                      };
+                      setExpertise(next);
+                    }}
+                    className="mt-3 w-full accent-sky-400"
+                  />
+                </label>
+                <div className="flex items-end gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (i === 0) return;
+                      const next = [...expertise];
+                      const tmp = next[i - 1]!;
+                      next[i - 1] = next[i]!;
+                      next[i] = tmp;
+                      setExpertise(next);
+                    }}
+                    disabled={i === 0}
+                    className="rounded-lg border border-white/15 px-2 py-2 text-xs text-white/85 hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-40"
+                    title="Move up"
+                  >
+                    ↑
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (i === expertise.length - 1) return;
+                      const next = [...expertise];
+                      const tmp = next[i + 1]!;
+                      next[i + 1] = next[i]!;
+                      next[i] = tmp;
+                      setExpertise(next);
+                    }}
+                    disabled={i === expertise.length - 1}
+                    className="rounded-lg border border-white/15 px-2 py-2 text-xs text-white/85 hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-40"
+                    title="Move down"
+                  >
+                    ↓
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setExpertise(expertise.filter((_, j) => j !== i))
+                    }
+                    className="rounded-lg border border-red-500/30 px-3 py-2 text-xs text-red-200 hover:bg-red-500/10"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
       <section className="mt-10 space-y-4">

@@ -8,6 +8,7 @@ import type {
   ApplySocialLink,
   ApplySocialPlatform,
 } from "@/lib/firebase/types";
+import { DUT_DEPARTMENTS, LICENSE_DEPARTMENTS } from "@/lib/team/school-taxonomy";
 
 const ICON_KEYS = new Set(["map", "phone", "mail", "clock"]);
 const TONES = new Set(["blue", "violet", "pink", "green"]);
@@ -190,14 +191,16 @@ export const DEFAULT_APPLY_CONFIG: ApplySectionConfig = {
     phone: "+212 6XXXXXXXX",
     message: "Tell us what interests you most — robotics, AI, design, media…",
   },
-  yearOptions: ["1st Year", "2nd Year", "3rd Year"],
-  departmentOptions: [
-    "Computer Science",
-    "Electrical Engineering",
-    "Mechanical Engineering",
-    "Industrial Engineering",
-    "Other",
+  yearOptions: [
+    "DUT 1st year",
+    "DUT 2nd year",
+    "License",
+    "Master",
+    "Doctoral",
+    "Professor",
   ],
+  /** Full pool; the apply form filters by selected education year (DUT vs Licence vs N/A). */
+  departmentOptions: [...DUT_DEPARTMENTS, ...LICENSE_DEPARTMENTS, "Other"],
   charterLinkText: "Club Charter",
   charterLinkHref: "#",
   submitNotePrefix: "By subscribing you agree to our",

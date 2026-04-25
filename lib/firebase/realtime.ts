@@ -14,6 +14,7 @@ import {
   type Unsubscribe,
 } from "firebase/firestore";
 
+import { parseFooterDoc } from "@/lib/content/site-content-parser";
 import { db } from "@/lib/firebase";
 import { logFirestoreListenerError } from "@/lib/firebase/firestore-listener-log";
 import {
@@ -40,9 +41,6 @@ import {
   type ApplySectionConfig,
   DEFAULT_FOOTER_CONFIG,
   type FooterConfig,
-  type FooterNavItem,
-  type FooterSocialLink,
-  type FooterSocialPlatform,
 } from "@/lib/firebase/types";
 import { DEFAULT_PROCESS_STEPS_CONFIG } from "@/lib/content/process-steps-defaults";
 import { DEFAULT_FAQ_CONFIG } from "@/lib/content/faq-defaults";
@@ -124,6 +122,25 @@ function asStringArray(value: unknown): string[] {
   return value.filter((v): v is string => isNonEmptyString(v)).map((v) => v.trim());
 }
 
+function parseExpertiseList(
+  raw: unknown,
+): { title: string; level: number }[] | undefined {
+  if (!Array.isArray(raw) || raw.length === 0) return undefined;
+  const out: { title: string; level: number }[] = [];
+  for (const row of raw) {
+    if (!row || typeof row !== "object") continue;
+    const o = row as Record<string, unknown>;
+    const title = typeof o.title === "string" ? o.title.trim() : "";
+    if (!title) continue;
+    const rawLevel = typeof o.level === "number" ? o.level : Number(o.level);
+    const level = Number.isFinite(rawLevel)
+      ? Math.max(0, Math.min(100, Math.round(rawLevel)))
+      : 0;
+    out.push({ title, level });
+  }
+  return out.length ? out : undefined;
+}
+
 function mapTeamDoc(docId: string, data: DocumentData): TeamMemberProfile | null {
   const row = data as Partial<FirestoreTeamMember> & { createdAt?: unknown };
 
@@ -184,6 +201,8 @@ function mapTeamDoc(docId: string, data: DocumentData): TeamMemberProfile | null
     birthday: isNonEmptyString(row.birthday) ? row.birthday.trim() : undefined,
     contacts,
     visibility: mergeVisibility(row.visibility),
+    startedYear: isNonEmptyString(row.startedYear) ? row.startedYear.trim() : undefined,
+    expertise: parseExpertiseList(row.expertise),
     image: null,
   };
 }
@@ -329,6 +348,15 @@ export function subscribeToHomepageTeam(
   );
 }
 
+function parseEventTopics(raw: unknown): string[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const out = raw
+    .filter((x): x is string => typeof x === "string" && x.trim().length > 0)
+    .map((x) => x.trim())
+    .slice(0, 16);
+  return out.length ? out : undefined;
+}
+
 export function mapEventDocToItem(docId: string, raw: EventDoc): EventItem | null {
   if (!isNonEmptyString(raw.title)) return null;
   const attachments = parseEventAttachments(raw.attachments);
@@ -364,6 +392,7 @@ export function mapEventDocToItem(docId: string, raw: EventDoc): EventItem | nul
     isFeatured: Boolean(raw.isFeatured),
     imageUrl: isNonEmptyString(raw.imageUrl) ? raw.imageUrl : null,
     order: typeof raw.order === "number" ? raw.order : undefined,
+    topics: parseEventTopics(raw.topics),
   };
 }
 
@@ -427,11 +456,25 @@ export function subscribeToPublishedEventBySlugOrId(
       flush();
     },
     (error) => {
-      console.error("[Firestore] subscribeToPublishedEventBySlugOrId (doc) failed", error);
+      // Direct doc reads on /events/{id} hit the rule `resource.data.isActive == true`,
+      // which evaluates to permission-denied when:
+      //   - the URL segment is a slug, not a doc id (doc doesn't exist), or
+      //   - the doc exists but isActive is false / missing.
+      // All three cases are recoverable: the slug query (unsubQuery) is the fallback.
+      // Treat permission-denied / not-found as "no doc here" silently; only surface unexpected errors.
+      const code = (error as { code?: string }).code ?? "";
+      const benign = code === "permission-denied" || code === "not-found";
+      if (!benign) {
+        logFirestoreListenerError(
+          `subscribeToPublishedEventBySlugOrId (doc events/${key})`,
+          error,
+        );
+        console.error("[Firestore] subscribeToPublishedEventBySlugOrId (doc) failed", error);
+        onError?.(error);
+      }
       docReady = true;
       docItem = null;
       flush();
-      onError?.(error);
     },
   );
 
@@ -896,43 +939,7 @@ export function subscribeToApplyConfig(
 }
 
 function parseFooterFromFirestore(raw: Record<string, unknown>): FooterConfig {
-  const str = (key: keyof FooterConfig, fallback: string) => {
-    const v = raw[key as string];
-    return typeof v === "string" && v.trim() ? (v as string).trim() : fallback;
-  };
-
-  const rawNav = Array.isArray(raw.footerNav) ? raw.footerNav : [];
-  const footerNav: FooterNavItem[] = [];
-  for (const row of rawNav) {
-    if (!row || typeof row !== "object") continue;
-    const o = row as Record<string, unknown>;
-    const label = typeof o.label === "string" ? o.label.trim() : "";
-    const href = typeof o.href === "string" ? o.href.trim() : "";
-    if (label && href) footerNav.push({ label, href });
-  }
-
-  const rawSocial = Array.isArray(raw.socialLinks) ? raw.socialLinks : [];
-  const socialLinks: FooterSocialLink[] = [];
-  const validPlatforms: FooterSocialPlatform[] = ["instagram", "linkedin", "youtube", "github"];
-  for (const row of rawSocial) {
-    if (!row || typeof row !== "object") continue;
-    const o = row as Record<string, unknown>;
-    const platform = typeof o.platform === "string" ? o.platform.trim() : "";
-    const url = typeof o.url === "string" ? o.url.trim() : "";
-    if (!platform || !url) continue;
-    if (!validPlatforms.includes(platform as FooterSocialPlatform)) continue;
-    socialLinks.push({ platform: platform as FooterSocialPlatform, url });
-  }
-
-  return {
-    tagline: str("tagline", DEFAULT_FOOTER_CONFIG.tagline),
-    footerNav: footerNav.length ? footerNav : [...DEFAULT_FOOTER_CONFIG.footerNav],
-    socialLinks: socialLinks.length ? socialLinks : [...DEFAULT_FOOTER_CONFIG.socialLinks],
-    contactLocation: str("contactLocation", DEFAULT_FOOTER_CONFIG.contactLocation),
-    contactEmail: str("contactEmail", DEFAULT_FOOTER_CONFIG.contactEmail),
-    copyrightText: str("copyrightText", DEFAULT_FOOTER_CONFIG.copyrightText),
-    versionLine: str("versionLine", DEFAULT_FOOTER_CONFIG.versionLine),
-  };
+  return parseFooterDoc(raw);
 }
 
 export function subscribeToFooterConfig(

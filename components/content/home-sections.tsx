@@ -13,6 +13,8 @@ import {
   Video,
   Wallet,
 } from "lucide-react";
+import { resolveSectionIcon } from "@/lib/icons/section-icon-pack";
+import { formatEventDate } from "@/lib/events/public";
 import { PartnersMarquee } from "@/components/content/partners-marquee";
 import { RevealSection } from "@/components/motion/reveal-section";
 import { ApplySection } from "@/components/content/apply-section";
@@ -145,28 +147,19 @@ const cellulesCards = [
   },
 ];
 
-const celluleIcons = {
-  users: Users,
-  palette: Palette,
-  video: Video,
-  file: FileText,
-  wallet: Wallet,
-  megaphone: Megaphone,
-} as const;
+/* The cellule icon set now mirrors the Process Steps icon pack so admins
+   pick from the same 50-icon library. Resolution is delegated to the shared
+   helper which also keeps the legacy "file" alias working. */
 
 function buildCarouselItems(events: EventItem[]): EventCarouselItem[] {
   if (!events.length) return [];
   return events.map((event) => ({
     id: event._id,
     title: event.title,
-    dateLabel:
-      event.dateTba || !event.date
-        ? "Date TBA"
-        : new Date(event.date).toLocaleDateString(undefined, {
-            month: "short",
-            day: "numeric",
-            year: "numeric",
-          }),
+    /* Custom strings ("Coming Soon", "TBD", "Spring 2026") flow through
+       the shared formatter so they are rendered verbatim instead of as
+       "Invalid Date". */
+    dateLabel: formatEventDate(event.date, { dateTba: event.dateTba ?? false }),
     imageUrl: event.imageUrl ?? null,
     imageFocusX: event.imageFocusX ?? 50,
     imageFocusY: event.imageFocusY ?? 50,
@@ -490,8 +483,7 @@ export function HomeSections({
           <div className="grid gap-px bg-violet-500/10 sm:grid-cols-2 lg:grid-cols-3">
             {cellules.cards.map((card, idx) => {
               const base = cellulesCards[idx % cellulesCards.length]!;
-              const iconKey = (card.iconKey ?? "").trim().toLowerCase() as keyof typeof celluleIcons;
-              const Icon = celluleIcons[iconKey] ?? base.icon;
+              const Icon = resolveSectionIcon(card.iconKey, base.icon);
               return (
                 <article
                   key={card.title}

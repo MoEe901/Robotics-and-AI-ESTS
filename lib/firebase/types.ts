@@ -19,6 +19,15 @@ export type FirestoreTeamContact = {
   visible: boolean;
 };
 
+/**
+ * One expertise entry shown in the public profile's "Expertise" grid.
+ * `level` is the progress-bar value, clamped 0..100 by the parser.
+ */
+export type FirestoreExpertiseEntry = {
+  title: string;
+  level: number;
+};
+
 export type FirestoreTeamMember = {
   name: string;
   slug: string;
@@ -39,6 +48,10 @@ export type FirestoreTeamMember = {
   birthday?: string;
   contacts?: FirestoreTeamContact[];
   visibility?: Partial<TeamMemberVisibility>;
+  /** Free-text year the member began as Professor / Doctoral student. */
+  startedYear?: string;
+  /** Admin-managed expertise list with progress bar values. */
+  expertise?: FirestoreExpertiseEntry[];
 };
 
 export type EventAttachment = {
@@ -78,6 +91,8 @@ export type EventDoc = {
   isFeatured?: boolean;
   imageUrl?: string;
   order?: number;
+  /** Short labels shown as chips on the event documentary page (admin-managed). */
+  topics?: string[];
 };
 
 export type PageSectionDoc = {
@@ -108,6 +123,7 @@ export type EventItem = {
   isFeatured?: boolean;
   imageUrl?: string | null;
   order?: number;
+  topics?: string[];
 };
 
 export type PageSection = {
@@ -353,6 +369,8 @@ export type FooterNavItem = {
 export type FooterColumn = {
   heading: string;
   links: FooterNavItem[];
+  /** Defaults to true. When false the column is hidden on the public site. */
+  isVisible?: boolean;
 };
 
 export type FooterConfig = {
@@ -367,17 +385,53 @@ export type FooterConfig = {
   versionLine: string;
   /** When set, footer link columns are rendered from Firestore (`siteContent/footer`). */
   footerColumns?: FooterColumn[];
+  /** Master switch — hides the whole footer when false. Defaults to true. */
+  isVisible?: boolean;
+  /** Toggle the brand/logo column on the left. Defaults to true. */
+  showBrandColumn?: boolean;
+  /** Toggle the dedicated Social column. Defaults to true. */
+  showSocialColumn?: boolean;
+  /** Heading for the Social column (defaults to "Social"). */
+  socialHeading?: string;
+  /** Toggle the bottom bar (copyright + version). Defaults to true. */
+  showBottomBar?: boolean;
 };
+
+export const DEFAULT_FOOTER_COLUMNS: FooterColumn[] = [
+  {
+    heading: "Club",
+    isVisible: true,
+    links: [
+      { label: "Home", href: "/" },
+      { label: "Events", href: "/#events" },
+      { label: "Projects", href: "/#cellules" },
+      { label: "Competitions", href: "/#events" },
+    ],
+  },
+  {
+    heading: "Info",
+    isVisible: true,
+    links: [
+      { label: "Know Us", href: "/#know" },
+      { label: "Cellules", href: "/#cellules" },
+      { label: "Team", href: "/#team" },
+      { label: "FAQ", href: "/#faq" },
+    ],
+  },
+  {
+    heading: "Connect",
+    isVisible: true,
+    links: [
+      { label: "Apply Now", href: "/#apply" },
+      { label: "Contact Us", href: "/#apply" },
+    ],
+  },
+];
 
 export const DEFAULT_FOOTER_CONFIG: FooterConfig = {
   tagline:
     "A university tech community at EST Safi, Morocco. Building the future through robotics, AI, and collaboration.",
-  footerNav: [
-    { label: "Home", href: "/" },
-    { label: "Events", href: "/#events" },
-    { label: "Projects", href: "/#cellules" },
-    { label: "Competitions", href: "/#events" },
-  ],
+  footerNav: [...DEFAULT_FOOTER_COLUMNS[0]!.links],
   socialLinks: [
     { platform: "instagram", url: "https://www.instagram.com/" },
     { platform: "linkedin", url: "https://www.linkedin.com/" },
@@ -386,6 +440,16 @@ export const DEFAULT_FOOTER_CONFIG: FooterConfig = {
   contactEmail: "roboticsaiclub.est@gmail.com",
   copyrightText: "Robotics & AI Club · EST Safi, Morocco",
   versionLine: "All systems operational · v2.0",
+  footerColumns: DEFAULT_FOOTER_COLUMNS.map((c) => ({
+    heading: c.heading,
+    links: [...c.links],
+    isVisible: true,
+  })),
+  isVisible: true,
+  showBrandColumn: true,
+  showSocialColumn: true,
+  socialHeading: "Social",
+  showBottomBar: true,
 };
 
 export type HeroConfig = {

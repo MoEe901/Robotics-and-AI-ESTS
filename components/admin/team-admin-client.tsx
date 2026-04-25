@@ -14,6 +14,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { useAdminSession } from "@/components/admin/admin-session-context";
 import { DEFAULT_TEAM_VISIBILITY } from "@/lib/firebase/types";
 import { db } from "@/lib/firebase";
 import {
@@ -43,6 +44,7 @@ export function TeamAdminClient() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { ready: sessionReady, session } = useAdminSession();
 
   const [rows, setRows] = useState<Row[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -71,6 +73,7 @@ export function TeamAdminClient() {
   }, [yearParam, pathname, router]);
 
   useEffect(() => {
+    if (!sessionReady || !session?.ok) return;
     const unsub = onSnapshot(
       collection(db(), "teamMembers"),
       (snap) => {
@@ -85,7 +88,7 @@ export function TeamAdminClient() {
       (e) => setError(e.message),
     );
     return () => unsub();
-  }, []);
+  }, [sessionReady, session]);
 
   const discoveredYears = useMemo(() => {
     const set = new Set<string>();

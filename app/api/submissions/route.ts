@@ -15,6 +15,7 @@ import { z } from "zod";
 import { Resend } from "resend";
 
 import { db, isFirebaseConfigured } from "@/lib/firebase";
+import { getApplyFormNotificationRecipients } from "@/lib/submission-notifications";
 
 const submissionSchema = z.object({
   formId: z.string().min(1).max(60),
@@ -37,12 +38,15 @@ async function sendNotification(id: string, formId: string, fields: Record<strin
     console.warn("[submissions] RESEND_API_KEY missing, skipping email send.");
     return;
   }
+  const to = await getApplyFormNotificationRecipients();
+  if (to.length === 0) {
+    console.warn(
+      "[submissions] No notification recipients — set siteConfig/submissionNotifications in admin or ADMIN_NOTIFICATION_EMAIL.",
+    );
+    return;
+  }
   const resend = new Resend(apiKey);
   const from = process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev";
-  const to = process.env.ADMIN_NOTIFICATION_EMAIL || "m.talbani0481@uca.ac.ma";
-  if (!process.env.ADMIN_NOTIFICATION_EMAIL) {
-    console.warn("[submissions] ADMIN_NOTIFICATION_EMAIL missing, using fallback.");
-  }
   const site = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
   const first = Object.values(fields)[0] || "Robotics & AI Club";
   const rows = Object.entries(fields)
@@ -54,7 +58,7 @@ async function sendNotification(id: string, formId: string, fields: Record<strin
 
   await resend.emails.send({
     from,
-    to,
+    to: to.length === 1 ? to[0]! : to,
     subject: `New ${formId} submission — ${first}`,
     html: `<div style="font-family:Arial,sans-serif"><h3>New ${formId} submission</h3><table style="border-collapse:collapse">${rows}</table><p><a href="${site}/admin/submissions/${id}">Open in admin</a></p></div>`,
   });

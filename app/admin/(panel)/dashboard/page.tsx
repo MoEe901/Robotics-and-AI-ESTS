@@ -1,5 +1,11 @@
+"use client";
+
 import { ArrowUpRight, ExternalLink } from "lucide-react";
 import Link from "next/link";
+import { useMemo } from "react";
+
+import { useAdminSession } from "@/components/admin/admin-session-context";
+import { isAdminPathAllowedForRole } from "@/lib/admin-route-access";
 
 const DASHBOARD_ITEMS = [
   {
@@ -31,6 +37,20 @@ const DASHBOARD_ITEMS = [
 
 export default function AdminDashboardPage() {
   const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ?? "YOUR_PROJECT_ID";
+  const { ready, session } = useAdminSession();
+
+  const items = useMemo(() => {
+    if (!ready || !session?.ok) return DASHBOARD_ITEMS;
+    const full = session.mode === "legacy" || session.role === "admin";
+    return DASHBOARD_ITEMS.filter((it) => isAdminPathAllowedForRole(it.href, session.role, full));
+  }, [ready, session]);
+
+  const showFirestoreShortcut =
+    !ready ||
+    !session?.ok ||
+    session.mode === "legacy" ||
+    session.role === "admin" ||
+    session.role === "editor";
 
   return (
     <div className="admin-page">
@@ -42,7 +62,7 @@ export default function AdminDashboardPage() {
       </p>
 
       <div className="mt-10 grid grid-cols-1 gap-3">
-        {DASHBOARD_ITEMS.map((item) => (
+        {items.map((item) => (
           <Link
             key={item.href}
             href={item.href}
@@ -56,18 +76,20 @@ export default function AdminDashboardPage() {
           </Link>
         ))}
 
-        <a
-          href={`https://console.firebase.google.com/project/${projectId}/firestore`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="admin-card admin-card--interactive group flex items-center justify-between gap-4 px-5 py-4"
-        >
-          <div className="min-w-0">
-            <div className="font-syne text-base font-bold text-white">Open Firestore in Firebase Console</div>
-            <div className="mt-1 text-sm text-white/60">External — for raw document editing.</div>
-          </div>
-          <ExternalLink className="size-5 shrink-0 text-white/40 transition-colors group-hover:text-[#06b6d4]" />
-        </a>
+        {showFirestoreShortcut ? (
+          <a
+            href={`https://console.firebase.google.com/project/${projectId}/firestore`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="admin-card admin-card--interactive group flex items-center justify-between gap-4 px-5 py-4"
+          >
+            <div className="min-w-0">
+              <div className="font-syne text-base font-bold text-white">Open Firestore in Firebase Console</div>
+              <div className="mt-1 text-sm text-white/60">External — for raw document editing.</div>
+            </div>
+            <ExternalLink className="size-5 shrink-0 text-white/40 transition-colors group-hover:text-[#06b6d4]" />
+          </a>
+        ) : null}
       </div>
     </div>
   );

@@ -12,6 +12,10 @@ import { DEFAULT_HERO_PUBLIC } from "@/lib/content/site-content-parser";
 import { db } from "@/lib/firebase";
 import { useFirestoreCollection } from "@/lib/hooks/use-firestore-collection";
 import { siteConfig } from "@/lib/site-config";
+import {
+  academicYearMatchesStrict,
+  getCurrentAcademicYearLabel,
+} from "@/lib/team/academic-year";
 import { relativeTime } from "@/lib/time";
 import { cn } from "@/lib/utils";
 import { useHomeContentStore } from "@/store/homeContentStore";
@@ -117,13 +121,14 @@ export function HeroSection() {
   );
 
   const displayedTech = hero.techStack.filter((item) => item.isVisible).sort((a, b) => a.order - b.order);
-  const latestAcademicYear =
-    teamRows
-      .map((r) => r.academicYear)
-      .filter(Boolean)
-      .sort((a, b) => b.localeCompare(a))[0] ?? "";
-  const currentAcademicYear = latestAcademicYear;
-  const membersCount = teamRows.filter((row) => row.academicYear === currentAcademicYear).length;
+  /* The members tile must always reflect *this* academic year, never an
+     aggregate. We anchor on today's date (Sep–Aug rollover) instead of the
+     latest year present in the data so a stray future-year row doesn't shift
+     the count, and a missing current-year row doesn't silently fall back. */
+  const currentAcademicYear = getCurrentAcademicYearLabel();
+  const membersCount = teamRows.filter((row) =>
+    academicYearMatchesStrict(row.academicYear, currentAcademicYear),
+  ).length;
   const cellulesCount = cellulesConfig?.cards?.length ?? 0;
   const partnersCount = partnersConfig?.logos?.filter((l) => l.visible !== false).length ?? 0;
   const eventsAllCount = events.length;
@@ -335,8 +340,9 @@ export function HeroSection() {
           <h1
             className={cn(
               "font-syne max-w-full font-extrabold uppercase leading-[0.9] tracking-tight [hyphens:none] [word-break:normal]",
-              /* clamp(1.75rem,9vw,8rem): smaller vw + floor so "ROBOTICS" stays one line on ~360px; no overflow-wrap to avoid mid-word breaks */
-              "text-[clamp(1.75rem,9vw,8rem)]",
+              /* mobile: clamp(1.75rem,9vw,8rem) keeps "ROBOTICS" on one line at ~360px;
+                 lg+: tighter clamp so the headline never bleeds into the floating-cards column */
+              "text-[clamp(1.75rem,9vw,8rem)] lg:text-[clamp(2.25rem,5vw,5rem)]",
             )}
           >
             {hero.titleLines.map((line, idx) => {
@@ -390,10 +396,10 @@ export function HeroSection() {
           style={{ x: cardOffsetX, y: cardOffsetY }}
           className="pointer-events-none relative z-[31] hidden min-w-0 w-full lg:flex lg:flex-col lg:w-auto lg:justify-center lg:self-center"
         >
-        <div className="mx-auto flex w-full max-w-[300px] flex-col gap-4 lg:mx-0">
+        <div className="mx-auto flex w-full max-w-[300px] flex-col gap-4 lg:ml-auto lg:mr-0">
           {hero.heroCards.activity.isVisible && !activityError && (activityLoading || activityRows.length > 0) ? (
           <div
-            className="w-full max-w-[300px] rounded-2xl border border-violet-500/20 bg-[rgba(13,15,26,0.85)] p-5 backdrop-blur-[20px] transition hover:-translate-x-1 hover:border-violet-500/40"
+            className="w-full max-w-[300px] rounded-2xl border border-violet-500/25 bg-[rgba(13,15,26,0.15)] p-5 backdrop-blur-[16px] transition hover:-translate-x-1 hover:border-violet-500/45"
             style={{ animation: "heroFadeLeft 1s ease both 0.65s" }}
           >
             <div style={{ animation: "heroCardFloat 6s ease-in-out infinite 1s" }}>
@@ -429,7 +435,7 @@ export function HeroSection() {
 
           {hero.heroCards.techStack.isVisible ? (
           <div
-            className="w-full max-w-[300px] rounded-2xl border border-violet-500/20 bg-[rgba(13,15,26,0.85)] p-5 backdrop-blur-[20px] transition hover:-translate-x-1 hover:border-violet-500/40"
+            className="w-full max-w-[300px] rounded-2xl border border-violet-500/25 bg-[rgba(13,15,26,0.15)] p-5 backdrop-blur-[16px] transition hover:-translate-x-1 hover:border-violet-500/45"
             style={{ animation: "heroFadeLeft 1s ease both 0.72s" }}
           >
             <div style={{ animation: "heroCardFloat 7s ease-in-out infinite 0.5s" }}>
@@ -471,7 +477,7 @@ export function HeroSection() {
 
           {hero.heroCards.growth.isVisible ? (
           <div
-            className="w-full max-w-[300px] rounded-2xl border border-violet-500/20 bg-[rgba(13,15,26,0.85)] p-5 backdrop-blur-[20px] transition hover:-translate-x-1 hover:border-violet-500/40"
+            className="w-full max-w-[300px] rounded-2xl border border-violet-500/25 bg-[rgba(13,15,26,0.15)] p-5 backdrop-blur-[16px] transition hover:-translate-x-1 hover:border-violet-500/45"
             style={{ animation: "heroFadeLeft 1s ease both 0.78s" }}
           >
             <div style={{ animation: "heroCardFloat 5.5s ease-in-out infinite 1s" }}>

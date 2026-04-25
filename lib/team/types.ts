@@ -35,11 +35,21 @@ export type TeamMemberListItem = {
   roles?: RoleSummary[] | null;
 };
 
+export type TeamExpertiseEntry = {
+  title: string;
+  /** 0..100 progress-bar value */
+  level: number;
+};
+
 export type TeamMemberProfile = TeamMemberListItem & {
   fullDescription?: string;
   contacts?: TeamContact[] | null;
   birthday?: string;
   visibility?: TeamMemberVisibility;
+  /** Free-text year the member started as Professor / Doctoral student. */
+  startedYear?: string;
+  /** Admin-managed expertise list (title + progress %). Empty when unset. */
+  expertise?: TeamExpertiseEntry[];
 };
 
 export const ROLE_TYPE_FILTERS = ["All"] as const;

@@ -3,7 +3,11 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import { DEFAULT_FOOTER_CONFIG, type FooterSocialPlatform } from "@/lib/firebase/types";
+import {
+  DEFAULT_FOOTER_CONFIG,
+  type FooterColumn,
+  type FooterSocialPlatform,
+} from "@/lib/firebase/types";
 import { useHomeContentStore } from "@/store/homeContentStore";
 
 const SOCIAL_ICONS: Record<FooterSocialPlatform, React.ReactNode> = {
@@ -34,23 +38,48 @@ const SOCIAL_ICONS: Record<FooterSocialPlatform, React.ReactNode> = {
   ),
 };
 
-const INFO_LINKS = [
-  { label: "Know Us", href: "/#know" },
-  { label: "Cellules", href: "/#cellules" },
-  { label: "Team", href: "/#team" },
-  { label: "FAQ", href: "/#faq" },
-] as const;
+const SOCIAL_LABEL: Record<FooterSocialPlatform, string> = {
+  instagram: "Instagram",
+  linkedin: "LinkedIn",
+  youtube: "YouTube",
+  github: "GitHub",
+};
 
-const CONNECT_LINKS = [
-  { label: "Apply Now", href: "/#apply" },
-  { label: "Contact Us", href: "/#apply" },
-] as const;
+function visibleColumns(columns: FooterColumn[] | undefined): FooterColumn[] {
+  if (!columns) return [];
+  return columns.filter((c) => c.isVisible !== false && c.heading && c.links?.length);
+}
 
 export function Footer() {
   const live = useHomeContentStore((s) => s.footerConfig);
   const config = live ?? DEFAULT_FOOTER_CONFIG;
   const y = new Date().getFullYear();
-  const useDynamic = Boolean(config.footerColumns?.length);
+
+  if (config.isVisible === false) return null;
+
+  const cols = visibleColumns(
+    config.footerColumns?.length ? config.footerColumns : DEFAULT_FOOTER_CONFIG.footerColumns,
+  );
+  const showBrand = config.showBrandColumn !== false;
+  const showSocial =
+    config.showSocialColumn !== false && (config.socialLinks?.length ?? 0) > 0;
+  const showBottom = config.showBottomBar !== false;
+  const socialHeading = config.socialHeading?.trim() || "Social";
+
+  // Build a CSS grid that adapts to the count of visible blocks.
+  const blockCount = (showBrand ? 1 : 0) + cols.length + (showSocial ? 1 : 0);
+  const gridTemplate =
+    blockCount <= 1
+      ? "grid-cols-1"
+      : blockCount === 2
+        ? "sm:grid-cols-2"
+        : blockCount === 3
+          ? "sm:grid-cols-2 lg:grid-cols-3"
+          : blockCount === 4
+            ? "sm:grid-cols-2 lg:grid-cols-4"
+            : blockCount === 5
+              ? "sm:grid-cols-2 lg:grid-cols-5"
+              : "sm:grid-cols-2 lg:grid-cols-6";
 
   return (
     <footer className="relative mt-24 overflow-hidden border-t border-violet-500/20 bg-[#07060f] text-slate-200 shadow-[inset_0_1px_0_rgba(34,211,238,0.12)]">
@@ -67,142 +96,69 @@ export function Footer() {
         aria-hidden
       />
       <div className="relative mx-auto max-w-[1200px] px-6 py-14 sm:px-10 lg:px-16">
-        <div
-          className={
-            useDynamic
-              ? "grid gap-12 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr_1fr] lg:gap-16"
-              : "grid gap-12 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr] lg:gap-16"
-          }
-        >
-          <div className="space-y-4">
-            <Link href="/" className="inline-flex items-center gap-2.5">
-              <span className="size-2 shrink-0 rounded-full bg-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.55)]" />
-              <Image
-                src="/assets/logos/logo-optimized.svg"
-                alt="Club logo"
-                width={28}
-                height={28}
-                className="size-7 shrink-0"
-              />
-              <span className="font-syne font-extrabold tracking-tight text-white">Robotics & AI Club</span>
-            </Link>
-            <p className="max-w-sm text-[13px] font-light leading-[1.9] text-slate-400/80">{config.tagline}</p>
-            {config.contactLocation || config.contactEmail ? (
-              <div className="max-w-sm space-y-1 text-[12px] text-slate-500/90">
-                {config.contactLocation ? (
-                  <p className="whitespace-pre-line font-light leading-relaxed">{config.contactLocation}</p>
-                ) : null}
-                {config.contactEmail ? (
-                  <a href={`mailto:${config.contactEmail}`} className="text-cyan-400/90 hover:text-cyan-300">
-                    {config.contactEmail}
-                  </a>
-                ) : null}
-              </div>
-            ) : null}
-          </div>
-
-          {useDynamic ? (
-            config.footerColumns!.map((col) => (
-              <div key={col.heading}>
-                <h4 className="mb-5 font-mono text-[10px] font-medium uppercase tracking-[0.25em] text-violet-400/70">
-                  {col.heading}
-                </h4>
-                <ul className="flex flex-col gap-2.5">
-                  {col.links.map((item) => (
-                    <li key={`${col.heading}-${item.label}`}>
-                      <Link
-                        href={item.href}
-                        className="text-[13px] text-slate-400/55 transition-colors duration-200 hover:text-cyan-400"
-                      >
-                        {item.label}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))
-          ) : (
-            <>
-              <div>
-                <h4 className="mb-5 font-mono text-[10px] font-medium uppercase tracking-[0.25em] text-violet-400/70">
-                  Club
-                </h4>
-                <ul className="flex flex-col gap-2.5">
-                  {config.footerNav.map((item) => (
-                    <li key={`${item.label}-${item.href}`}>
-                      <Link
-                        href={item.href}
-                        className="text-[13px] text-slate-400/55 transition-colors duration-200 hover:text-cyan-400"
-                      >
-                        {item.label}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div>
-                <h4 className="mb-5 font-mono text-[10px] font-medium uppercase tracking-[0.25em] text-violet-400/70">
-                  Info
-                </h4>
-                <ul className="flex flex-col gap-2.5">
-                  {INFO_LINKS.map((item) => (
-                    <li key={item.href}>
-                      <Link
-                        href={item.href}
-                        className="text-[13px] text-slate-400/55 transition-colors duration-200 hover:text-cyan-400"
-                      >
-                        {item.label}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div>
-                <h4 className="mb-5 font-mono text-[10px] font-medium uppercase tracking-[0.25em] text-violet-400/70">
-                  Connect
-                </h4>
-                <ul className="mb-6 flex flex-col gap-2.5">
-                  {CONNECT_LINKS.map((item) => (
-                    <li key={item.label}>
-                      <Link
-                        href={item.href}
-                        className="text-[13px] text-slate-400/55 transition-colors duration-200 hover:text-cyan-400"
-                      >
-                        {item.label}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-                <div className="flex flex-wrap gap-2">
-                  {config.socialLinks.map((s) => (
+        <div className={`grid gap-12 ${gridTemplate} lg:gap-16`}>
+          {showBrand ? (
+            <div className="space-y-4 lg:col-span-1">
+              <Link href="/" className="inline-flex items-center gap-2.5">
+                <span className="size-2 shrink-0 rounded-full bg-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.55)]" />
+                <Image
+                  src="/assets/logos/logo-optimized.svg"
+                  alt="Club logo"
+                  width={28}
+                  height={28}
+                  className="size-7 shrink-0"
+                />
+                <span className="font-syne font-extrabold tracking-tight text-white">
+                  Robotics &amp; AI Club
+                </span>
+              </Link>
+              <p className="max-w-sm text-[13px] font-light leading-[1.9] text-slate-400/80">
+                {config.tagline}
+              </p>
+              {config.contactLocation || config.contactEmail ? (
+                <div className="max-w-sm space-y-1 text-[12px] text-slate-500/90">
+                  {config.contactLocation ? (
+                    <p className="whitespace-pre-line font-light leading-relaxed">
+                      {config.contactLocation}
+                    </p>
+                  ) : null}
+                  {config.contactEmail ? (
                     <a
-                      key={s.platform + s.url}
-                      href={s.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label={
-                        s.platform === "instagram"
-                          ? "Instagram"
-                          : s.platform === "linkedin"
-                            ? "LinkedIn"
-                            : s.platform === "youtube"
-                              ? "YouTube"
-                              : "GitHub"
-                      }
-                      className="flex size-9 items-center justify-center rounded-full border border-violet-500/20 text-slate-400/70 transition-all duration-200 hover:border-cyan-400/35 hover:text-cyan-400"
+                      href={`mailto:${config.contactEmail}`}
+                      className="text-cyan-400/90 hover:text-cyan-300"
                     >
-                      {SOCIAL_ICONS[s.platform]}
+                      {config.contactEmail}
                     </a>
-                  ))}
+                  ) : null}
                 </div>
-              </div>
-            </>
-          )}
+              ) : null}
+            </div>
+          ) : null}
 
-          {useDynamic ? (
+          {cols.map((col) => (
+            <div key={col.heading}>
+              <h4 className="mb-5 font-mono text-[10px] font-medium uppercase tracking-[0.25em] text-violet-400/70">
+                {col.heading}
+              </h4>
+              <ul className="flex flex-col gap-2.5">
+                {col.links.map((item) => (
+                  <li key={`${col.heading}-${item.label}`}>
+                    <Link
+                      href={item.href}
+                      className="text-[13px] text-slate-400/55 transition-colors duration-200 hover:text-cyan-400"
+                    >
+                      {item.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+
+          {showSocial ? (
             <div>
               <h4 className="mb-5 font-mono text-[10px] font-medium uppercase tracking-[0.25em] text-violet-400/70">
-                Social
+                {socialHeading}
               </h4>
               <div className="flex flex-wrap gap-2">
                 {config.socialLinks.map((s) => (
@@ -211,15 +167,7 @@ export function Footer() {
                     href={s.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    aria-label={
-                      s.platform === "instagram"
-                        ? "Instagram"
-                        : s.platform === "linkedin"
-                          ? "LinkedIn"
-                          : s.platform === "youtube"
-                            ? "YouTube"
-                            : "GitHub"
-                    }
+                    aria-label={SOCIAL_LABEL[s.platform]}
                     className="flex size-9 items-center justify-center rounded-full border border-violet-500/20 text-slate-400/70 transition-all duration-200 hover:border-cyan-400/35 hover:text-cyan-400"
                   >
                     {SOCIAL_ICONS[s.platform]}
@@ -231,14 +179,16 @@ export function Footer() {
         </div>
       </div>
 
-      <div className="relative border-t border-violet-500/15 bg-black/30 px-6 py-5 sm:px-10 lg:px-16">
-        <div className="mx-auto flex max-w-[1200px] flex-col items-center justify-between gap-2 font-mono text-[10px] uppercase tracking-[0.12em] text-slate-500/70 sm:flex-row sm:gap-0">
-          <span>
-            © {y - 1}–{y} {config.copyrightText}
-          </span>
-          <span>{config.versionLine}</span>
+      {showBottom ? (
+        <div className="relative border-t border-violet-500/15 bg-black/30 px-6 py-5 sm:px-10 lg:px-16">
+          <div className="mx-auto flex max-w-[1200px] flex-col items-center justify-between gap-2 font-mono text-[10px] uppercase tracking-[0.12em] text-slate-500/70 sm:flex-row sm:gap-0">
+            <span>
+              © {y - 1}–{y} {config.copyrightText}
+            </span>
+            <span>{config.versionLine}</span>
+          </div>
         </div>
-      </div>
+      ) : null}
     </footer>
   );
 }
