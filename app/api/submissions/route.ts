@@ -19,7 +19,9 @@ import { getApplyFormNotificationRecipients } from "@/lib/submission-notificatio
 
 const submissionSchema = z.object({
   formId: z.string().min(1).max(60),
-  fields: z.record(z.string(), z.string().max(2000)).refine((obj) => Object.keys(obj).length > 0),
+  fields: z.record(z.string(), z.string().max(2000)).refine(
+    (obj) => Object.keys(obj).length > 0,
+  ),
   website: z.string().optional(),
 });
 
@@ -29,10 +31,28 @@ function ipHash(ip: string): string {
 
 function getClientIp(req: Request): string {
   const h = req.headers;
-  return h.get("x-forwarded-for")?.split(",")[0]?.trim() || h.get("x-real-ip") || "unknown";
+  return (
+    h.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    h.get("x-real-ip") ||
+    "unknown"
+  );
 }
 
-async function sendNotification(id: string, formId: string, fields: Record<string, string>): Promise<void> {
+/** Escape HTML special characters to prevent XSS in email clients. */
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+async function sendNotification(
+  id: string,
+  formId: string,
+  fields: Record<string, string>,
+): Promise<void> {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
     console.warn("[submissions] RESEND_API_KEY missing, skipping email send.");
@@ -41,46 +61,61 @@ async function sendNotification(id: string, formId: string, fields: Record<strin
   const to = await getApplyFormNotificationRecipients();
   if (to.length === 0) {
     console.warn(
-      "[submissions] No notification recipients — set siteConfig/submissionNotifications in admin or ADMIN_NOTIFICATION_EMAIL.",
+      "[submissions] No notification recipients. " +
+        "Set siteConfig/submissionNotifications in admin or ADMIN_NOTIFICATION_EMAIL.",
     );
     return;
   }
   const resend = new Resend(apiKey);
   const from = process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev";
   const site = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
-  const first = Object.values(fields)[0] || "Robotics & AI Club";
+  const subjectFirst = Object.values(fields)[0] ?? "Robotics & AI Club";
+  const safeFormId = escapeHtml(formId);
+  const safeId = encodeURIComponent(id);
   const rows = Object.entries(fields)
     .map(
       ([k, v]) =>
-        `<tr><td style=\"padding:6px 10px;border:1px solid #ddd;font-weight:600;\">${k}</td><td style=\"padding:6px 10px;border:1px solid #ddd;\">${v}</td></tr>`,
+        `<tr>` +
+        `<td style="padding:6px 10px;border:1px solid #ddd;font-weight:600;">${escapeHtml(k)}</td>` +
+        `<td style="padding:6px 10px;border:1px solid #ddd;">${escapeHtml(v)}</td>` +
+        `</tr>`,
     )
     .join("");
 
   await resend.emails.send({
     from,
-    to: to.length === 1 ? to[0]! : to,
-    subject: `New ${formId} submission — ${first}`,
-    html: `<div style="font-family:Arial,sans-serif"><h3>New ${formId} submission</h3><table style="border-collapse:collapse">${rows}</table><p><a href="${site}/admin/submissions/${id}">Open in admin</a></p></div>`,
+    to,
+    subject: `New ${formId} submission -- ${subjectFirst}`,
+    html:
+      `<div style="font-family:Arial,sans-serif">` +
+      `<h3>New ${safeFormId} submission</h3>` +
+      `<table style="border-collapse:collapse">${rows}</table>` +
+      `<p><a href="${site}/admin/submissions/${safeId}">Open in admin</a></p>` +
+      `</div>`,
   });
 }
 
 export async function POST(request: Request) {
   if (!isFirebaseConfigured()) {
-    return NextResponse.json({ ok: false, error: "Firebase is not configured.", status: 503 }, { status: 503 });
+    return NextResponse.json(
+      { ok: false, error: "Firebase is not configured." },
+      { status: 503 },
+    );
   }
 
   let body: unknown;
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ ok: false, error: "Invalid JSON.", status: 400 }, { status: 400 });
+    return NextResponse.json({ ok: false, error: "Invalid JSON." }, { status: 400 });
   }
 
   const parsed = submissionSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ ok: false, error: "Invalid payload.", status: 400 }, { status: 400 });
+    return NextResponse.json({ ok: false, error: "Invalid payload." }, { status: 400 });
   }
 
+  // Honeypot field -- bots fill it, real users never see it.
   if ((parsed.data.website || "").trim() !== "") {
     return NextResponse.json({ ok: true }, { status: 200 });
   }
@@ -93,23 +128,32 @@ export async function POST(request: Request) {
   let recentCount = 0;
   try {
     const recent = await getDocs(
-      query(collection(db(), "submissions"), where("userAgent", "==", uaKey), limit(25)),
+      query(
+        collection(db(), "submissions"),
+        where("userAgent", "==", uaKey),
+        limit(25),
+      ),
     );
     for (const d of recent.docs) {
       const t = d.data().submittedAt;
-      if (typeof t?.toMillis === "function" && t.toMillis() >= oneHourAgo) recentCount += 1;
+      if (typeof t?.toMillis === "function" && t.toMillis() >= oneHourAgo) {
+        recentCount += 1;
+      }
     }
   } catch (e) {
     // Rules may intentionally block anonymous reads on submissions.
-    // Keep create path functional; stronger rate limiting should move to Redis/service layer.
+    // Keep the create path functional; production rate limiting should use Redis.
     if (process.env.NODE_ENV === "development") {
       const msg = e instanceof Error ? e.message : String(e);
       console.warn("[submissions] rate-limit read skipped:", msg);
     }
   }
-  // Production-grade rate limiting needs Redis; this MVP is Firestore-based only.
+
   if (recentCount >= 5) {
-    return NextResponse.json({ ok: false, error: "Too many submissions.", status: 429 }, { status: 429 });
+    return NextResponse.json(
+      { ok: false, error: "Too many submissions." },
+      { status: 429 },
+    );
   }
 
   let ref;
@@ -127,7 +171,11 @@ export async function POST(request: Request) {
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    return NextResponse.json({ ok: false, error: msg, status: 403 }, { status: 403 });
+    console.error("[submissions] write failed", msg);
+    return NextResponse.json(
+      { ok: false, error: "Submission could not be saved." },
+      { status: 500 },
+    );
   }
 
   void sendNotification(ref.id, parsed.data.formId, parsed.data.fields)
@@ -137,7 +185,10 @@ export async function POST(request: Request) {
     .catch(async (e) => {
       const msg = e instanceof Error ? e.message : String(e);
       console.error("[submissions] email failed", msg);
-      await updateDoc(ref, { notificationSent: false, notificationError: msg.slice(0, 500) });
+      await updateDoc(ref, {
+        notificationSent: false,
+        notificationError: msg.slice(0, 500),
+      });
     });
 
   return NextResponse.json({ ok: true, id: ref.id }, { status: 201 });

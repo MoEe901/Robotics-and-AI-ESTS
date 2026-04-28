@@ -30,8 +30,7 @@ export function RequireAdmin({ children }: Props) {
         router.replace("/admin/login");
         return;
       }
-      const full = session.mode === "legacy" || session.role === "admin";
-      if (!isAdminPathAllowedForRole(pathname, session.role, full)) {
+      if (!isAdminPathAllowedForRole(pathname, session.role)) {
         router.replace("/admin/dashboard");
       }
     })();
@@ -40,7 +39,7 @@ export function RequireAdmin({ children }: Props) {
   if (!ready) {
     return (
       <p className="px-6 py-16 text-sm text-white/60">
-        Checking admin session…
+        Checking admin session...
       </p>
     );
   }
@@ -49,11 +48,10 @@ export function RequireAdmin({ children }: Props) {
     return null;
   }
 
-  const full = session.mode === "legacy" || session.role === "admin";
-  if (!isAdminPathAllowedForRole(pathname, session.role, full)) {
+  if (!isAdminPathAllowedForRole(pathname, session.role)) {
     return (
       <p className="px-6 py-16 text-sm text-white/60">
-        Redirecting…
+        Redirecting...
       </p>
     );
   }

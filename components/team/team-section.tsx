@@ -1,6 +1,9 @@
+"use client";
+
 import Link from "next/link";
 
 import type { TeamMemberListItem } from "@/lib/team/types";
+import { useLanguage } from "@/lib/i18n/context";
 
 import { TeamMemberCard } from "./team-member-card";
 
@@ -10,6 +13,7 @@ type TeamSectionProps = {
 };
 
 export function TeamSection({ title, members }: TeamSectionProps) {
+  const { t } = useLanguage();
   return (
     <section
       id="team"
@@ -19,22 +23,21 @@ export function TeamSection({ title, members }: TeamSectionProps) {
         <div>
           <h2 className="text-2xl font-semibold tracking-tight">{title}</h2>
           <p className="mt-2 max-w-lg text-sm text-white/70">
-            Leadership for this academic year — open a profile for more.
+            {t.sections.teamSubtitle}
           </p>
         </div>
         <Link
           href="/team"
           className="inline-flex w-fit items-center justify-center rounded-full border border-white/20 bg-white/10 px-5 py-2.5 text-sm font-semibold text-white backdrop-blur-md transition duration-[400ms] ease-in-out hover:border-white/35 hover:bg-white/15"
         >
-          View all members
+          {t.sections.teamViewAll}
         </Link>
       </div>
       {members.length === 0 ? (
         <div className="mt-8 rounded-2xl border border-dashed border-white/15 bg-black/25 px-6 py-14 text-center md:px-10">
-          <p className="text-sm font-medium text-white/80">No members to show here yet</p>
+          <p className="text-sm font-medium text-white/80">{t.sections.teamEmptyTitle}</p>
           <p className="mx-auto mt-3 max-w-md text-xs leading-relaxed text-white/45">
-            Published team profiles for this year will appear in this section with the same card layout as
-            on the full Team directory.
+            {t.sections.teamEmptyDesc}
           </p>
         </div>
       ) : (

@@ -1,4 +1,4 @@
-import { getApps, initializeApp, type FirebaseApp } from "firebase/app";
+import { getApps, initializeApp, setLogLevel, type FirebaseApp } from "firebase/app";
 import { getAuth, type Auth } from "firebase/auth";
 import { getStorage, type FirebaseStorage } from "firebase/storage";
 import { initializeFirestore, type Firestore } from "firebase/firestore";
@@ -58,6 +58,13 @@ function assertFirebaseConfigForRuntime(): void {
   }
 }
 
+// Suppress noisy transport-level warnings (e.g. "WebChannelConnection ... transport errored.
+// Name: undefined Message: undefined") — these are benign retries from long-polling HTTP aborts.
+// Real permission errors still surface via each onSnapshot's error callback.
+if (typeof window !== "undefined") {
+  setLogLevel("error");
+}
+
 let appSingleton: FirebaseApp | undefined;
 let dbSingleton: Firestore | undefined;
 let storageSingleton: FirebaseStorage | undefined;
@@ -74,11 +81,14 @@ function getFirebaseApp(): FirebaseApp {
 /**
  * Firestore client — lazy init, validated projectId, long-polling (avoids flaky streams in dev / some networks).
  * Do not use IndexedDB persistence here (multi-tab / Turbopack / quota issues).
+ * experimentalLongPollingOptions.timeoutSeconds: proactively recycle each HTTP long-poll request
+ * before the browser aborts it, which eliminates "transport errored Name: undefined" noise.
  */
 export function db(): Firestore {
   if (!dbSingleton) {
     dbSingleton = initializeFirestore(getFirebaseApp(), {
       experimentalForceLongPolling: true,
+      experimentalLongPollingOptions: { timeoutSeconds: 30 },
     });
   }
   return dbSingleton;

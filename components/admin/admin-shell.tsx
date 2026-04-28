@@ -135,13 +135,12 @@ export function AdminShell({ children }: Props) {
   const showSubmissionsBadge =
     sessionReady &&
     session?.ok &&
-    (session.mode === "legacy" || session.role === "admin" || session.role === "moderator");
+    (session.role === "admin" || session.role === "moderator");
 
   useEffect(() => {
-    if (!showSubmissionsBadge) {
-      setNewSubmissionsCount(0);
-      return;
-    }
+    // When the badge is hidden no listener is needed; count resets naturally to
+    // its initial 0 on the next mount and the snapshot re-fires when access returns.
+    if (!showSubmissionsBadge) return;
     const q = query(collection(db(), "submissions"), where("status", "==", "new"));
     return onSnapshot(q, (snap) => setNewSubmissionsCount(snap.size), () => {});
   }, [showSubmissionsBadge]);
@@ -179,8 +178,7 @@ export function AdminShell({ children }: Props) {
     if (!sessionReady || !session?.ok) {
       return fromShell;
     }
-    const full = session.mode === "legacy" || session.role === "admin";
-    return filterAdminNavForRole(session.role, full, fromShell);
+    return filterAdminNavForRole(session.role, fromShell);
   }, [shellConfig, session, sessionReady]);
 
   const theme = useSyncExternalStore<AdminThemeMode>(
@@ -220,7 +218,7 @@ export function AdminShell({ children }: Props) {
         className="flex items-center gap-3 border-b border-[rgba(124,58,237,0.18)] px-6 py-5"
       >
         <Image
-          src="/assets/logos/logo-optimized.svg"
+          src="/assets/logos/logo-optimized.svg" loading="eager"
           alt=""
           width={34}
           height={34}
@@ -303,7 +301,7 @@ export function AdminShell({ children }: Props) {
 
   return (
     <div
-      className="admin-root relative min-h-screen [background:var(--background)] [color:var(--admin-fg)]"
+      className="admin-root relative min-h-screen [background:var(--admin-bg)] [color:var(--admin-fg)]"
       data-admin-theme={theme}
     >
       <div className="futurized-violet-grid" aria-hidden />
@@ -315,7 +313,7 @@ export function AdminShell({ children }: Props) {
 
       <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-[rgba(124,58,237,0.18)] bg-[rgba(7,8,15,0.82)] px-4 py-3 backdrop-blur lg:hidden">
         <Link href="/admin/dashboard" className="flex items-center gap-2">
-          <Image src="/assets/logos/logo-optimized.svg" alt="" width={26} height={26} />
+          <Image src="/assets/logos/logo-optimized.svg" loading="eager" alt="" width={26} height={26} />
           <span className="font-syne text-sm font-bold tracking-tight">Club admin</span>
         </Link>
         <button
@@ -360,3 +358,4 @@ export function AdminShell({ children }: Props) {
     </div>
   );
 }
+

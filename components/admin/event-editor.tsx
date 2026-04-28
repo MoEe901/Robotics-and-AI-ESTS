@@ -82,7 +82,9 @@ export function EventEditor({ eventId }: Props) {
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
   const [description, setDescription] = useState("");
+  const [descriptionFr, setDescriptionFr] = useState("");
   const [documentary, setDocumentary] = useState("");
+  const [documentaryFr, setDocumentaryFr] = useState("");
   const [location, setLocation] = useState("");
   const [locationMapsUrl, setLocationMapsUrl] = useState("");
   const [date, setDate] = useState("");
@@ -117,7 +119,9 @@ export function EventEditor({ eventId }: Props) {
         setTitle(readString(data, "title"));
         setSlug(readString(data, "slug"));
         setDescription(readString(data, "description"));
+        setDescriptionFr(readString(data, "descriptionFr"));
         setDocumentary(readString(data, "documentary"));
+        setDocumentaryFr(readString(data, "documentaryFr"));
         setLocation(readString(data, "location"));
         setLocationMapsUrl(readString(data, "locationMapsUrl"));
         setDate(readString(data, "date"));
@@ -171,7 +175,9 @@ export function EventEditor({ eventId }: Props) {
         showEventWebsite,
       };
       const d = description.trim();
+      const dFr = descriptionFr.trim();
       const docu = documentary.trim();
+      const docuFr = documentaryFr.trim();
       const loc = location.trim();
       const maps = locationMapsUrl.trim();
       const dt = date.trim();
@@ -179,7 +185,9 @@ export function EventEditor({ eventId }: Props) {
       const web = eventWebsiteUrl.trim();
 
       payload.description = d ? d : deleteField();
+      payload.descriptionFr = dFr ? dFr : deleteField();
       payload.documentary = docu ? docu : deleteField();
+      payload.documentaryFr = docuFr ? docuFr : deleteField();
       payload.location = loc ? loc : deleteField();
       payload.locationMapsUrl = maps ? maps : deleteField();
       payload.date = dt ? dt : deleteField();
@@ -223,7 +231,9 @@ export function EventEditor({ eventId }: Props) {
     title,
     slug,
     description,
+    descriptionFr,
     documentary,
+    documentaryFr,
     location,
     locationMapsUrl,
     date,
@@ -342,8 +352,10 @@ export function EventEditor({ eventId }: Props) {
             </button>
           </div>
         </div>
-        <label className="block text-sm"><span className="text-white/70">Short description (optional)</span><textarea value={description} onChange={(e)=>setDescription(e.target.value)} rows={3} className="mt-1 w-full resize-y rounded-xl border border-white/15 bg-black/30 px-3 py-2 text-white outline-none focus:border-white/35"/></label>
-        <label className="block text-sm"><span className="text-white/70">Event story / documentary</span><textarea value={documentary} onChange={(e)=>setDocumentary(e.target.value)} rows={10} className="mt-1 w-full resize-y rounded-xl border border-white/15 bg-black/30 px-3 py-2 text-white outline-none focus:border-white/35"/></label>
+        <label className="block text-sm"><span className="text-white/70">Short description (EN)</span><textarea value={description} onChange={(e)=>setDescription(e.target.value)} rows={3} className="mt-1 w-full resize-y rounded-xl border border-white/15 bg-black/30 px-3 py-2 text-white outline-none focus:border-white/35"/></label>
+        <label className="block text-sm"><span className="text-white/70">Short description — French (FR)</span><textarea value={descriptionFr} onChange={(e)=>setDescriptionFr(e.target.value)} rows={3} placeholder="Courte description en français (optionnel)" className="mt-1 w-full resize-y rounded-xl border border-white/15 bg-black/30 px-3 py-2 text-white outline-none placeholder:text-white/30 focus:border-sky-400/40"/></label>
+        <label className="block text-sm"><span className="text-white/70">Event story / documentary (EN)</span><textarea value={documentary} onChange={(e)=>setDocumentary(e.target.value)} rows={10} className="mt-1 w-full resize-y rounded-xl border border-white/15 bg-black/30 px-3 py-2 text-white outline-none focus:border-white/35"/></label>
+        <label className="block text-sm"><span className="text-white/70">Event story / documentary — French (FR)</span><textarea value={documentaryFr} onChange={(e)=>setDocumentaryFr(e.target.value)} rows={10} placeholder="Histoire / documentaire en français (optionnel)" className="mt-1 w-full resize-y rounded-xl border border-white/15 bg-black/30 px-3 py-2 text-white outline-none placeholder:text-white/30 focus:border-sky-400/40"/></label>
 
         <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
           <h2 className="text-sm font-semibold text-white">Documentary topics</h2>

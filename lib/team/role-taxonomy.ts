@@ -35,8 +35,16 @@ export const DEFAULT_TEAM_CELLS = [
   "Member",
 ] as const;
 
-const TAXONOMY_REF = doc(db(), "teamConfig", "taxonomy");
-const TAXONOMY_FALLBACK_REF = doc(db(), "pageSections", "teamTaxonomy");
+/**
+ * Lazily-resolved DocumentReferences. Avoids calling db() at module-load time
+ * when Firebase may not yet be configured (e.g. during server-side import).
+ */
+function getTaxonomyRef() {
+  return doc(db(), "teamConfig", "taxonomy");
+}
+function getTaxonomyFallbackRef() {
+  return doc(db(), "pageSections", "teamTaxonomy");
+}
 
 function normalizeLabel(input: string): string {
   return input.trim().replace(/\s+/g, " ");
@@ -65,11 +73,15 @@ function mergeWithDefaults(raw: Partial<TeamTaxonomy> | null | undefined): TeamT
   return {
     roles: dedupeCaseInsensitive([
       ...DEFAULT_TEAM_ROLES,
-      ...(Array.isArray(raw?.roles) ? raw.roles.filter((x): x is string => typeof x === "string") : []),
+      ...(Array.isArray(raw?.roles)
+        ? raw.roles.filter((x): x is string => typeof x === "string")
+        : []),
     ]),
     cells: dedupeCaseInsensitive([
       ...DEFAULT_TEAM_CELLS,
-      ...(Array.isArray(raw?.cells) ? raw.cells.filter((x): x is string => typeof x === "string") : []),
+      ...(Array.isArray(raw?.cells)
+        ? raw.cells.filter((x): x is string => typeof x === "string")
+        : []),
     ]),
   };
 }
@@ -95,12 +107,16 @@ async function collectTaxonomyFromTeamMembers(): Promise<TeamTaxonomy> {
 
 export async function loadTeamTaxonomy(): Promise<TeamTaxonomy> {
   const [fromConfig, fromFallback, fromMembers] = await Promise.all([
-    getDoc(TAXONOMY_REF).catch(() => null),
-    getDoc(TAXONOMY_FALLBACK_REF).catch(() => null),
+    getDoc(getTaxonomyRef()).catch(() => null),
+    getDoc(getTaxonomyFallbackRef()).catch(() => null),
     collectTaxonomyFromTeamMembers(),
   ]);
-  const cfg = fromConfig?.exists() ? (fromConfig.data() as Partial<TeamTaxonomy>) : null;
-  const fallback = fromFallback?.exists() ? (fromFallback.data() as Partial<TeamTaxonomy>) : null;
+  const cfg = fromConfig?.exists()
+    ? (fromConfig.data() as Partial<TeamTaxonomy>)
+    : null;
+  const fallback = fromFallback?.exists()
+    ? (fromFallback.data() as Partial<TeamTaxonomy>)
+    : null;
   const mergedStored = mergeWithDefaults({
     roles: [...(cfg?.roles ?? []), ...(fallback?.roles ?? [])],
     cells: [...(cfg?.cells ?? []), ...(fallback?.cells ?? [])],
@@ -115,13 +131,13 @@ export async function saveTeamTaxonomy(next: TeamTaxonomy): Promise<TeamTaxonomy
   const merged = mergeWithDefaults(next);
   let wrote = false;
   try {
-    await setDoc(TAXONOMY_REF, merged, { merge: true });
+    await setDoc(getTaxonomyRef(), merged, { merge: true });
     wrote = true;
   } catch {
     // ignore; fallback below
   }
   if (!wrote) {
-    await setDoc(TAXONOMY_FALLBACK_REF, merged, { merge: true });
+    await setDoc(getTaxonomyFallbackRef(), merged, { merge: true });
   }
   return merged;
 }
@@ -134,7 +150,7 @@ export async function appendCustomRole(value: string): Promise<TeamTaxonomy> {
     ...current,
     roles: dedupeCaseInsensitive([...current.roles, nextRole]),
   };
-  await setDoc(TAXONOMY_REF, next, { merge: true });
+  await setDoc(getTaxonomyRef(), next, { merge: true });
   return next;
 }
 
@@ -146,6 +162,6 @@ export async function appendCustomCell(value: string): Promise<TeamTaxonomy> {
     ...current,
     cells: dedupeCaseInsensitive([...current.cells, nextCell]),
   };
-  await setDoc(TAXONOMY_REF, next, { merge: true });
+  await setDoc(getTaxonomyRef(), next, { merge: true });
   return next;
 }

@@ -1,8 +1,14 @@
-﻿"use client";
+"use client";
 
 import { DEFAULT_NAVBAR_CONFIG } from "@/lib/firebase/types";
 import { parseNavbarDoc } from "@/lib/content/site-content-parser";
 import { useFirestoreDoc } from "@/lib/hooks/use-firestore-doc";
+import { useLanguage } from "@/lib/i18n/context";
+import {
+  LanguageSwitcher,
+  LanguageSwitcherMobile,
+} from "@/components/layout/language-switcher";
+import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { AnimatePresence, motion } from "framer-motion";
 import { Menu, X } from "lucide-react";
 import Image from "next/image";
@@ -12,7 +18,14 @@ import { useEffect, useState } from "react";
 export function Navbar() {
   const { data: navbarConfig } = useFirestoreDoc("siteConfig/navbar", (raw) => parseNavbarDoc(raw));
   const nav = navbarConfig ?? DEFAULT_NAVBAR_CONFIG;
+  const { t, locale } = useLanguage();
   const [open, setOpen] = useState(false);
+
+  /** Translate a CMS nav link label using the locale map (no-op in EN). */
+  function xlLink(label: string) {
+    if (locale === "en") return label;
+    return t.nav.linkLabelMap[label.toLowerCase()] ?? label;
+  }
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -59,7 +72,8 @@ export function Navbar() {
           </span>
         </Link>
 
-        <nav className="ml-auto hidden shrink-0 items-center gap-8 md:flex">
+        {/* Desktop nav */}
+        <nav className="ml-auto hidden shrink-0 items-center gap-6 md:flex">
           {navLinks.map((item) => (
             <Link
               key={item.id}
@@ -67,9 +81,16 @@ export function Navbar() {
               {...(item.isExternal ? { target: "_blank", rel: "noopener noreferrer" } : {})}
               className="text-[11px] font-medium uppercase tracking-[0.12em] text-slate-400/80 transition-colors duration-200 hover:text-cyan-400"
             >
-              {item.label}
+              {xlLink(item.label)}
             </Link>
           ))}
+
+          {/* Language switcher */}
+          <LanguageSwitcher />
+
+          {/* Theme toggle */}
+          {nav.showThemeToggle ? <ThemeToggle /> : null}
+
           {applyNav ? (
             <Link
               href={nav.ctaButton.href || applyNav.href}
@@ -80,11 +101,12 @@ export function Navbar() {
           ) : null}
         </nav>
 
+        {/* Mobile hamburger */}
         <div className="flex shrink-0 items-center gap-1 sm:gap-1.5 md:hidden">
           <button
             type="button"
             className="inline-flex size-9 shrink-0 items-center justify-center rounded-full border border-violet-500/25 text-white/85 sm:size-10"
-            aria-label={open ? "Close navigation menu" : "Open navigation menu"}
+            aria-label={open ? t.nav.closeMenu : t.nav.openMenu}
             onClick={() => setOpen((v) => !v)}
           >
             {open ? <X className="size-4" /> : <Menu className="size-4" />}
@@ -92,6 +114,7 @@ export function Navbar() {
         </div>
       </motion.header>
 
+      {/* Mobile dropdown */}
       <AnimatePresence>
         {open ? (
           <motion.div
@@ -111,7 +134,7 @@ export function Navbar() {
                   onClick={() => setOpen(false)}
                   className="rounded-xl px-3 py-2 text-sm font-medium uppercase tracking-wide text-slate-300 hover:bg-violet-500/10 hover:text-white"
                 >
-                  {item.label}
+                  {xlLink(item.label)}
                 </Link>
               ))}
               {applyNav ? (
@@ -123,6 +146,14 @@ export function Navbar() {
                   {nav.ctaButton.label}
                 </Link>
               ) : null}
+
+              {/* Theme toggle + language switcher — mobile */}
+              <div className="mt-1 flex items-center justify-between px-1 pb-1">
+                <LanguageSwitcherMobile />
+                {nav.showThemeToggle ? (
+                  <ThemeToggle className="inline-flex size-9 items-center justify-center rounded-full border border-violet-500/25 text-white/70 transition-colors hover:border-violet-500/45 hover:text-cyan-400" />
+                ) : null}
+              </div>
             </nav>
           </motion.div>
         ) : null}

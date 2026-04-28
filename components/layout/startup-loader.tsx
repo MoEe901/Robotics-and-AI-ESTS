@@ -2,11 +2,13 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { useLanguage } from "@/lib/i18n/context";
 
 const MIN_VISIBLE_MS = 1200;
 const FADE_MS = 900;
 
 export function StartupLoader({ children }: { children: React.ReactNode }) {
+  const { t } = useLanguage();
   const [visible, setVisible] = useState(true);
 
   useEffect(() => {
@@ -70,8 +72,8 @@ export function StartupLoader({ children }: { children: React.ReactNode }) {
         {/* Logo */}
         <div className="relative z-10 px-6">
           <Image
-            src="/assets/logos/logo-optimized.svg"
-            alt="Robotics & AI Club loading"
+            src="/assets/logos/logo-optimized.svg" loading="eager"
+            alt={t.meta.appName}
             width={520}
             height={320}
             priority

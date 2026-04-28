@@ -247,7 +247,7 @@ export function HomeSections({
   };
 
   const layout = sectionLayout ?? {
-    order: ["hero", "events", "knowUs", "whyJoin", "cellules", "processSteps", "faq", "apply", "footer"],
+    order: ["hero", "events", "knowUs", "whyJoin", "cellules", "processSteps", "team", "faq", "apply", "footer"],
     visibility: {
       hero: true,
       events: true,
@@ -255,6 +255,7 @@ export function HomeSections({
       whyJoin: true,
       cellules: true,
       processSteps: true,
+      team: true,
       faq: true,
       apply: true,
       footer: true,
@@ -530,9 +531,11 @@ export function HomeSections({
       </RevealSection>
       ) : null}
 
-      <RevealSection className="mx-auto w-[min(94%,1100px)] py-2" delay={0.16}>
+      {isVisible("team") ? (
+      <RevealSection className="mx-auto w-[min(94%,1100px)] py-2" delay={0.16} style={{ order: sectionOrder("team") }}>
         <TeamSection title={teamTitle} members={teamMembers} />
       </RevealSection>
+      ) : null}
 
       {isVisible("faq") ? (
       <RevealSection className="mx-auto w-[min(94%,1100px)] py-2" delay={0.18} style={{ order: sectionOrder("faq") }}>

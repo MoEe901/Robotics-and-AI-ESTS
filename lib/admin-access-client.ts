@@ -1,39 +1,44 @@
 import { doc, getDoc } from "firebase/firestore";
 import type { User } from "firebase/auth";
 
-import { isAllowlistedAdmin } from "@/lib/admin-allowlist";
 import { db } from "@/lib/firebase";
 
-export type ProvisionedAdminRole = "admin" | "editor" | "moderator" | "viewer";
+export type ProvisionedAdminRole =
+  | "admin"
+  | "editor"
+  | "moderator"
+  | "viewer";
 
 export type AdminSessionInfo = {
   ok: true;
-  mode: "legacy" | "rbac";
   role: ProvisionedAdminRole | null;
 };
 
-export type AdminSessionDenied = { ok: false; reason: "not_signed_in" | "not_provisioned" };
+export type AdminSessionDenied = {
+  ok: false;
+  reason: "not_signed_in" | "not_provisioned";
+};
 
 /**
- * Legacy allowlist (NEXT_PUBLIC_ADMIN_EMAILS) still grants full admin without an `adminUsers` doc.
- * Otherwise requires `adminUsers/{uid}` with `active != false` and a known `role`.
+ * Resolves the admin session for a Firebase Auth user.
+ * Requires an `adminUsers/{uid}` document with `active != false`
+ * and a known `role` value.
  */
-export async function resolveAdminSession(user: User | null): Promise<AdminSessionInfo | AdminSessionDenied> {
+export async function resolveAdminSession(
+  user: User | null,
+): Promise<AdminSessionInfo | AdminSessionDenied> {
   if (!user?.uid) return { ok: false, reason: "not_signed_in" };
-  const email = user.email;
-  if (isAllowlistedAdmin(email)) {
-    return { ok: true, mode: "legacy", role: "admin" };
-  }
   const snap = await getDoc(doc(db(), "adminUsers", user.uid));
   if (!snap.exists()) return { ok: false, reason: "not_provisioned" };
   const d = snap.data() as Record<string, unknown>;
   if (d.active === false) return { ok: false, reason: "not_provisioned" };
-  const roleRaw = typeof d.role === "string" ? d.role.trim().toLowerCase() : "";
-  const role = (["admin", "editor", "moderator", "viewer"] as const).includes(
-    roleRaw as ProvisionedAdminRole,
-  )
+  const roleRaw =
+    typeof d.role === "string" ? d.role.trim().toLowerCase() : "";
+  const role = (
+    ["admin", "editor", "moderator", "viewer"] as const
+  ).includes(roleRaw as ProvisionedAdminRole)
     ? (roleRaw as ProvisionedAdminRole)
     : null;
   if (!role) return { ok: false, reason: "not_provisioned" };
-  return { ok: true, mode: "rbac", role };
+  return { ok: true, role };
 }

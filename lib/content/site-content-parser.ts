@@ -135,7 +135,7 @@ const LEGACY_SOURCE_MAP: Record<string, HeroStatSource> = {
 export function normalizeHeroStatSource(raw: unknown): HeroStatSource {
   const s = typeof raw === "string" ? raw.trim() : "";
   if (!s) return "manual";
-  if (s in LEGACY_SOURCE_MAP) return LEGACY_SOURCE_MAP[s];
+  if (s in LEGACY_SOURCE_MAP) return LEGACY_SOURCE_MAP[s]!;
   const allowed = HERO_STAT_SOURCES.map((src) => src.value) as string[];
   return (allowed.includes(s) ? s : "manual") as HeroStatSource;
 }

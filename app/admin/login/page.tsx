@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { resolveAdminSession } from "@/lib/admin-access-client";
-import { parseAdminEmails } from "@/lib/admin-allowlist";
 import { auth } from "@/lib/firebase";
 
 export default function AdminLoginPage() {
@@ -16,8 +15,6 @@ export default function AdminLoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
-  const allowPasswordConfigured = parseAdminEmails().size > 0;
-
   async function afterFirebaseSignIn() {
     const u = auth().currentUser;
     const session = await resolveAdminSession(u);
@@ -25,7 +22,7 @@ export default function AdminLoginPage() {
       await signOut(auth());
       if (session.reason === "not_provisioned") {
         setError(
-          "This account is not in NEXT_PUBLIC_ADMIN_EMAILS or is not provisioned for admin access.",
+          "This account is not provisioned for admin access.",
         );
       } else {
         setError("Sign-in required.");
@@ -42,10 +39,15 @@ export default function AdminLoginPage() {
     setError(null);
     setPending(true);
     try {
-      await signInWithEmailAndPassword(auth(), email.trim(), password);
+      await signInWithEmailAndPassword(
+        auth(),
+        email.trim(),
+        password,
+      );
       await afterFirebaseSignIn();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Sign-in failed.";
+      const msg =
+        err instanceof Error ? err.message : "Sign-in failed.";
       setError(msg);
     } finally {
       setPending(false);
@@ -54,15 +56,9 @@ export default function AdminLoginPage() {
 
   return (
     <div className="mx-auto flex min-h-[70vh] max-w-md flex-col justify-center px-6 py-16">
-      <h1 className="text-2xl font-semibold tracking-tight text-white">Admin sign-in</h1>
-
-
-      {!allowPasswordConfigured ? (
-        <p className="rounded-xl border border-amber-500/35 bg-amber-500/10 px-4 py-3 text-sm text-amber-100/90">
-          Email/password sign-in is disabled until you set{" "}
-          <span className="font-mono">NEXT_PUBLIC_ADMIN_EMAILS</span> in <span className="font-mono">.env.local</span>.
-        </p>
-      ) : null}
+      <h1 className="text-2xl font-semibold tracking-tight text-white">
+        Admin sign-in
+      </h1>
 
       <form onSubmit={handleSubmit} className="mt-8 space-y-4">
         <div>
@@ -98,16 +94,16 @@ export default function AdminLoginPage() {
         ) : null}
         <button
           type="submit"
-          disabled={pending || !allowPasswordConfigured}
+          disabled={pending}
           className="w-full rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {pending ? "Signing in…" : "Sign in"}
+          {pending ? "Signing in..." : "Sign in"}
         </button>
       </form>
 
       <p className="mt-10 text-center text-xs text-white/45">
         <Link href="/" className="text-blue-300 hover:text-blue-200">
-          ← Back to site
+          Back to site
         </Link>
       </p>
     </div>

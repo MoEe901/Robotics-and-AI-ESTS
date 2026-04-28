@@ -32,6 +32,7 @@ import { teamListingHref } from "@/lib/team/academic-year";
 import { formatBirthdayDisplay } from "@/lib/team/birthday";
 import { memberImageSrc } from "@/lib/team/image-url";
 import { taxonomyDisplay } from "@/lib/team/taxonomy";
+import { useLanguage } from "@/lib/i18n/context";
 
 const FALLBACK_MEMBER_IMAGE = "/fallback.jpg";
 
@@ -110,6 +111,7 @@ type MemberProfileProps = {
 };
 
 export function MemberProfile({ member }: MemberProfileProps) {
+  const { t } = useLanguage();
   const [heroFallback, setHeroFallback] = useState(false);
   const [avatarFallback, setAvatarFallback] = useState(false);
 
@@ -123,8 +125,8 @@ export function MemberProfile({ member }: MemberProfileProps) {
   const directoryHref = member.academicYear
     ? teamListingHref({ year: member.academicYear })
     : "/team";
-  const departmentLabel = taxonomyDisplay(member.department ?? "");
-  const schoolStatusLabel = taxonomyDisplay(member.schoolStatus ?? "");
+  const departmentLabel = taxonomyDisplay(member.department ?? "", "");
+  const schoolStatusLabel = taxonomyDisplay(member.schoolStatus ?? "", "");
   const showBirthday = member.visibility?.showBirthday && member.birthday;
   const showFullDescription = member.visibility?.showFullDescription !== false && member.fullDescription;
 
@@ -185,7 +187,7 @@ export function MemberProfile({ member }: MemberProfileProps) {
             title,
             pct: skillWidthPct(title, i),
           }))
-        : [{ title: "Club member", pct: 72 }];
+        : [{ title: t.memberProfilePage.clubMemberFallback, pct: 72 }];
 
   const interestTags = [
     ...new Set(
@@ -235,13 +237,13 @@ export function MemberProfile({ member }: MemberProfileProps) {
     : "—";
 
   const stats = [
-    { n: String(roleTitles.length || 0), l: "Roles" },
-    { n: startedYearDisplay, l: "Started" },
+    { n: String(roleTitles.length || 0), l: t.memberProfilePage.rolesLabel },
+    { n: startedYearDisplay, l: t.memberProfilePage.startedLabel },
     {
       n: typeof member.order === "number" && Number.isFinite(member.order) ? String(member.order) : "—",
-      l: "Order",
+      l: t.memberProfilePage.orderLabel,
     },
-    { n: String(visibleContacts.length), l: "Links" },
+    { n: String(visibleContacts.length), l: t.memberProfilePage.linksLabel },
   ];
 
   const statColors = ["text-sky-400", "text-violet-300", "text-emerald-400", "text-amber-400"];
@@ -308,7 +310,7 @@ export function MemberProfile({ member }: MemberProfileProps) {
 
         {/* Local top bar: fixed under global Navbar — does not scroll with the page. */}
         <nav
-          className="fixed left-0 right-0 top-[5.5rem] z-40 flex flex-wrap items-center justify-between gap-3 border-b border-white/10 px-4 py-4 sm:top-24 sm:px-6 md:px-10 lg:px-12 [&_a]:[text-shadow:0_1px_3px_rgba(0,0,0,0.92),0_0_18px_rgba(0,0,0,0.5)] [&_span]:[text-shadow:0_1px_3px_rgba(0,0,0,0.92),0_0_18px_rgba(0,0,0,0.5)] [&_svg]:[filter:drop-shadow(0_1px_2px_rgba(0,0,0,0.85))]"
+          className="member-profile-nav-bar fixed left-0 right-0 top-[5.5rem] z-40 flex flex-wrap items-center justify-between gap-3 border-b border-white/10 px-4 py-4 sm:top-24 sm:px-6 md:px-10 lg:px-12 [&_a]:[text-shadow:0_1px_3px_rgba(0,0,0,0.92),0_0_18px_rgba(0,0,0,0.5)] [&_span]:[text-shadow:0_1px_3px_rgba(0,0,0,0.92),0_0_18px_rgba(0,0,0,0.5)] [&_svg]:[filter:drop-shadow(0_1px_2px_rgba(0,0,0,0.85))]"
           style={{ animation: "profile-fade-down 0.5s ease both" }}
         >
           <Link
@@ -316,12 +318,12 @@ export function MemberProfile({ member }: MemberProfileProps) {
             className="inline-flex min-w-0 flex-1 items-center gap-2 text-xs text-[#f0eff5]/85 transition hover:gap-3 hover:text-white"
           >
             <ArrowLeft className="size-3.5 shrink-0 text-[#f0eff5]/90" strokeWidth={2} />
-            <span className="truncate">Team directory</span>
+            <span className="truncate">{t.memberProfilePage.teamDirectory}</span>
           </Link>
           <div className="hidden min-w-0 items-center gap-2 text-xs text-[#f0eff5]/80 sm:flex">
-            <span>Team</span>
+            <span>{t.sections.teamTitle}</span>
             <ChevronRight className="size-3 shrink-0 text-[#f0eff5]/55" strokeWidth={2} />
-            <span className="max-w-[140px] truncate">{member.roleType || member.academicYear || "Member"}</span>
+            <span className="max-w-[140px] truncate">{member.roleType || member.academicYear || t.memberProfilePage.clubMemberFallback}</span>
             <ChevronRight className="size-3 shrink-0 text-[#f0eff5]/55" strokeWidth={2} />
             <span className="max-w-[180px] truncate font-medium text-white">{member.name}</span>
           </div>
@@ -395,7 +397,7 @@ export function MemberProfile({ member }: MemberProfileProps) {
               className="inline-flex items-center justify-center gap-2 rounded-[10px] bg-sky-500 px-5 py-2.5 text-[12.5px] font-medium text-white shadow-[0_4px_20px_rgba(79,142,247,0.25)] transition hover:-translate-y-px hover:opacity-90"
             >
               <Mail className="size-3.5" strokeWidth={2} />
-              Send message
+              {t.memberProfilePage.sendMessage}
             </a>
           ) : null}
           <button
@@ -406,7 +408,7 @@ export function MemberProfile({ member }: MemberProfileProps) {
             className="inline-flex items-center justify-center gap-2 rounded-[10px] border border-white/[0.13] bg-white/[0.05] px-5 py-2.5 text-[12.5px] font-medium text-[#f0eff5] transition hover:bg-white/[0.09]"
           >
             <Share2 className="size-3.5" strokeWidth={2} />
-            Share profile
+            {t.memberProfilePage.shareProfile}
           </button>
         </div>
       </div>
@@ -419,7 +421,7 @@ export function MemberProfile({ member }: MemberProfileProps) {
             className="inline-flex items-center gap-2 rounded-[10px] bg-sky-500 px-4 py-2.5 text-xs font-medium text-white"
           >
             <Mail className="size-3.5" strokeWidth={2} />
-            Message
+            {t.memberProfilePage.message}
           </a>
         ) : null}
         <button
@@ -430,7 +432,7 @@ export function MemberProfile({ member }: MemberProfileProps) {
           className="inline-flex items-center gap-2 rounded-[10px] border border-white/[0.13] bg-white/[0.05] px-4 py-2.5 text-xs font-medium"
         >
           <Share2 className="size-3.5" strokeWidth={2} />
-          Share
+          {t.memberProfilePage.share}
         </button>
       </div>
 
@@ -447,7 +449,7 @@ export function MemberProfile({ member }: MemberProfileProps) {
             <section>
               <p className="mb-5 flex items-center gap-3 text-[9px] font-semibold uppercase tracking-[0.26em] text-[#6b6a80]">
                 <span className="h-px w-[18px] shrink-0 bg-sky-400" />
-                Bio
+                {t.memberProfilePage.bio}
                 <span className="h-px min-w-[2rem] flex-1 bg-white/[0.07]" />
               </p>
               <div className="space-y-4 text-[15px] font-light leading-[1.85] text-[#f0eff5]/[0.72]">
@@ -465,7 +467,7 @@ export function MemberProfile({ member }: MemberProfileProps) {
             <section>
               <p className="mb-5 flex items-center gap-3 text-[9px] font-semibold uppercase tracking-[0.26em] text-[#6b6a80]">
                 <span className="h-px w-[18px] shrink-0 bg-sky-400" />
-                About
+                {t.memberProfilePage.about}
                 <span className="h-px min-w-[2rem] flex-1 bg-white/[0.07]" />
               </p>
               <div className="space-y-3.5 text-[14.5px] font-light leading-[1.85] text-[#f0eff5]/[0.68]">
@@ -477,7 +479,7 @@ export function MemberProfile({ member }: MemberProfileProps) {
           <section>
             <p className="mb-5 flex items-center gap-3 text-[9px] font-semibold uppercase tracking-[0.26em] text-[#6b6a80]">
               <span className="h-px w-[18px] shrink-0 bg-sky-400" />
-              Expertise
+              {t.memberProfilePage.expertise}
               <span className="h-px min-w-[2rem] flex-1 bg-white/[0.07]" />
             </p>
             <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
@@ -509,7 +511,7 @@ export function MemberProfile({ member }: MemberProfileProps) {
             <section>
               <p className="mb-5 flex items-center gap-3 text-[9px] font-semibold uppercase tracking-[0.26em] text-[#6b6a80]">
                 <span className="h-px w-[18px] shrink-0 bg-sky-400" />
-                Interests &amp; areas
+                {t.memberProfilePage.interestsAndAreas}
                 <span className="h-px min-w-[2rem] flex-1 bg-white/[0.07]" />
               </p>
               <div className="flex flex-wrap gap-2">
@@ -530,7 +532,7 @@ export function MemberProfile({ member }: MemberProfileProps) {
           <div className="overflow-hidden rounded-2xl border border-white/[0.07] bg-[#0d0d18]">
             <div className="flex items-center gap-2 border-b border-white/[0.07] px-5 py-3 text-[9px] font-semibold uppercase tracking-[0.2em] text-[#6b6a80]">
               <span className="size-1.5 shrink-0 rounded-full bg-sky-400" />
-              Impact
+              {t.memberProfilePage.impact}
             </div>
             <div className="grid grid-cols-2 gap-px bg-white/[0.07]">
               {stats.map((s, i) => (
@@ -552,7 +554,7 @@ export function MemberProfile({ member }: MemberProfileProps) {
           <div className="overflow-hidden rounded-2xl border border-white/[0.07] bg-[#0d0d18]">
             <div className="flex items-center gap-2 border-b border-white/[0.07] px-5 py-3 text-[9px] font-semibold uppercase tracking-[0.2em] text-[#6b6a80]">
               <span className="size-1.5 shrink-0 rounded-full bg-sky-400" />
-              Details
+              {t.memberProfilePage.details}
             </div>
             <div className="flex flex-col gap-3.5 p-5">
               <div className="flex gap-3 border-b border-white/[0.07] pb-3.5">
@@ -560,7 +562,7 @@ export function MemberProfile({ member }: MemberProfileProps) {
                   <BookOpen className="size-3.5" strokeWidth={1.8} />
                 </div>
                 <div className="min-w-0">
-                  <p className="mb-0.5 text-[10px] text-[#6b6a80]">Department</p>
+                  <p className="mb-0.5 text-[10px] text-[#6b6a80]">{t.memberProfilePage.department}</p>
                   <p className="text-[13px] leading-snug text-[#f0eff5]">
                     {departmentLabel || "—"}
                   </p>
@@ -571,9 +573,9 @@ export function MemberProfile({ member }: MemberProfileProps) {
                   <MapPin className="size-3.5" strokeWidth={1.8} />
                 </div>
                 <div className="min-w-0">
-                  <p className="mb-0.5 text-[10px] text-[#6b6a80]">School</p>
+                  <p className="mb-0.5 text-[10px] text-[#6b6a80]">{t.memberProfilePage.school}</p>
                   <p className="text-[13px] leading-snug text-[#f0eff5]">
-                    {schoolStatusLabel || "EST Safi"}
+                    {schoolStatusLabel || t.memberProfilePage.schoolFallback}
                   </p>
                 </div>
               </div>
@@ -582,7 +584,7 @@ export function MemberProfile({ member }: MemberProfileProps) {
                   <Calendar className="size-3.5" strokeWidth={1.8} />
                 </div>
                 <div className="min-w-0">
-                  <p className="mb-0.5 text-[10px] text-[#6b6a80]">Academic year</p>
+                  <p className="mb-0.5 text-[10px] text-[#6b6a80]">{t.memberProfilePage.academicYear}</p>
                   <p className="text-[13px] leading-snug text-[#f0eff5]">
                     {member.academicYear?.trim() || "—"}
                   </p>
@@ -594,7 +596,7 @@ export function MemberProfile({ member }: MemberProfileProps) {
                     <User className="size-3.5" strokeWidth={1.8} />
                   </div>
                   <div className="min-w-0">
-                    <p className="mb-0.5 text-[10px] text-[#6b6a80]">Birthday</p>
+                    <p className="mb-0.5 text-[10px] text-[#6b6a80]">{t.memberProfilePage.birthday}</p>
                     <p className="text-[13px] leading-snug text-[#f0eff5]">
                       {formatBirthdayDisplay(member.birthday!)}
                     </p>
@@ -608,28 +610,28 @@ export function MemberProfile({ member }: MemberProfileProps) {
             <div className="overflow-hidden rounded-2xl border border-white/[0.07] bg-[#0d0d18]">
               <div className="flex items-center gap-2 border-b border-white/[0.07] px-5 py-3 text-[9px] font-semibold uppercase tracking-[0.2em] text-[#6b6a80]">
                 <span className="size-1.5 shrink-0 rounded-full bg-sky-400" />
-                Social &amp; contact
+                {t.memberProfilePage.socialAndContact}
               </div>
               <div className="flex flex-col gap-2 p-4">
                 {sidebarContacts.map((c, idx) => {
-                  const t = c.type ?? "Link";
+                  const cType = c.type ?? "Link";
                   const v = c.value ?? "";
-                  const external = t !== "Email" && t !== "Phone";
+                  const external = cType !== "Email" && cType !== "Phone";
                   return (
                     <a
-                      key={`${t}-${idx}-${v.slice(0, 24)}`}
-                      href={contactHref(t, v)}
+                      key={`${cType}-${idx}-${v.slice(0, 24)}`}
+                      href={contactHref(cType, v)}
                       target={external ? "_blank" : undefined}
                       rel={external ? "noopener noreferrer" : undefined}
                       className="flex items-center gap-3 rounded-[10px] border border-white/[0.07] bg-white/[0.02] px-3.5 py-3 transition hover:translate-x-0.5 hover:border-white/[0.13] hover:bg-white/[0.05]"
                     >
                       <div
-                        className={`flex size-8 shrink-0 items-center justify-center rounded-lg ${socialIconWrapClass(t)}`}
+                        className={`flex size-8 shrink-0 items-center justify-center rounded-lg ${socialIconWrapClass(cType)}`}
                       >
-                        <ContactRowIcon type={t} />
+                        <ContactRowIcon type={cType} />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-[12.5px] font-medium text-[#f0eff5]">{t}</p>
+                        <p className="text-[12.5px] font-medium text-[#f0eff5]">{cType}</p>
                         <p className="truncate text-[11px] text-[#6b6a80]">{v}</p>
                       </div>
                       <ChevronRight className="size-3.5 shrink-0 text-[#6b6a80]" strokeWidth={2} />

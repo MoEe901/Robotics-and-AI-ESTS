@@ -18,11 +18,11 @@ const ALL_HREFS = [
   "/admin/layout",
 ] as const;
 
-/**
- * Minimum URLs each role may see in the admin sidebar (locked routes still apply).
- * `admin` and legacy allowlisted users receive the full list from shell config.
- */
-const ROLE_MIN_HREFS: Record<ProvisionedAdminRole, ReadonlySet<string>> = {
+/** Minimum URLs each role may see in the admin sidebar. */
+const ROLE_MIN_HREFS: Record<
+  ProvisionedAdminRole,
+  ReadonlySet<string>
+> = {
   admin: new Set(ALL_HREFS),
   editor: new Set(
     ALL_HREFS.filter(
@@ -39,10 +39,9 @@ const ROLE_MIN_HREFS: Record<ProvisionedAdminRole, ReadonlySet<string>> = {
 
 export function filterAdminNavForRole<T extends { href: string }>(
   role: ProvisionedAdminRole | null,
-  isLegacyFullAdmin: boolean,
   items: readonly T[],
 ): T[] {
-  if (isLegacyFullAdmin || role === "admin" || role == null) return [...items];
+  if (role === "admin" || role == null) return [...items];
   const allowed = ROLE_MIN_HREFS[role];
   return items.filter((i) => allowed.has(i.href));
 }

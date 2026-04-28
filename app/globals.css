@@ -16,6 +16,267 @@
   color-scheme: dark;
 }
 
+/* ─── PUBLIC SITE — LIGHT MODE ─────────────────────────────────── */
+
+[data-theme="light"] {
+  --background: #f0f2f8;
+  --foreground: #0f172a;
+  --foreground-muted: rgba(15, 23, 42, 0.55);
+  --surface: rgba(255, 255, 255, 0.78);
+  --surface-strong: rgba(255, 255, 255, 0.95);
+  --surface-hover: rgba(124, 58, 237, 0.07);
+  --surface-border: rgba(124, 58, 237, 0.28);
+  --futurized-bg2: #e8eaf2;
+  --futurized-bg3: #edf0f8;
+  color-scheme: light;
+}
+
+/* Smooth transition on theme change */
+[data-theme] body {
+  transition: background-color 0.35s ease, color 0.3s ease;
+}
+
+/* ── Text: white → dark navy ─────────────── */
+[data-theme="light"] .text-white,
+[data-theme="light"] .text-white\/95,
+[data-theme="light"] .text-white\/90,
+[data-theme="light"] .text-white\/85,
+[data-theme="light"] .text-white\/80,
+[data-theme="light"] .text-white\/75,
+[data-theme="light"] .text-white\/70,
+[data-theme="light"] .text-white\/65,
+[data-theme="light"] .text-white\/60 {
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .text-white\/55,
+[data-theme="light"] .text-white\/50,
+[data-theme="light"] .text-white\/45,
+[data-theme="light"] .text-white\/40,
+[data-theme="light"] .text-white\/35 {
+  color: rgba(15, 23, 42, 0.72) !important;
+}
+
+[data-theme="light"] .text-white\/30,
+[data-theme="light"] .text-white\/25,
+[data-theme="light"] .text-white\/20,
+[data-theme="light"] .text-white\/15 {
+  color: rgba(15, 23, 42, 0.46) !important;
+}
+
+[data-theme="light"] .text-white\/10,
+[data-theme="light"] .text-white\/5 {
+  color: rgba(15, 23, 42, 0.22) !important;
+}
+
+[data-theme="light"] .hover\:text-white:hover {
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .placeholder\:text-white\/30::placeholder {
+  color: rgba(15, 23, 42, 0.35) !important;
+}
+
+/* ── Text: slate scale adjustment ─────────── */
+[data-theme="light"] .text-slate-200 { color: #1f2937 !important; }
+[data-theme="light"] .text-slate-300 { color: #374151 !important; }
+[data-theme="light"] .text-slate-400 { color: #4b5563 !important; }
+[data-theme="light"] .text-slate-400\/80 { color: rgba(71, 85, 105, 0.85) !important; }
+[data-theme="light"] .text-slate-500 { color: #6b7280 !important; }
+[data-theme="light"] .text-slate-600 { color: #374151 !important; }
+
+/* ── Backgrounds: black/dark → light surfaces ── */
+[data-theme="light"] .bg-black { background-color: rgba(255, 255, 255, 0.96) !important; }
+
+[data-theme="light"] .bg-black\/95,
+[data-theme="light"] .bg-black\/90,
+[data-theme="light"] .bg-black\/85 { background-color: rgba(255, 255, 255, 0.94) !important; }
+
+[data-theme="light"] .bg-black\/80,
+[data-theme="light"] .bg-black\/70,
+[data-theme="light"] .bg-black\/60 { background-color: rgba(255, 255, 255, 0.88) !important; }
+
+[data-theme="light"] .bg-black\/50,
+[data-theme="light"] .bg-black\/45,
+[data-theme="light"] .bg-black\/40 { background-color: rgba(255, 255, 255, 0.82) !important; }
+
+[data-theme="light"] .bg-black\/30,
+[data-theme="light"] .bg-black\/25,
+[data-theme="light"] .bg-black\/20 { background-color: rgba(255, 255, 255, 0.76) !important; }
+
+[data-theme="light"] .bg-black\/15,
+[data-theme="light"] .bg-black\/10 { background-color: rgba(255, 255, 255, 0.62) !important; }
+
+[data-theme="light"] .bg-zinc-900,
+[data-theme="light"] .bg-zinc-900\/95,
+[data-theme="light"] .bg-zinc-900\/90,
+[data-theme="light"] .bg-zinc-800 { background-color: rgba(255, 255, 255, 0.92) !important; }
+
+[data-theme="light"] .bg-slate-900 { background-color: rgba(240, 242, 248, 0.95) !important; }
+[data-theme="light"] .bg-slate-800 { background-color: rgba(248, 250, 252, 0.9) !important; }
+
+/* White-on-dark glass panes → proper light surfaces */
+[data-theme="light"] .bg-white\/\[0\.03\],
+[data-theme="light"] .bg-white\/\[0\.04\],
+[data-theme="light"] .bg-white\/\[0\.05\],
+[data-theme="light"] .bg-white\/\[0\.06\],
+[data-theme="light"] .bg-white\/\[0\.07\],
+[data-theme="light"] .bg-white\/\[0\.08\],
+[data-theme="light"] .bg-white\/\[0\.09\],
+[data-theme="light"] .bg-white\/\[0\.1\],
+[data-theme="light"] .bg-white\/\[0\.12\] { background-color: rgba(255, 255, 255, 0.82) !important; }
+
+/* Arbitrary dark rgba backgrounds used in navbar, modals, sections */
+[data-theme="light"] .bg-\[rgba\(7\,8\,15\,0\.92\)\],
+[data-theme="light"] .bg-\[rgba\(7\,8\,15\,0\.85\)\],
+[data-theme="light"] .bg-\[rgba\(7\,8\,15\,0\.8\)\] { background-color: rgba(240, 242, 248, 0.94) !important; }
+
+[data-theme="light"] .bg-\[rgba\(13\,15\,26\,0\.65\)\],
+[data-theme="light"] .bg-\[rgba\(13\,15\,26\,0\.72\)\],
+[data-theme="light"] .bg-\[rgba\(13\,15\,26\,0\.75\)\],
+[data-theme="light"] .bg-\[rgba\(13\,15\,26\,0\.85\)\],
+[data-theme="light"] .bg-\[rgba\(13\,15\,26\,0\.9\)\],
+[data-theme="light"] .bg-\[rgba\(13\,15\,26\,0\.92\)\],
+[data-theme="light"] .bg-\[rgba\(13\,15\,26\,0\.95\)\] { background-color: rgba(240, 242, 248, 0.92) !important; }
+
+/* ── Borders ─────────────────────────────── */
+[data-theme="light"] .border-white,
+[data-theme="light"] .border-white\/30,
+[data-theme="light"] .border-white\/25,
+[data-theme="light"] .border-white\/20,
+[data-theme="light"] .border-white\/15,
+[data-theme="light"] .border-white\/12,
+[data-theme="light"] .border-white\/10,
+[data-theme="light"] .border-white\/5 { border-color: rgba(15, 23, 42, 0.18) !important; }
+
+/* ── Structural element overrides ─────────── */
+
+/* Navbar header */
+[data-theme="light"] header[class*="fixed"] {
+  background-color: rgba(240, 242, 248, 0.88) !important;
+  border-color: rgba(124, 58, 237, 0.22) !important;
+}
+
+/* Mobile nav dropdown */
+[data-theme="light"] nav[class*="flex-col"] {
+  background-color: rgba(240, 242, 248, 0.96) !important;
+}
+
+/* Decorative overlays: reduce so they don't darken light background */
+[data-theme="light"] .futurized-violet-grid { opacity: 0.35; }
+[data-theme="light"] .futurized-scanlines   { opacity: 0.08; }
+[data-theme="light"] .futurized-corner      { opacity: 0.25; }
+
+/* color-scheme for native elements */
+[data-theme="light"] .\[color-scheme\:dark\] { color-scheme: light !important; }
+
+/* ─── LIGHT MODE: HARDCODED HEX BACKGROUNDS ─────────────────────── */
+
+/* Full-page section backgrounds → site light background */
+[data-theme="light"] .bg-\[\#07080f\],
+[data-theme="light"] .bg-\[\#07060f\],
+[data-theme="light"] .bg-\[\#09090f\],
+[data-theme="light"] .bg-\[\#08080e\] {
+  background-color: var(--background) !important;
+}
+
+/* Card / panel backgrounds → white surfaces */
+[data-theme="light"] .bg-\[\#0d0f1a\],
+[data-theme="light"] .bg-\[\#0d0d18\] {
+  background-color: rgba(255, 255, 255, 0.92) !important;
+}
+
+[data-theme="light"] .bg-\[\#0e0e14\]\/95,
+[data-theme="light"] .bg-\[\#0e0e14\]\/90,
+[data-theme="light"] .bg-\[\#0e0e14\],
+[data-theme="light"] .bg-\[\#0e0e18\] {
+  background-color: rgba(255, 255, 255, 0.9) !important;
+}
+
+[data-theme="light"] .bg-\[\#111422\]\/80 {
+  background-color: rgba(255, 255, 255, 0.86) !important;
+}
+
+[data-theme="light"] .bg-\[\#111120\],
+[data-theme="light"] .bg-\[\#121220\] {
+  background-color: rgba(240, 242, 248, 0.95) !important;
+}
+
+/* Hover states for gallery / stat items */
+[data-theme="light"] .hover\:bg-\[\#0e0e18\]:hover,
+[data-theme="light"] .hover\:bg-\[\#0d0d18\]:hover,
+[data-theme="light"] .hover\:bg-\[\#111120\]:hover {
+  background-color: rgba(230, 233, 244, 1) !important;
+}
+
+/* Hero floating glass cards (low-opacity rgba, below existing threshold) */
+[data-theme="light"] .bg-\[rgba\(13\,15\,26\,0\.15\)\] {
+  background-color: rgba(255, 255, 255, 0.78) !important;
+}
+
+/* ─── LIGHT MODE: HARDCODED HEX TEXT ─────────────────────────────── */
+
+/* Near-white base text used in hero, apply, event page, team profile */
+[data-theme="light"] .text-\[\#e2e8f0\] { color: #0f172a !important; }
+[data-theme="light"] .text-\[\#f0eff5\] { color: #0f172a !important; }
+
+/* Semi-transparent text variants */
+[data-theme="light"] .text-\[\#f0eff5\]\/85 { color: rgba(15, 23, 42, 0.85) !important; }
+[data-theme="light"] .text-\[\#f0eff5\]\/80 { color: rgba(15, 23, 42, 0.80) !important; }
+[data-theme="light"] .text-\[\#f0eff5\]\/70 { color: rgba(15, 23, 42, 0.70) !important; }
+[data-theme="light"] .text-\[\#f0eff5\]\/65 { color: rgba(15, 23, 42, 0.65) !important; }
+[data-theme="light"] .text-\[\#f0eff5\]\/\[0\.72\] { color: rgba(15, 23, 42, 0.72) !important; }
+[data-theme="light"] .text-\[\#f0eff5\]\/\[0\.68\] { color: rgba(15, 23, 42, 0.68) !important; }
+
+/* ─── LIGHT MODE: INTENTIONALLY DARK-BACKGROUND ELEMENTS ─────────────── */
+/* Member profile hero title sits over the dark hero background — keep white */
+[data-theme="light"] .member-profile-hero-title { color: #f0eff5 !important; }
+/* Homepage hero h1 — video provides the dark background so title stays white */
+[data-theme="light"] #home h1 .text-white { color: #ffffff !important; }
+
+/* ─── LIGHT MODE: EVENT PAGE HERO ────────────────────────────────── */
+/* event-hero-bg is set via inline <style> (not Tailwind) so it stays dark automatically.
+   We only need to keep the TEXT inside the hero wrapper light (dark bg underneath). */
+[data-theme="light"] .event-hero-wrapper .text-\[\#f0eff5\] { color: #f0eff5 !important; }
+[data-theme="light"] .event-hero-wrapper .text-\[\#f0eff5\]\/65 { color: rgba(240, 239, 245, 0.65) !important; }
+[data-theme="light"] .event-hero-wrapper .text-\[\#f0eff5\]\/80 { color: rgba(240, 239, 245, 0.80) !important; }
+/* Override CSS variables to light-mode values for the body (below the hero) */
+[data-theme="light"] .event-theme-root {
+  --border: rgba(15, 23, 42, 0.1);
+  --border2: rgba(15, 23, 42, 0.15);
+  --muted: #6b7280;
+}
+/* Re-scope the dark border/muted vars back to dark inside the hero wrapper */
+[data-theme="light"] .event-hero-wrapper {
+  --border: rgba(255, 255, 255, 0.07);
+  --border2: rgba(255, 255, 255, 0.13);
+  --muted: rgba(240, 239, 245, 0.55);
+}
+
+/* ─── LIGHT MODE: MEMBER PROFILE NAV + SHARE BUTTON ─────────────── */
+/* Fixed breadcrumb nav — give it a frosted-glass light backdrop */
+[data-theme="light"] .member-profile-nav-bar {
+  background-color: rgba(255, 255, 255, 0.88) !important;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom-color: rgba(15, 23, 42, 0.1) !important;
+}
+/* Remove the dark text-shadows that were only for white-on-dark rendering */
+[data-theme="light"] .member-profile-nav-bar [style*="text-shadow"],
+[data-theme="light"] .member-profile-nav-bar a,
+[data-theme="light"] .member-profile-nav-bar span { text-shadow: none !important; }
+/* Share buttons — give them a proper light-mode surface */
+[data-theme="light"] .member-profile-shell .bg-white\/\[0\.05\] {
+  background-color: rgba(255, 255, 255, 0.88) !important;
+}
+
+/* ─── LIGHT MODE: ADDITIONAL BORDER OPACITY COVERAGE ─────────────── */
+[data-theme="light"] .border-white\/\[0\.13\],
+[data-theme="light"] .border-white\/\[0\.07\],
+[data-theme="light"] .border-white\/\[0\.06\] {
+  border-color: rgba(15, 23, 42, 0.15) !important;
+}
+
 select {
   color-scheme: inherit;
 }
@@ -41,6 +302,13 @@ body {
 
 .font-syne {
   font-family: var(--font-syne), sans-serif;
+}
+
+/* Bebas Neue display accent font — used on hero gradient lines and other accent headlines.
+   Condensed, monolinear display face; pair with tracking-[0.04em] or wider so the
+   gradient fill reads cleanly between strokes at display scale. */
+.font-bebas {
+  font-family: var(--font-bebas-neue), var(--font-syne), sans-serif;
 }
 
 .font-jetbrains {
@@ -172,8 +440,11 @@ h3 {
   --admin-bg: #f4f6fb;
   --admin-fg: #0f172a;
   --admin-surface: rgba(255, 255, 255, 0.82);
+  --admin-surface-strong: rgba(255, 255, 255, 0.97);
   --admin-border: rgba(124, 58, 237, 0.28);
   --admin-border-strong: rgba(124, 58, 237, 0.42);
+  --admin-violet: #7c3aed;
+  --admin-cyan: #06b6d4;
   --admin-accent-grad: linear-gradient(135deg, rgba(124, 58, 237, 0.9) 0%, rgba(6, 182, 212, 0.92) 100%);
   color-scheme: light;
 }
@@ -203,6 +474,20 @@ h3 {
 
 .admin-root[data-admin-theme="light"] .bg-zinc-900\/95 {
   background-color: #ffffff !important;
+}
+
+/* Mobile sidebar dark arbitrary value */
+.admin-root[data-admin-theme="light"] .bg-\[rgba\(7\,8\,15\,0\.95\)\] {
+  background-color: rgba(255, 255, 255, 0.97) !important;
+}
+
+/* Neutral white/black opacity variants used in form rows and nav rows */
+.admin-root[data-admin-theme="light"] .bg-white\/8 {
+  background-color: rgba(15, 23, 42, 0.05) !important;
+}
+
+.admin-root[data-admin-theme="light"] .border-white\/8 {
+  border-color: rgba(15, 23, 42, 0.12) !important;
 }
 
 .admin-root[data-admin-theme="light"] .border-white,
@@ -400,8 +685,8 @@ h3 {
 
 /* ─── ADMIN — SIDEBAR & PAGE POLISH ────────────────────────────────── */
 
-.admin-root[data-admin-theme="light"] aside.lg\:flex {
-  background-color: rgba(255, 255, 255, 0.78) !important;
+.admin-root[data-admin-theme="light"] aside {
+  background-color: rgba(255, 255, 255, 0.92) !important;
   border-right-color: rgba(15, 23, 42, 0.12) !important;
 }
 

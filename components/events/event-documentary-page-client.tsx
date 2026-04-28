@@ -29,6 +29,7 @@ import {
 } from "@/lib/events/event-page-accent";
 import { eventLocationHref, formatEventDate, youtubeEmbedSrc } from "@/lib/events/public";
 import { parseWebsiteCtaHex } from "@/lib/events/website-cta-color";
+import { useLanguage } from "@/lib/i18n/context";
 import { cn } from "@/lib/utils";
 
 const FALLBACK = "/fallback.jpg";
@@ -87,6 +88,8 @@ function firstParagraph(text: string): { lead: string; rest: string } {
 }
 
 export function EventDocumentaryPageClient({ pathSegment }: Props) {
+  const { t, locale } = useLanguage();
+  const isFr = locale !== "en";
   const [event, setEvent] = useState<EventItem | null | undefined>(undefined);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [nowMs, setNowMs] = useState(() => Date.now());
@@ -238,7 +241,7 @@ export function EventDocumentaryPageClient({ pathSegment }: Props) {
           fontSans.className,
         )}
       >
-        Loading event…
+        {t.eventPage.loading}
       </p>
     );
   }
@@ -246,26 +249,27 @@ export function EventDocumentaryPageClient({ pathSegment }: Props) {
   if (event === null) {
     return (
       <div className={cn("mx-auto w-[min(94%,720px)] px-4 pb-24 pt-28", fontSans.className)}>
-        <p className="text-sm text-[#6b6a80]">This event could not be found or is no longer public.</p>
+        <p className="text-sm text-[#6b6a80]">{t.eventPage.notFound}</p>
         <Link
           href="/#events"
           className="mt-6 inline-block text-sm text-sky-400 hover:text-sky-300"
         >
-          ← Back to events
+          {t.eventPage.backToEvents}
         </Link>
       </div>
     );
   }
 
   const slug = event.slug?.current ?? event._id;
-  const narrative =
-    (event.documentary && event.documentary.trim()) ||
-    (event.description && event.description.trim()) ||
-    "";
+  const narrative = isFr
+    ? (event.documentaryFr?.trim() || event.descriptionFr?.trim() ||
+       event.documentary?.trim() || event.description?.trim() || "")
+    : (event.documentary?.trim() || event.description?.trim() || "");
   const { lead: leadParagraph, rest: restNarrative } = firstParagraph(narrative);
-  const teaser =
-    leadParagraph ||
-    "Join the Robotics & AI Club for an experience built for curious builders — details, media, and links live on this page.";
+  const teaserFallback = isFr
+    ? "Rejoignez le Club Robotique & IA pour une expérience conçue pour les curieux — détails, médias et liens disponibles sur cette page."
+    : "Join the Robotics & AI Club for an experience built for curious builders — details, media, and links live on this page.";
+  const teaser = leadParagraph || teaserFallback;
 
   const mapsHref = eventLocationHref(event.location, event.locationMapsUrl);
   const attachments =
@@ -296,8 +300,15 @@ export function EventDocumentaryPageClient({ pathSegment }: Props) {
 
   const heroCoverUrl = coverSrc(event.imageUrl);
   const heroBgPosX = event.imageFocusX ?? 50;
-  /** Default slightly toward the top so portraits do not look “cut off” under the header. */
+  /** Default slightly toward the top so portraits do not look "cut off" under the header. */
   const heroBgPosY = event.imageFocusY ?? 18;
+
+  const countdownCells = [
+    { v: countdown.days, l: t.eventPage.days },
+    { v: countdown.hours, l: t.eventPage.hours },
+    { v: countdown.mins, l: t.eventPage.minutes },
+    { v: countdown.secs, l: t.eventPage.seconds },
+  ];
 
   return (
     <div
@@ -351,7 +362,7 @@ export function EventDocumentaryPageClient({ pathSegment }: Props) {
       `}</style>
 
       {/* Hero: pt clears fixed Navbar; bg layers fill full hero including that inset so art reaches the viewport top. */}
-      <div className="relative grid min-h-[min(92vh,920px)] grid-rows-[auto_1fr_auto] pt-24 md:pt-28">
+      <div className="event-hero-wrapper relative grid min-h-[min(92vh,920px)] grid-rows-[auto_1fr_auto] pt-24 md:pt-28">
         <div className="event-hero-bg pointer-events-none absolute inset-0" aria-hidden />
         <div
           className="pointer-events-none absolute inset-0 z-[1] bg-cover bg-no-repeat opacity-[0.14] blur-[2px] [background-attachment:scroll] md:[background-attachment:fixed]"
@@ -371,7 +382,7 @@ export function EventDocumentaryPageClient({ pathSegment }: Props) {
             className="inline-flex min-w-0 flex-1 items-center gap-2 text-xs text-[var(--muted)] transition hover:text-[#f0eff5]"
           >
             <ArrowLeft className="size-3.5 shrink-0" strokeWidth={2} />
-            <span className="truncate">All events</span>
+            <span className="truncate">{t.eventPage.allEvents}</span>
           </Link>
           <div className="flex shrink-0 flex-nowrap items-center gap-2">
             <button
@@ -380,7 +391,7 @@ export function EventDocumentaryPageClient({ pathSegment }: Props) {
               className="inline-flex items-center gap-1.5 rounded-[10px] border border-[var(--border2)] bg-white/[0.04] px-3 py-2 text-xs text-[#f0eff5] transition hover:bg-white/[0.08] sm:px-4"
             >
               <Share2 className="size-3.5 shrink-0" strokeWidth={2} />
-              Share
+              {t.eventPage.share}
             </button>
             {showWebsiteCta ? (
               <a
@@ -391,7 +402,7 @@ export function EventDocumentaryPageClient({ pathSegment }: Props) {
                 style={{ backgroundColor: "var(--ev-accent)" }}
               >
                 <Sparkles className="size-3.5 shrink-0" strokeWidth={2} />
-                Register
+                {t.eventPage.register}
               </a>
             ) : (
               <a
@@ -400,7 +411,7 @@ export function EventDocumentaryPageClient({ pathSegment }: Props) {
                 style={{ backgroundColor: "var(--ev-accent)" }}
               >
                 <ChevronDown className="size-3.5 shrink-0" strokeWidth={2} />
-                Details
+                {t.eventPage.details}
               </a>
             )}
           </div>
@@ -419,14 +430,14 @@ export function EventDocumentaryPageClient({ pathSegment }: Props) {
                 color: "var(--ev-accent)",
               }}
             >
-              {event.isFeatured ? "Featured event" : "Event"}
+              {event.isFeatured ? t.eventPage.featuredEvent : t.eventPage.event}
             </span>
             <span className="flex items-center gap-1.5 text-[11px] text-[var(--muted)]">
               <span
                 className="size-1.5 rounded-full"
                 style={{ background: "var(--ev-accent)", animation: "ev-blink 2s ease-in-out infinite" }}
               />
-              {showWebsiteCta ? "Registration on external site" : "Club event"}
+              {showWebsiteCta ? t.eventPage.registrationOnExternalSite : t.eventPage.clubEvent}
             </span>
           </div>
 
@@ -499,7 +510,7 @@ export function EventDocumentaryPageClient({ pathSegment }: Props) {
                 style={{ background: "var(--ev-accent)" }}
               >
                 <Sparkles className="size-4" strokeWidth={2} />
-                Reserve your spot
+                {t.eventPage.reserveYourSpot}
               </a>
             ) : null}
             <a
@@ -507,7 +518,7 @@ export function EventDocumentaryPageClient({ pathSegment }: Props) {
               className="inline-flex items-center gap-2.5 rounded-xl border border-[var(--border2)] bg-white/[0.05] px-7 py-3.5 text-sm text-[#f0eff5] transition hover:border-white/20 hover:bg-white/[0.09]"
             >
               <ChevronDown className="size-4" strokeWidth={2} />
-              Read the story
+              {t.eventPage.readTheStory}
             </a>
           </div>
         </div>
@@ -518,16 +529,11 @@ export function EventDocumentaryPageClient({ pathSegment }: Props) {
         >
           {countdown.past || !targetDate ? (
             <div className="col-span-full py-7 text-center text-sm text-[var(--muted)]">
-              {!targetDate ? "Date to be announced" : "This event date has passed — thanks for visiting."}
+              {!targetDate ? t.eventPage.dateTba : t.eventPage.eventPassed}
             </div>
           ) : (
             <>
-              {[
-                { v: countdown.days, l: "Days" },
-                { v: countdown.hours, l: "Hours" },
-                { v: countdown.mins, l: "Minutes" },
-                { v: countdown.secs, l: "Seconds" },
-              ].map((cell) => (
+              {countdownCells.map((cell) => (
                 <div
                   key={cell.l}
                   className="flex flex-col items-center gap-1 border-[var(--border)] py-5 sm:border-r sm:py-6 sm:last:border-r-0"
@@ -556,7 +562,7 @@ export function EventDocumentaryPageClient({ pathSegment }: Props) {
           <section id="documentary" className="scroll-mt-24">
             <p className="mb-6 flex items-center gap-3 text-[9px] font-semibold uppercase tracking-[0.26em] text-[var(--muted)]">
               <span className="h-px w-5 shrink-0" style={{ background: "var(--ev-accent)" }} />
-              About the event
+              {t.eventPage.aboutTheEvent}
               <span className="h-px min-w-[2rem] flex-1 bg-[var(--border)]" />
             </p>
             {narrative ? (
@@ -579,8 +585,7 @@ export function EventDocumentaryPageClient({ pathSegment }: Props) {
                     <Lightbulb className="size-[17px]" strokeWidth={1.8} />
                   </div>
                   <p className="m-0 text-sm font-light leading-relaxed text-[#f0eff5]">
-                    Explore the full story, downloads, and gallery on this page — built to feel like a
-                    documentary, not a bulletin.
+                    {t.eventPage.exploreFullStory}
                   </p>
                 </div>
                 {restNarrative ? (
@@ -589,9 +594,7 @@ export function EventDocumentaryPageClient({ pathSegment }: Props) {
               </div>
             ) : (
               <p className="text-sm text-[var(--muted)]">
-                There is no long-form story yet. Admins can add one under{" "}
-                <span className="text-[#f0eff5]/80">Documentary</span> or{" "}
-                <span className="text-[#f0eff5]/80">Description</span> in the event editor.
+                {t.eventPage.noStoryYet}
               </p>
             )}
           </section>
@@ -601,7 +604,7 @@ export function EventDocumentaryPageClient({ pathSegment }: Props) {
             <section id="schedule">
               <p className="mb-6 flex items-center gap-3 text-[9px] font-semibold uppercase tracking-[0.26em] text-[var(--muted)]">
                 <span className="h-px w-5 shrink-0" style={{ background: "var(--ev-accent)" }} />
-                Program &amp; resources
+                {t.eventPage.programAndResources}
                 <span className="h-px min-w-[2rem] flex-1 bg-[var(--border)]" />
               </p>
               <div className="flex flex-col">
@@ -628,7 +631,7 @@ export function EventDocumentaryPageClient({ pathSegment }: Props) {
                         className="mb-1.5 text-[9px] font-semibold uppercase tracking-[0.16em]"
                         style={{ color: "var(--ev-accent)" }}
                       >
-                        Resource
+                        {t.eventPage.resource}
                       </p>
                       <a
                         href={a.url}
@@ -639,7 +642,7 @@ export function EventDocumentaryPageClient({ pathSegment }: Props) {
                         {a.label}
                       </a>
                       <p className="mt-1 text-[13px] font-light leading-relaxed text-[var(--muted)]">
-                        Opens in a new tab — PDF, form, or external link.
+                        {t.eventPage.opensInNewTab}
                       </p>
                     </div>
                   </div>
@@ -653,7 +656,7 @@ export function EventDocumentaryPageClient({ pathSegment }: Props) {
             <section>
               <p className="mb-6 flex items-center gap-3 text-[9px] font-semibold uppercase tracking-[0.26em] text-[var(--muted)]">
                 <span className="h-px w-5 shrink-0" style={{ background: "var(--ev-accent)" }} />
-                Gallery
+                {t.eventPage.gallery}
                 <span className="h-px min-w-[2rem] flex-1 bg-[var(--border)]" />
               </p>
 
@@ -710,7 +713,7 @@ export function EventDocumentaryPageClient({ pathSegment }: Props) {
                         />
                         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#09090f]/60 to-transparent opacity-0 transition group-hover:opacity-100" />
                         <span className="pointer-events-none absolute bottom-4 left-4 text-xs font-medium text-[#f0eff5] opacity-0 transition group-hover:opacity-100">
-                          {imageGallery[0]!.caption?.trim() || "Open"}
+                          {imageGallery[0]!.caption?.trim() || t.eventPage.openVideo}
                         </span>
                       </button>
                     ) : null}
@@ -735,7 +738,7 @@ export function EventDocumentaryPageClient({ pathSegment }: Props) {
                       <button
                         type="button"
                         className="flex h-[200px] flex-col items-center justify-center gap-2 rounded-[14px] border border-[var(--border)] bg-[#121220] transition hover:bg-[#0e0e18] sm:h-auto"
-                        aria-label={`Open gallery — ${moreGalleryCount} more ${moreGalleryCount === 1 ? "image" : "images"}`}
+                        aria-label={`${t.eventPage.gallery} — ${moreGalleryCount} ${t.eventPage.moreMedia}`}
                         onClick={() => openMediaAt(imageGallery[3])}
                       >
                         <span
@@ -745,7 +748,7 @@ export function EventDocumentaryPageClient({ pathSegment }: Props) {
                           +{moreGalleryCount}
                         </span>
                         <span className="text-[11px] uppercase tracking-[0.1em] text-[var(--muted)]">
-                          More media
+                          {t.eventPage.moreMedia}
                         </span>
                       </button>
                     ) : null}
@@ -784,7 +787,7 @@ export function EventDocumentaryPageClient({ pathSegment }: Props) {
                               src={item.url}
                             >
                               <a href={item.url} target="_blank" rel="noopener noreferrer">
-                                Open video
+                                {t.eventPage.openVideo}
                               </a>
                             </video>
                           </div>
@@ -808,7 +811,7 @@ export function EventDocumentaryPageClient({ pathSegment }: Props) {
           >
             <div className="flex items-center gap-2 border-b border-[var(--border)] px-5 py-3.5 text-[9px] font-semibold uppercase tracking-[0.2em] text-[var(--muted)]">
               <span className="size-1.5 rounded-full" style={{ background: "var(--ev-accent)" }} />
-              Registration
+              {t.eventPage.registration}
             </div>
             <div className="p-5">
               <div
@@ -819,12 +822,10 @@ export function EventDocumentaryPageClient({ pathSegment }: Props) {
                 }}
               >
                 <strong className="mb-2 block text-[15px] font-medium text-[#f0eff5]">
-                  {showWebsiteCta ? "Join via official page" : "On-campus event"}
+                  {showWebsiteCta ? t.eventPage.joinViaOfficialPage : t.eventPage.onCampusEvent}
                 </strong>
                 <p className="mb-4 text-[13px] font-light leading-relaxed text-[var(--muted)]">
-                  {showWebsiteCta
-                    ? "Limited steps: open the official registration or info page in one tap."
-                    : "Full details and story are on this page — reach out to the club for logistics."}
+                  {showWebsiteCta ? t.eventPage.externalRegDesc : t.eventPage.onCampusDesc}
                 </p>
                 {showWebsiteCta ? (
                   <a
@@ -834,14 +835,14 @@ export function EventDocumentaryPageClient({ pathSegment }: Props) {
                     className="block w-full rounded-[10px] border-0 py-3.5 text-[13.5px] font-medium text-white transition hover:opacity-90"
                     style={{ background: "var(--ev-accent)" }}
                   >
-                    Register / info
+                    {t.eventPage.registerInfo}
                   </a>
                 ) : (
                   <a
                     href="#documentary"
                     className="block w-full rounded-[10px] border border-[var(--border2)] bg-white/[0.06] py-3.5 text-[13.5px] font-medium text-[#f0eff5] transition hover:bg-white/[0.1]"
                   >
-                    Read the story
+                    {t.eventPage.readTheStory}
                   </a>
                 )}
                 <div
@@ -852,7 +853,7 @@ export function EventDocumentaryPageClient({ pathSegment }: Props) {
                     className="size-1 rounded-full"
                     style={{ background: "var(--ev-accent)", animation: "ev-blink 1.5s ease-in-out infinite" }}
                   />
-                  EST Safi · Student club
+                  {t.eventPage.estSafiStudentClub}
                 </div>
               </div>
             </div>
@@ -861,7 +862,7 @@ export function EventDocumentaryPageClient({ pathSegment }: Props) {
           <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[#0e0e18]">
             <div className="flex items-center gap-2 border-b border-[var(--border)] px-5 py-3.5 text-[9px] font-semibold uppercase tracking-[0.2em] text-[var(--muted)]">
               <span className="size-1.5 rounded-full" style={{ background: "var(--ev-accent)" }} />
-              Event details
+              {t.eventPage.eventDetails}
             </div>
             <div className="flex flex-col gap-3.5 p-5">
               <div className="flex gap-3 border-b border-[var(--border)] pb-3.5 last:border-0 last:pb-0">
@@ -876,7 +877,7 @@ export function EventDocumentaryPageClient({ pathSegment }: Props) {
                   <Calendar className="size-3.5" strokeWidth={1.8} />
                 </div>
                 <div>
-                  <p className="mb-0.5 text-[10px] tracking-wide text-[var(--muted)]">Date</p>
+                  <p className="mb-0.5 text-[10px] tracking-wide text-[var(--muted)]">{t.eventPage.dateLabel}</p>
                   <p className="text-[13px] leading-snug text-[#f0eff5]">{formatDateLabel(event.date)}</p>
                 </div>
               </div>
@@ -893,7 +894,7 @@ export function EventDocumentaryPageClient({ pathSegment }: Props) {
                     <Clock className="size-3.5" strokeWidth={1.8} />
                   </div>
                   <div>
-                    <p className="mb-0.5 text-[10px] tracking-wide text-[var(--muted)]">Time</p>
+                    <p className="mb-0.5 text-[10px] tracking-wide text-[var(--muted)]">{t.eventPage.timeLabel}</p>
                     <p className="text-[13px] leading-snug text-[#f0eff5]">{timePill}</p>
                   </div>
                 </div>
@@ -910,7 +911,7 @@ export function EventDocumentaryPageClient({ pathSegment }: Props) {
                   <MapPin className="size-3.5" strokeWidth={1.8} />
                 </div>
                 <div>
-                  <p className="mb-0.5 text-[10px] tracking-wide text-[var(--muted)]">Venue</p>
+                  <p className="mb-0.5 text-[10px] tracking-wide text-[var(--muted)]">{t.eventPage.venueLabel}</p>
                   <p className="text-[13px] leading-snug text-[#f0eff5]">
                     {event.location?.trim() ? (
                       mapsHref ? (
@@ -926,7 +927,7 @@ export function EventDocumentaryPageClient({ pathSegment }: Props) {
                         event.location.trim()
                       )
                     ) : (
-                      "To be announced"
+                      t.eventPage.tba
                     )}
                   </p>
                 </div>
@@ -943,7 +944,7 @@ export function EventDocumentaryPageClient({ pathSegment }: Props) {
                   <User className="size-3.5" strokeWidth={1.8} />
                 </div>
                 <div>
-                  <p className="mb-0.5 text-[10px] tracking-wide text-[var(--muted)]">Organizer</p>
+                  <p className="mb-0.5 text-[10px] tracking-wide text-[var(--muted)]">{t.eventPage.organizerLabel}</p>
                   <p className="text-[13px] leading-snug text-[#f0eff5]">
                     Robotics &amp; AI Club
                     <br />
@@ -958,7 +959,7 @@ export function EventDocumentaryPageClient({ pathSegment }: Props) {
             <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[#0e0e18]">
               <div className="flex items-center gap-2 border-b border-[var(--border)] px-5 py-3.5 text-[9px] font-semibold uppercase tracking-[0.2em] text-[var(--muted)]">
                 <span className="size-1.5 rounded-full" style={{ background: "var(--ev-accent)" }} />
-                Topics
+                {t.eventPage.topics}
               </div>
               <div className="flex flex-wrap gap-2 p-5">
                 {event.topics.map((tag, ti) => (
@@ -982,14 +983,14 @@ export function EventDocumentaryPageClient({ pathSegment }: Props) {
           className="fixed inset-0 z-[300] flex items-center justify-center bg-[#09090f]/96 p-8 backdrop-blur-xl"
           role="dialog"
           aria-modal="true"
-          aria-label="Media preview"
+          aria-label={t.eventPage.mediaPreview}
           onClick={() => setSelectedIndex(null)}
         >
           <button
             type="button"
             className="absolute right-6 top-6 z-10 flex size-11 items-center justify-center rounded-full border border-[var(--border2)] bg-white/[0.07] text-[#f0eff5] transition hover:bg-white/[0.14]"
             onClick={() => setSelectedIndex(null)}
-            aria-label="Close"
+            aria-label={t.eventPage.close}
           >
             <X className="size-[18px]" strokeWidth={2} />
           </button>
@@ -1002,7 +1003,7 @@ export function EventDocumentaryPageClient({ pathSegment }: Props) {
                   e.stopPropagation();
                   stepMedia(-1);
                 }}
-                aria-label="Previous media"
+                aria-label={t.eventPage.previousMedia}
               >
                 <ChevronLeft className="size-[20px]" strokeWidth={2} />
               </button>
@@ -1013,7 +1014,7 @@ export function EventDocumentaryPageClient({ pathSegment }: Props) {
                   e.stopPropagation();
                   stepMedia(1);
                 }}
-                aria-label="Next media"
+                aria-label={t.eventPage.nextMedia}
               >
                 <ChevronRight className="size-[20px]" strokeWidth={2} />
               </button>
@@ -1069,7 +1070,7 @@ export function EventDocumentaryPageClient({ pathSegment }: Props) {
             style={{ background: "var(--ev-accent)" }}
           >
             <Check className="size-4" strokeWidth={2} />
-            Open registration
+            {t.eventPage.openRegistration}
           </a>
         </div>
       ) : null}

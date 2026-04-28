@@ -4,6 +4,8 @@ import { ArrowRight, Check, Clock, Mail, MapPin, Phone } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { useClientMounted } from "@/lib/hooks/use-client-mounted";
+
 import type {
   ApplyContactRow,
   ApplySectionConfig,
@@ -15,6 +17,7 @@ import {
   applyEducationYearDepartmentMode,
   departmentOptionsForApplyEducationYear,
 } from "@/lib/team/school-taxonomy";
+import { useLanguage } from "@/lib/i18n/context";
 
 const TONE_ICON: Record<ApplyContactRow["tone"], string> = {
   blue: "bg-sky-500/10 text-sky-400",
@@ -119,7 +122,45 @@ function CharterLink({
 }
 
 export function ApplySection({ config }: ApplySectionProps) {
-  const c = config ?? DEFAULT_APPLY_CONFIG;
+  const { t, locale } = useLanguage();
+  const isFr = locale !== "en";
+  const base = config ?? DEFAULT_APPLY_CONFIG;
+  const tr = t.applySection;
+  const c: ApplySectionConfig = isFr
+    ? {
+        ...base,
+        topLabel: tr.topLabel,
+        heroLine1: tr.heroLine1,
+        heroLine2: tr.heroLine2,
+        heroSub: tr.heroSub,
+        infoBadge: tr.infoBadge,
+        infoTitle: tr.infoTitle,
+        infoDesc: tr.infoDesc,
+        formTitle: tr.formTitle,
+        formSubtitle: tr.formSubtitle,
+        firstNameLabel: tr.firstNameLabel,
+        lastNameLabel: tr.lastNameLabel,
+        yearLabel: tr.yearLabel,
+        departmentLabel: tr.departmentLabel,
+        emailLabel: tr.emailLabel,
+        phoneLabel: tr.phoneLabel,
+        messageLabel: tr.messageLabel,
+        submitNotePrefix: tr.submitNotePrefix,
+        charterLinkText: tr.charterLinkText,
+        submitButtonLabel: tr.submitButtonLabel,
+        successTitle: tr.successTitle,
+        successMessage: tr.successMessage,
+        placeholders: tr.placeholders,
+        contactRows: tr.contactRows as typeof DEFAULT_APPLY_CONFIG.contactRows,
+        community: {
+          ...(base.community ?? DEFAULT_APPLY_CONFIG.community),
+          eyebrow: tr.community.eyebrow,
+          titleLine: tr.community.titleLine,
+          titleAccent: tr.community.titleAccent,
+          description: tr.community.description,
+        },
+      }
+    : base;
   const years = Array.isArray(c.yearOptions) && c.yearOptions.length
     ? c.yearOptions
     : DEFAULT_APPLY_CONFIG.yearOptions;
@@ -152,10 +193,7 @@ export function ApplySection({ config }: ApplySectionProps) {
   const [submitting, setSubmitting] = useState(false);
 
   /** Avoid SSR/client hydration mismatches on the department `<select>` (option list + disabled vary with year). */
-  const [deptFieldReady, setDeptFieldReady] = useState(false);
-  useEffect(() => {
-    setDeptFieldReady(true);
-  }, []);
+  const deptFieldReady = useClientMounted();
 
   const deptMode = useMemo(
     () => (educationYear ? applyEducationYearDepartmentMode(educationYear) : "unknown"),
@@ -171,13 +209,16 @@ export function ApplySection({ config }: ApplySectionProps) {
   useEffect(() => {
     if (!department) return;
     if (filteredDepts.length > 0 && !filteredDepts.includes(department)) {
-      setDepartment("");
+      // Defer to avoid a synchronous setState cascade within the effect body.
+      const id = setTimeout(() => setDepartment(""), 0);
+      return () => clearTimeout(id);
     }
   }, [educationYear, filteredDepts, department]);
 
   useEffect(() => {
     if (!requiresDepartment && department) {
-      setDepartment("");
+      const id = setTimeout(() => setDepartment(""), 0);
+      return () => clearTimeout(id);
     }
   }, [requiresDepartment, department]);
 
@@ -197,19 +238,26 @@ export function ApplySection({ config }: ApplySectionProps) {
   const progressPct = Math.min(100, Math.round((filledRequired / requiredSlots) * 100));
 
   const validate = useCallback(() => {
-    if (!firstName.trim()) return "First name is required.";
-    if (!lastName.trim()) return "Last name is required.";
-    if (!educationYear) return "Education year is required.";
+    if (!firstName.trim()) return t.apply.validation.firstNameRequired;
+    if (!lastName.trim()) return t.apply.validation.lastNameRequired;
+    if (!educationYear) return t.apply.validation.yearRequired;
     if (requiresDepartment) {
-      if (!department) return "Department is required.";
+      if (!department) return t.apply.validation.departmentRequired;
       if (filteredDepts.length > 0 && !filteredDepts.includes(department)) {
-        return "Pick a department that matches your education year.";
+        return t.apply.validation.departmentMismatch;
       }
     }
-    if (!email.trim()) return "Email is required.";
-    if (!phone.trim()) return "Phone number is required.";
+    if (!email.trim()) return t.apply.validation.emailRequired;
+    if (!/^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/.test(email.trim())) {
+      return t.apply.validation.emailFormat;
+    }
+    if (!phone.trim()) return t.apply.validation.phoneRequired;
+    if (!/^\+?[0-9]{6,}$/.test(phone.trim())) {
+      return t.apply.validation.phoneFormat;
+    }
     return null;
   }, [
+    t,
     firstName,
     lastName,
     educationYear,
@@ -248,12 +296,12 @@ export function ApplySection({ config }: ApplySectionProps) {
       });
       const data = (await res.json().catch(() => ({}))) as { error?: string };
       if (!res.ok) {
-        setSubmitError(data.error ?? "Something went wrong. Please try again.");
+        setSubmitError(data.error ?? t.apply.serverError);
         return;
       }
       setSuccess(true);
     } catch {
-      setSubmitError("Network error. Check your connection and try again.");
+      setSubmitError(t.apply.networkError);
     } finally {
       setSubmitting(false);
     }
@@ -463,7 +511,7 @@ export function ApplySection({ config }: ApplySectionProps) {
                       className="w-full rounded-[10px] border border-violet-500/15 bg-white/[0.03] px-3.5 py-2.5 text-[13.5px] text-slate-200 outline-none transition focus:border-violet-400/50 focus:shadow-[0_0_0_3px_rgba(124,58,237,0.12)]"
                     >
                       <option value="" disabled>
-                        Select your year
+                        {t.apply.selectYearPlaceholder}
                       </option>
                       {years.map((y) => (
                         <option key={y} value={y} className="bg-[#0d0f1a]">
@@ -486,8 +534,8 @@ export function ApplySection({ config }: ApplySectionProps) {
                       >
                         <option value="" disabled>
                           {deptFieldReady && educationYear
-                            ? "Select your department"
-                            : "Select your year first"}
+                            ? t.apply.selectDepartment
+                            : t.apply.selectYear}
                         </option>
                         {deptFieldReady
                           ? filteredDepts.map((d) => (
@@ -504,7 +552,7 @@ export function ApplySection({ config }: ApplySectionProps) {
                         {c.departmentLabel}
                       </span>
                       <p className="text-[12.5px] leading-relaxed text-slate-500">
-                        Not required for the level you selected (e.g. Master, Doctoral, Professor).
+                        {t.apply.notRequiredForLevel}
                       </p>
                     </div>
                   )}
@@ -528,7 +576,15 @@ export function ApplySection({ config }: ApplySectionProps) {
                     <input
                       type="tel"
                       value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
+                      onChange={(e) => {
+                        // Allow digits only; a single + is permitted at position 0
+                        const raw = e.target.value;
+                        const cleaned = raw
+                          .split("")
+                          .filter((ch, i) => /[0-9]/.test(ch) || (ch === "+" && i === 0))
+                          .join("");
+                        setPhone(cleaned);
+                      }}
                       placeholder={c.placeholders.phone}
                       autoComplete="tel"
                       className="w-full rounded-[10px] border border-violet-500/15 bg-white/[0.03] px-3.5 py-2.5 text-[13.5px] text-slate-200 outline-none transition placeholder:text-slate-600 focus:border-violet-400/50 focus:shadow-[0_0_0_3px_rgba(124,58,237,0.12)]"
@@ -538,7 +594,7 @@ export function ApplySection({ config }: ApplySectionProps) {
                     <span className="font-jetbrains text-[10px] font-medium uppercase tracking-[0.1em] text-slate-500">
                       {c.messageLabel}{" "}
                       <span className="font-light normal-case tracking-normal text-slate-600">
-                        (Optional)
+                        {t.apply.optional}
                       </span>
                     </span>
                     <textarea
@@ -563,7 +619,7 @@ export function ApplySection({ config }: ApplySectionProps) {
                     onClick={() => void handleSubmit()}
                     className="font-jetbrains inline-flex shrink-0 items-center justify-center gap-2.5 rounded-full border-0 bg-gradient-to-br from-violet-600 to-cyan-500 px-8 py-3.5 text-[12px] font-medium uppercase tracking-[0.08em] text-white shadow-[0_0_25px_rgba(124,58,237,0.4)] transition hover:-translate-y-0.5 hover:shadow-[0_0_40px_rgba(124,58,237,0.55)] disabled:pointer-events-none disabled:opacity-50"
                   >
-                    {submitting ? "Sending…" : c.submitButtonLabel}
+                    {submitting ? t.apply.sending : c.submitButtonLabel}
                     <ArrowRight className="size-4" strokeWidth={2} />
                   </button>
                 </div>

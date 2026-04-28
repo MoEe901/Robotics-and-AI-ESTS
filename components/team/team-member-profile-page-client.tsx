@@ -7,12 +7,14 @@ import { useClientMounted } from "@/lib/hooks/use-client-mounted";
 import { subscribeToMemberBySlug } from "@/lib/firebase/realtime";
 import type { TeamMemberProfile } from "@/lib/team/types";
 import { useTeamStore } from "@/store/teamStore";
+import { useLanguage } from "@/lib/i18n/context";
 
 type TeamMemberProfilePageClientProps = {
   slug: string;
 };
 
 export function TeamMemberProfilePageClient({ slug }: TeamMemberProfilePageClientProps) {
+  const { t } = useLanguage();
   const clientMounted = useClientMounted();
   const setProfileForSlug = useTeamStore((s) => s.setProfileForSlug);
 
@@ -45,7 +47,7 @@ export function TeamMemberProfilePageClient({ slug }: TeamMemberProfilePageClien
   if (!member && awaitingLive) {
     return (
       <p className="mx-auto w-[min(94%,720px)] px-4 pb-24 pt-24 text-sm text-[#6b6a80] md:pt-28">
-        Loading profile…
+        {t.memberProfilePage.loading}
       </p>
     );
   }
@@ -53,7 +55,7 @@ export function TeamMemberProfilePageClient({ slug }: TeamMemberProfilePageClien
   if (!member) {
     return (
       <p className="mx-auto w-[min(94%,720px)] px-4 pb-24 pt-24 text-sm text-[#6b6a80] md:pt-28">
-        Member not found.
+        {t.memberProfilePage.notFound}
       </p>
     );
   }

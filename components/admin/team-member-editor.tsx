@@ -151,17 +151,20 @@ export function TeamMemberEditor({ memberId }: Props) {
 
   useEffect(() => {
     if (!sessionReady) return;
-    if (!session?.ok) {
-      setLoading(false);
-      setLoadError("Admin session is not active.");
-      return;
-    }
 
     let cancelled = false;
 
     void (async () => {
+      // Defer all state updates out of the synchronous effect body so React
+      // never sees a cascading render from a sync setState call.
       await Promise.resolve();
       if (cancelled) return;
+
+      if (!session?.ok) {
+        setLoading(false);
+        setLoadError("Admin session is not active.");
+        return;
+      }
 
       setLoading(true);
       setLoadError(null);

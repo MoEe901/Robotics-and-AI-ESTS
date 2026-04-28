@@ -33,7 +33,6 @@ type Setter = Pick<
   | "setWhyJoinConfig"
   | "setCellulesConfig"
   | "setProcessStepsConfig"
-  | "setSectionLayout"
   | "setFaqConfig"
   | "setApplyConfig"
   | "setPublicHero"
@@ -43,16 +42,17 @@ type Setter = Pick<
 >;
 
 /**
- * Exactly eight Firestore listeners for the public homepage:
- * 1) siteContent collection
- * 2) siteConfig/navbar document
- * 3) events (active, ordered)
- * 4) homepage team
- * 5) pageSections
- * 6) faq/config document
- * 7) faq/config/questions collection
- * 8) apply collection
- * 9) eventsConfig/public empty-state copy
+ * Ten Firestore listeners for the public homepage:
+ *  1) siteContent collection
+ *  2) siteConfig/navbar document
+ *  3) events (active, ordered)
+ *  4) homepage team
+ *  5) pageSections
+ *  6) siteConfig/sections (section order + visibility)
+ *  7) faq/config document
+ *  8) faq/config/questions collection
+ *  9) apply collection
+ * 10) eventsConfig/public empty-state copy
  */
 export function subscribeHomePageFirestore(set: Setter): () => void {
   const unsubs: Unsubscribe[] = [];
@@ -142,28 +142,6 @@ export function subscribeHomePageFirestore(set: Setter): () => void {
       (e) => {
         logFirestoreListenerError("home-page-sync pageSections", e);
         console.error("[home-page-sync] pageSections", e);
-      },
-    ),
-  );
-
-  unsubs.push(
-    onSnapshot(
-      doc(db(), "siteConfig", "sections"),
-      (snap) => {
-        if (!snap.exists()) return;
-        const raw = snap.data() as Record<string, unknown>;
-        const orderRaw = Array.isArray(raw.order) ? raw.order : [];
-        const order = orderRaw.filter((x): x is string => typeof x === "string");
-        const visRaw = raw.visibility && typeof raw.visibility === "object"
-          ? (raw.visibility as Record<string, unknown>)
-          : {};
-        const visibility: Record<string, boolean> = {};
-        for (const [k, v] of Object.entries(visRaw)) visibility[k] = v !== false;
-        set.setSectionLayout({ order, visibility });
-      },
-      (err) => {
-        logFirestoreListenerError("home-page-sync siteConfig/sections doc", err);
-        console.error("[home-page-sync] siteConfig/sections", err);
       },
     ),
   );

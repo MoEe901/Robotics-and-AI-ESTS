@@ -3,45 +3,25 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    /** Keep in sync with deployment: same addresses as `NEXT_PUBLIC_ADMIN_EMAILS` (lowercase). */
-    function legacyAdminEmails() {
-      return [
-        "admin123@gmail.com",
-      ];
-    }
+    // ── Claim-based helpers (no get() — safe for list operations) ──────────
+    // Custom claim `adminRole` is set server-side via /api/admin/set-claim
+    // and /api/admin/create-user whenever a role is assigned or changed.
 
-    /**
-     * Emergency bootstrap UIDs with full admin until RBAC is fully stable.
-     * Keep only trusted owners here, then remove once all adminUsers are provisioned.
-     */
-    function bootstrapAdminUids() {
-      // Include both spellings: UID is case-sensitive; a typo here blocks all admin writes.
-      return [
-        "CQ5PMN8qGYbaLYmwNYQaZiF6E4r2",
-        "CQ5PMN8qGYbaLYmwNYQaZIf6E4r2",
-      ];
-    }
-
-    function bootstrapAdminEmails() {
-      return [
-        "m.talbani0481@uca.ac.ma",
-      ];
-    }
-
-    function isLegacyAdmin() {
+    function claimRole() {
       return request.auth != null
-        && request.auth.token.email is string
-        && request.auth.token.email in legacyAdminEmails();
+        ? request.auth.token.get('adminRole', '')
+        : '';
     }
 
-    function isBootstrapAdmin() {
-      return request.auth != null
-        && (
-          request.auth.uid in bootstrapAdminUids()
-          || (request.auth.token.email is string
-            && request.auth.token.email in bootstrapAdminEmails())
-        );
+    function isAdminByClaim() {
+      return claimRole() == 'admin';
     }
+
+    function isProvisionedByClaim() {
+      return claimRole() in ['admin', 'editor', 'moderator', 'viewer'];
+    }
+
+    // ── Firestore-doc helpers (safe for single get operations only) ─────────
 
     function adminUserDoc() {
       return get(/databases/$(database)/documents/adminUsers/$(request.auth.uid));
@@ -59,14 +39,12 @@ service cloud.firestore {
     }
 
     function provisioned() {
-      return isLegacyAdmin() || isBootstrapAdmin() || isRbacProvisioned();
+      return isProvisionedByClaim() || isRbacProvisioned();
     }
 
-    /** Super-admin: legacy list or Firestore role `admin`. */
+    /** Super-admin check via Firestore doc (for get/write rules). */
     function isAdminFull() {
-      return isLegacyAdmin()
-        || isBootstrapAdmin()
-        || (isRbacProvisioned() && rbacRole() == 'admin');
+      return isAdminByClaim() || (isRbacProvisioned() && rbacRole() == 'admin');
     }
 
     function isEditor() {
@@ -100,8 +78,12 @@ service cloud.firestore {
     }
 
     match /adminUsers/{userId} {
-      allow read: if request.auth != null
+      // Single-document read: own doc or admin (Firestore-doc check is fine here)
+      allow get: if request.auth != null
         && (request.auth.uid == userId || isAdminFull());
+      // Collection list: claim-based only — Firestore forbids get() on the
+      // same collection being listed, so we use the custom claim instead.
+      allow list: if isAdminByClaim();
       allow create, update, delete: if isAdminFull();
     }
 

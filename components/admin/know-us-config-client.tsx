@@ -509,8 +509,8 @@ export function KnowUsConfigClient() {
                 }}
                 className="rounded-lg border border-white/15 bg-black/30 px-2 py-1 text-xs text-white outline-none focus:border-white/35"
               >
-                <option value="light">Light</option>
-                <option value="dark">Dark</option>
+                <option value="light">White (light bg)</option>
+                <option value="dark">Dark (dark bg)</option>
               </select>
 
               <button

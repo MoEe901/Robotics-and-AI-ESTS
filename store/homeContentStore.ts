@@ -23,7 +23,7 @@ export type SectionLayout = {
 };
 
 const DEFAULT_SECTION_LAYOUT: SectionLayout = {
-  order: ["hero", "events", "knowUs", "whyJoin", "cellules", "processSteps", "faq", "apply", "footer"],
+  order: ["hero", "events", "knowUs", "whyJoin", "cellules", "processSteps", "team", "faq", "apply", "footer"],
   visibility: {
     hero: true,
     events: true,
@@ -31,6 +31,7 @@ const DEFAULT_SECTION_LAYOUT: SectionLayout = {
     whyJoin: true,
     cellules: true,
     processSteps: true,
+    team: true,
     faq: true,
     apply: true,
     footer: true,

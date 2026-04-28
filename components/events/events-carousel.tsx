@@ -11,6 +11,8 @@ import {
   useState,
 } from "react";
 
+import { useLanguage } from "@/lib/i18n/context";
+
 const FALLBACK = "/fallback.jpg";
 const AUTOPLAY_MS = 6000;
 const MANUAL_COOLDOWN_MS = 9000;
@@ -39,6 +41,7 @@ function coverSrc(imageUrl: string | null | undefined): string {
 }
 
 export function EventsCarousel({ items, emptyTitle, emptyMessage }: EventsCarouselProps) {
+  const { t } = useLanguage();
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [autoplay, setAutoplay] = useState(false);
@@ -146,7 +149,7 @@ export function EventsCarousel({ items, emptyTitle, emptyMessage }: EventsCarous
   }, [autoplay, items.length, reduceMotion, scrollToIndex]);
 
   if (!items.length) {
-    const title = emptyTitle?.trim() || "No events scheduled yet.";
+    const title = emptyTitle?.trim() || t.eventPage.noEventsYet;
     const msg = emptyMessage?.trim();
     return (
       <div className="rounded-2xl border border-white/10 bg-black/20 px-6 py-10 text-center">
@@ -176,7 +179,7 @@ export function EventsCarousel({ items, emptyTitle, emptyMessage }: EventsCarous
               href={href}
               scroll={false}
               className="group flex w-[min(80vw,22rem)] shrink-0 snap-center flex-col overflow-hidden rounded-2xl border border-white/10 bg-black/80 text-left shadow-[0_24px_80px_-24px_rgba(27,110,200,0.35)] ring-1 ring-white/[0.06] transition-shadow duration-[400ms] ease-in-out outline-offset-4 hover:shadow-[0_28px_90px_-20px_rgba(27,110,200,0.45)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-white/40 sm:w-[min(78vw,24rem)] md:w-[calc((100%-0.75rem)/2)] lg:w-[calc((100%-0.75rem)/2)] lg:rounded-3xl xl:rounded-[1.35rem]"
-              aria-label={`${item.title} — open event story`}
+              aria-label={`${item.title} — ${t.eventPage.openEventStoryAriaLabel}`}
             >
               <motion.article
                 initial={{ opacity: 0, y: 28 }}
@@ -211,7 +214,7 @@ export function EventsCarousel({ items, emptyTitle, emptyMessage }: EventsCarous
                       {item.title}
                     </h3>
                     <p className="mt-3 text-xs font-medium [color:rgba(255,255,255,0.78)] lg:text-sm">
-                      View event story →
+                      {t.eventPage.viewEventStory}
                     </p>
                   </div>
                 </div>
@@ -227,7 +230,7 @@ export function EventsCarousel({ items, emptyTitle, emptyMessage }: EventsCarous
           <div
             className="flex max-w-[min(100%,22rem)] flex-wrap items-center justify-center gap-1.5 sm:gap-2"
             role="tablist"
-            aria-label="Events carousel"
+            aria-label={t.eventPage.eventsCarouselAriaLabel}
           >
             {items.map((item, i) => {
               const dist = Math.abs(i - activeIndex);
@@ -238,7 +241,7 @@ export function EventsCarousel({ items, emptyTitle, emptyMessage }: EventsCarous
                   type="button"
                   role="tab"
                   aria-selected={isActive}
-                  aria-label={`${item.title}, slide ${i + 1} of ${items.length}`}
+                  aria-label={`${item.title}, ${t.eventPage.slideLabel} ${i + 1} ${t.eventPage.slideOf} ${items.length}`}
                   onClick={() => {
                     manualCooldownUntil.current = Date.now() + MANUAL_COOLDOWN_MS;
                     setActiveIndex(i);
@@ -263,10 +266,10 @@ export function EventsCarousel({ items, emptyTitle, emptyMessage }: EventsCarous
             <button
               type="button"
               aria-pressed={autoplay}
-              aria-label={autoplay ? "Pause automatic slideshow" : "Play automatic slideshow"}
+              aria-label={autoplay ? t.eventPage.pauseSlideshow : t.eventPage.playSlideshow}
               title={
                 reduceMotion
-                  ? "Slideshow timing is off while reduced motion is enabled; use dots to change slides."
+                  ? t.eventPage.slideshowReducedMotionTitle
                   : undefined
               }
               onClick={() => setAutoplay((v) => !v)}

@@ -41,14 +41,12 @@ export default function AdminDashboardPage() {
 
   const items = useMemo(() => {
     if (!ready || !session?.ok) return DASHBOARD_ITEMS;
-    const full = session.mode === "legacy" || session.role === "admin";
-    return DASHBOARD_ITEMS.filter((it) => isAdminPathAllowedForRole(it.href, session.role, full));
+    return DASHBOARD_ITEMS.filter((it) => isAdminPathAllowedForRole(it.href, session.role));
   }, [ready, session]);
 
   const showFirestoreShortcut =
     !ready ||
     !session?.ok ||
-    session.mode === "legacy" ||
     session.role === "admin" ||
     session.role === "editor";
 

@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import type { ProcessStepsConfig } from "@/lib/firebase/types";
 import { DEFAULT_PROCESS_STEPS_CONFIG } from "@/lib/content/process-steps-defaults";
 import { resolveSectionIcon } from "@/lib/icons/section-icon-pack";
+import { useLanguage } from "@/lib/i18n/context";
 
 const ACCENT = [
   {
@@ -46,7 +47,11 @@ type ProcessStepsSectionProps = {
 };
 
 export function ProcessStepsSection({ config }: ProcessStepsSectionProps) {
-  const data = config ?? DEFAULT_PROCESS_STEPS_CONFIG;
+  const { t, locale } = useLanguage();
+  const isFr = locale !== "en";
+  const data = isFr
+    ? (t.processSteps as unknown as ProcessStepsConfig)
+    : (config ?? DEFAULT_PROCESS_STEPS_CONFIG);
   const steps = data.steps.length >= 2 ? data.steps : DEFAULT_PROCESS_STEPS_CONFIG.steps;
   const [visible, setVisible] = useState<Record<number, boolean>>({});
   const rootRef = useRef<HTMLElement>(null);

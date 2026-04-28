@@ -19,6 +19,7 @@ import { useMemo, useState } from "react";
 
 import type { FaqConfig, FaqItemColor } from "@/lib/firebase/types";
 import { DEFAULT_FAQ_CONFIG } from "@/lib/content/faq-defaults";
+import { useLanguage } from "@/lib/i18n/context";
 
 const faqIcons: Record<string, React.ComponentType<{ className?: string; strokeWidth?: number }>> = {
   "circle-dollar-sign": CircleDollarSign,
@@ -76,7 +77,9 @@ type FaqSectionProps = {
 };
 
 export function FaqSection({ config }: FaqSectionProps) {
-  const data = config ?? DEFAULT_FAQ_CONFIG;
+  const { t, locale } = useLanguage();
+  const isFr = locale !== "en";
+  const data = isFr ? (t.faqSection as unknown as FaqConfig) : (config ?? DEFAULT_FAQ_CONFIG);
   const categories = data.categories.length ? data.categories : DEFAULT_FAQ_CONFIG.categories;
   const items = data.items.length ? data.items : DEFAULT_FAQ_CONFIG.items;
 
@@ -124,7 +127,7 @@ export function FaqSection({ config }: FaqSectionProps) {
         <div className="grid gap-10 md:grid-cols-[minmax(0,200px)_1fr] md:gap-12 md:items-start">
           <aside className="md:sticky md:top-28">
             <p className="mb-2 hidden px-3 text-[9px] font-semibold uppercase tracking-[0.2em] text-white/45 md:block">
-              Filter by topic
+              {t.sections.faqFilterByTopic}
             </p>
             <div className="flex flex-row flex-wrap gap-1 md:flex-col">
               <button
@@ -144,7 +147,7 @@ export function FaqSection({ config }: FaqSectionProps) {
                     activeCat === "all" ? "bg-sky-400 shadow-[0_0_8px_rgba(56,189,248,0.7)]" : "bg-white/15"
                   }`}
                 />
-                <span className="min-w-0 flex-1 truncate">All Questions</span>
+                <span className="min-w-0 flex-1 truncate">{t.sections.faqAllQuestions}</span>
                 <span className="shrink-0 rounded-full bg-white/[0.06] px-1.5 py-0.5 text-[10px] text-white/50">
                   {counts.all ?? 0}
                 </span>

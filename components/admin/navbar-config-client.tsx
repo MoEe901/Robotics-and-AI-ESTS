@@ -36,6 +36,7 @@ export function NavbarConfigClient() {
   const [ctaText, setCtaText] = useState(DEFAULT_NAVBAR_CONFIG.ctaButton.label);
   const [ctaHref, setCtaHref] = useState(DEFAULT_NAVBAR_CONFIG.ctaButton.href);
   const [ctaVisible, setCtaVisible] = useState(DEFAULT_NAVBAR_CONFIG.ctaButton.isVisible);
+  const [showThemeToggle, setShowThemeToggle] = useState(DEFAULT_NAVBAR_CONFIG.showThemeToggle);
 
   useEffect(() => {
     let cancelled = false;
@@ -78,6 +79,7 @@ export function NavbarConfigClient() {
             str("ctaHref", typeof ctaObj.href === "string" ? ctaObj.href : DEFAULT_NAVBAR_CONFIG.ctaButton.href),
           );
           setCtaVisible(ctaObj.isVisible !== false);
+          setShowThemeToggle(r.showThemeToggle !== false);
         }
       } catch (e) {
         if (!cancelled)
@@ -133,7 +135,7 @@ export function NavbarConfigClient() {
           href: ctaHref.trim() || DEFAULT_NAVBAR_CONFIG.ctaButton.href,
           isVisible: ctaVisible,
         },
-        showThemeToggle: false,
+        showThemeToggle,
       }, { merge: true });
       setSuccess("Navigation config saved. Changes are live immediately.");
     } catch (e) {
@@ -285,6 +287,14 @@ export function NavbarConfigClient() {
               />
               Show CTA button
             </label>
+            <label className="inline-flex items-center gap-2 text-xs text-white/80">
+              <input
+                type="checkbox"
+                checked={showThemeToggle}
+                onChange={(e) => setShowThemeToggle(e.target.checked)}
+              />
+              Show theme toggle (dark/light mode button)
+            </label>
           </div>
         </div>
 
@@ -345,6 +355,7 @@ export function NavbarConfigClient() {
             setCtaText(DEFAULT_NAVBAR_CONFIG.ctaButton.label);
             setCtaHref(DEFAULT_NAVBAR_CONFIG.ctaButton.href);
             setCtaVisible(DEFAULT_NAVBAR_CONFIG.ctaButton.isVisible);
+            setShowThemeToggle(DEFAULT_NAVBAR_CONFIG.showThemeToggle);
           }}
           className="rounded-full border border-white/20 bg-white/[0.06] px-5 py-2.5 text-sm font-medium text-white/70 transition hover:border-white/35 hover:text-white"
         >

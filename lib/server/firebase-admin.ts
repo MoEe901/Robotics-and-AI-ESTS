@@ -15,7 +15,15 @@ export function getFirebaseAdminApp(): admin.app.App {
 
   const json = process.env.FIREBASE_SERVICE_ACCOUNT_JSON?.trim();
   if (json) {
-    const cred = JSON.parse(json) as admin.ServiceAccount;
+    let cred: admin.ServiceAccount;
+    try {
+      cred = JSON.parse(json) as admin.ServiceAccount;
+    } catch (e) {
+      const detail = e instanceof Error ? e.message : String(e);
+      throw new Error(
+        `Firebase Admin: FIREBASE_SERVICE_ACCOUNT_JSON contains invalid JSON: ${detail}`,
+      );
+    }
     return admin.initializeApp({
       credential: admin.credential.cert(cred),
       projectId: projectId || cred.projectId,
@@ -24,7 +32,8 @@ export function getFirebaseAdminApp(): admin.app.App {
 
   if (!projectId) {
     throw new Error(
-      "Firebase Admin: set FIREBASE_SERVICE_ACCOUNT_JSON, or set FIREBASE_PROJECT_ID / NEXT_PUBLIC_FIREBASE_PROJECT_ID with Application Default Credentials.",
+      "Firebase Admin: set FIREBASE_SERVICE_ACCOUNT_JSON, or set " +
+        "FIREBASE_PROJECT_ID / NEXT_PUBLIC_FIREBASE_PROJECT_ID with Application Default Credentials.",
     );
   }
   return admin.initializeApp({ projectId });

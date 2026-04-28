@@ -71,7 +71,9 @@ export type EventDoc = {
   title: string;
   slug?: string;
   description?: string;
+  descriptionFr?: string;
   documentary?: string;
+  documentaryFr?: string;
   eventStory?: string;
   location?: string;
   venue?: string;
@@ -106,7 +108,9 @@ export type EventItem = {
   title: string;
   slug?: { current?: string } | null;
   description?: string;
+  descriptionFr?: string;
   documentary?: string;
+  documentaryFr?: string;
   location?: string;
   locationMapsUrl?: string;
   date?: string;

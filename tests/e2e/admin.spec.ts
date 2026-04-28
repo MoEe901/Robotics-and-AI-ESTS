@@ -19,8 +19,8 @@ test.describe("Admin access", () => {
     await email.fill("invalid@example.com");
     await password.fill("not-a-real-password");
 
-    // Enablement depends on NEXT_PUBLIC_ADMIN_EMAILS, but form interaction
-    // and field binding must still work.
+    // The login form is always enabled — access is gated by adminUsers Firestore collection.
+    // Form interaction and field binding must work regardless of credentials.
     await expect(email).toHaveValue("invalid@example.com");
     await expect(password).toHaveValue("not-a-real-password");
   });

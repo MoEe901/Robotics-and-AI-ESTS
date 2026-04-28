@@ -1,9 +1,10 @@
 "use client";
 
 import { motion, useReducedMotion } from "framer-motion";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 
 import type { PartnerLogo } from "@/lib/firebase/types";
+import { getSiteThemeSnapshot, subscribeSiteTheme, type SiteTheme } from "@/lib/theme";
 
 type PartnersMarqueeProps = {
   logos: PartnerLogo[];
@@ -12,8 +13,18 @@ type PartnersMarqueeProps = {
   logoBasis: string;
 };
 
+function logoFilter(sourceTone: "dark" | "light", theme: SiteTheme): string {
+  if (sourceTone === "dark") {
+    // Logo is light/white-colored, designed for dark backgrounds
+    return theme === "dark" ? "none" : "invert(1)";
+  }
+  // Logo is dark-colored, designed for light/white backgrounds
+  return theme === "light" ? "none" : "invert(1)";
+}
+
 export function PartnersMarquee({ logos, gapPx, durationSec, logoBasis }: PartnersMarqueeProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const theme = useSyncExternalStore<SiteTheme>(subscribeSiteTheme, getSiteThemeSnapshot, () => "dark" as const);
   const groupRef = useRef<HTMLDivElement | null>(null);
   const [shiftPx, setShiftPx] = useState(0);
   const [repeatCount, setRepeatCount] = useState(2);
@@ -94,7 +105,7 @@ export function PartnersMarquee({ logos, gapPx, durationSec, logoBasis }: Partne
                   decoding="async"
                   className="h-14 w-full object-contain opacity-95 transition-[filter] duration-300"
                   style={{
-                    filter: (logo.sourceTone ?? "light") === "dark" ? "invert(1)" : "none",
+                    filter: logoFilter(logo.sourceTone ?? "light", theme),
                   }}
                 />
               </div>

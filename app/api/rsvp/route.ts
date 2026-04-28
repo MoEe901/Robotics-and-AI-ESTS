@@ -18,7 +18,13 @@ export async function POST(request: Request) {
     );
   }
 
-  const payload = await request.json();
+  let payload: unknown;
+  try {
+    payload = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
+  }
+
   const parsed = rsvpSchema.safeParse(payload);
 
   if (!parsed.success) {
@@ -38,6 +44,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true, id: ref.id }, { status: 201 });
   } catch (e) {
     const message = e instanceof Error ? e.message : "RSVP write failed";
-    return NextResponse.json({ error: message }, { status: 400 });
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

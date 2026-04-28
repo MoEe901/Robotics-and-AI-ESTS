@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 
 import { db } from "@/lib/firebase";
 
-const KNOWN = ["hero", "events", "knowUs", "whyJoin", "cellules", "processSteps", "faq", "apply", "footer"] as const;
+const KNOWN = ["hero", "events", "knowUs", "whyJoin", "cellules", "processSteps", "team", "faq", "apply", "footer"] as const;
 type Id = (typeof KNOWN)[number];
 
 export function SectionsLayoutClient() {
@@ -18,6 +18,7 @@ export function SectionsLayoutClient() {
     whyJoin: true,
     cellules: true,
     processSteps: true,
+    team: true,
     faq: true,
     apply: true,
     footer: true,

@@ -19,17 +19,50 @@ import {
 import { relativeTime } from "@/lib/time";
 import { cn } from "@/lib/utils";
 import { useHomeContentStore } from "@/store/homeContentStore";
+import { useLanguage } from "@/lib/i18n/context";
 
 const NOISE_BG =
   "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")";
 
 export function HeroSection() {
+  const { t, locale } = useLanguage();
   const publicHero = useHomeContentStore((s) => s.publicHero);
   const cellulesConfig = useHomeContentStore((s) => s.cellulesConfig);
   const partnersConfig = useHomeContentStore((s) => s.partnersConfig);
   const events = useHomeContentStore((s) => s.events);
   const faqConfig = useHomeContentStore((s) => s.faqConfig);
-  const hero = publicHero ?? DEFAULT_HERO_PUBLIC;
+  const heroCms = publicHero ?? DEFAULT_HERO_PUBLIC;
+  // When locale is not EN, overlay CMS values with translated strings
+  const isFr = locale !== "en";
+  const hero = isFr
+    ? {
+        ...heroCms,
+        eyebrow: t.hero.eyebrow,
+        location: t.hero.location,
+        titleLines: t.hero.titleLines,
+        description: t.hero.description,
+        primaryCta: { ...heroCms.primaryCta, label: t.hero.primaryCta },
+        secondaryCta: { ...heroCms.secondaryCta, label: t.hero.secondaryCta },
+        heroCards: {
+          ...heroCms.heroCards,
+          activity: {
+            ...heroCms.heroCards.activity,
+            eyebrow: t.hero.activityEyebrow,
+            title: t.hero.activityTitle,
+          },
+          techStack: {
+            ...heroCms.heroCards.techStack,
+            eyebrow: t.hero.techStackEyebrow,
+            title: t.hero.techStackTitle,
+          },
+          growth: {
+            ...heroCms.heroCards.growth,
+            eyebrow: t.hero.growthEyebrow,
+          },
+        },
+        growth: { ...heroCms.growth, title: t.hero.growthTitle },
+      }
+    : heroCms;
   const sectionRef = useRef<HTMLElement>(null);
   const [heroVideoFailed, setHeroVideoFailed] = useState(false);
 
@@ -315,7 +348,7 @@ export function HeroSection() {
       <div className="relative z-[30] mx-auto flex min-h-screen w-full max-w-[1300px] flex-col justify-center px-5 pb-8 pt-[6.5rem] sm:px-8 sm:pt-[7.25rem] lg:px-16 lg:pb-12 lg:pt-[7.5rem]">
         {/* lg grid: reserves right column for cards so headline never draws under them; min-w-0 lets long words shrink inside the track */}
         <div className="grid w-full grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-center lg:gap-x-12 lg:gap-y-0">
-          <div className="min-w-0">
+          <div className="min-w-0 [container-type:inline-size]">
         <motion.div
           style={{ opacity: contentOpacity, y: contentY }}
           className="relative w-full max-w-full"
@@ -339,10 +372,13 @@ export function HeroSection() {
 
           <h1
             className={cn(
-              "font-syne max-w-full font-extrabold uppercase leading-[0.9] tracking-tight [hyphens:none] [word-break:normal]",
-              /* mobile: clamp(1.75rem,9vw,8rem) keeps "ROBOTICS" on one line at ~360px;
-                 lg+: tighter clamp so the headline never bleeds into the floating-cards column */
-              "text-[clamp(1.75rem,9vw,8rem)] lg:text-[clamp(2.25rem,5vw,5rem)]",
+              "font-syne max-w-full font-extrabold uppercase leading-[0.9] tracking-tight [hyphens:none]",
+              /* cqi = % of the actual text column width (set by container-type on parent).
+                 7.2cqi (up from 6.5) makes the whole headline ~10 % larger at every
+                 breakpoint while the column-width constraint still prevents overflow.
+                 Klaxon accent lines are wider than Bebas Neue — the cqi unit absorbs
+                 that naturally since it scales to the column, not the viewport. */
+              "text-[clamp(1.4rem,7.2cqi,9rem)]",
             )}
           >
             {hero.titleLines.map((line, idx) => {
@@ -352,8 +388,17 @@ export function HeroSection() {
                 <span
                   key={`${line}-${idx}`}
                   className={cn(
-                    "block uppercase tracking-[0.035em] sm:tracking-[0.05em]",
-                    accent ? "hero-title-grad tracking-[-0.02em]" : "text-white",
+                    "block uppercase",
+                    accent
+                      ? /* Bebas Neue accent lines:
+                           – font-bebas: condensed display face, all-caps by design
+                           – tracking-[0.04em] / sm:tracking-[0.06em]: slightly wider than
+                             Syne's default so the gradient reads cleanly between strokes
+                           – font-normal: Bebas Neue is a display-weight 400; keeps the
+                             browser from applying faux-bold over the letterforms */
+                        "font-bebas font-normal hero-title-grad tracking-[0.04em] sm:tracking-[0.06em]"
+                      : /* Non-accent lines stay in Syne ExtraBold — structural, geometric, white */
+                        "text-white tracking-[0.035em] sm:tracking-[0.05em]",
                   )}
                   style={{ animation: `heroFadeUp 0.8s ease both ${delay}s` }}
                 >
@@ -493,7 +538,7 @@ export function HeroSection() {
                 </div>
               </div>
               {growthActiveMonths < 2 ? (
-                <p className="text-xs text-slate-400">Not enough data yet</p>
+                <p className="text-xs text-slate-400">{t.hero.notEnoughData}</p>
               ) : (
                 <div className="flex h-10 items-end gap-[3px]">
                 {growthSeries.map((stat, i) => {
@@ -547,7 +592,7 @@ export function HeroSection() {
           className="absolute bottom-6 left-1/2 z-[31] hidden -translate-x-1/2 flex-col items-center gap-2 font-jetbrains text-[9px] uppercase tracking-[0.18em] text-slate-500 sm:flex"
           style={{ animation: "heroFadeUp 0.8s ease both 1s" }}
         >
-          <span>Scroll</span>
+          <span>{t.hero.scroll}</span>
           <div
             className="h-9 w-px bg-gradient-to-b from-slate-500 to-transparent"
             style={{ animation: "heroScrollLine 2.4s ease-in-out infinite" }}

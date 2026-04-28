@@ -12,6 +12,7 @@ import {
   teamListingHref,
 } from "@/lib/team/academic-year";
 import { formatRoleTitles } from "@/lib/team/format-roles";
+import { useLanguage } from "@/lib/i18n/context";
 import { cn } from "@/lib/utils";
 
 import { TeamMemberCard } from "./team-member-card";
@@ -80,6 +81,7 @@ export function TeamDirectory({
   initialRoleFilter = "All",
   loading = false,
 }: TeamDirectoryProps) {
+  const { t } = useLanguage();
   const [search, setSearch] = useState("");
   const [view, setView] = useState<"grid" | "list">("grid");
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
@@ -167,7 +169,7 @@ export function TeamDirectory({
               className="size-1.5 rounded-full bg-sky-400"
               style={{ animation: "teamDirBlink 2s ease-in-out infinite" }}
             />
-            Directory
+            {t.teamPage.directory}
           </p>
 
           <h1
@@ -176,9 +178,9 @@ export function TeamDirectory({
               fontDisplay.className,
             )}
           >
-            Meet the{" "}
+            {t.teamPage.titleMain}{" "}
             <span className="bg-gradient-to-br from-sky-400 to-violet-400 bg-clip-text text-transparent">
-              Team
+              {t.teamPage.titleAccent}
             </span>
           </h1>
 
@@ -186,23 +188,23 @@ export function TeamDirectory({
             <div className="flex flex-wrap items-center gap-4 text-[13px] font-light text-[#6b6a80]">
               <span>
                 <strong className="font-medium text-[#f0eff5]">{loading ? "—" : members.length}</strong>
-                &nbsp; members
+                &nbsp;{t.teamPage.members}
               </span>
               <span className="hidden h-4 w-px bg-white/[0.13] sm:block" />
               <span>
-                Academic year{" "}
+                {t.teamPage.academicYear}{" "}
                 <strong className="font-medium text-[#f0eff5]">{academicYear}</strong>
               </span>
               {!isCurrentYear ? (
                 <>
                   <span className="hidden h-4 w-px bg-white/[0.13] sm:block" />
-                  <span className="text-[#6b6a80]/80">(not current year)</span>
+                  <span className="text-[#6b6a80]/80">{t.teamPage.notCurrentYear}</span>
                 </>
               ) : null}
               <span className="hidden h-4 w-px bg-white/[0.13] md:block" />
               <span>
                 <strong className="font-medium text-[#f0eff5]">{cellulesCount}</strong>
-                &nbsp; cellules
+                &nbsp;{t.teamPage.cellules}
               </span>
             </div>
 
@@ -251,7 +253,7 @@ export function TeamDirectory({
                   href={teamListingHref({ year: currentYear, role: filter })}
                   className="text-xs font-medium text-sky-400 hover:text-sky-300"
                 >
-                  Jump to current ({currentYear})
+                  {t.teamPage.jumpToCurrent} ({currentYear})
                 </Link>
               ) : null}
 
@@ -259,23 +261,24 @@ export function TeamDirectory({
                 href="/"
                 className="text-xs font-medium text-[#6b6a80] underline-offset-4 hover:text-[#f0eff5] hover:underline"
               >
-                ← Back to home
+                {t.teamPage.backToHome}
               </Link>
             </div>
           </div>
 
           {showYearMismatch ? (
             <p className="mb-6 max-w-2xl rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100/90">
-              No team members are published for{" "}
-              <span className="font-mono text-amber-50">{requestedAcademicYear}</span>. Showing the
-              latest year that has data:{" "}
+              {t.teamPage.noMembersPublished}{" "}
+              <span className="font-mono text-amber-50">{requestedAcademicYear}</span>
+              {t.teamPage.noMembersPublishedShowing}{" "}
               <span className="font-mono text-amber-50">{academicYear}</span>.
             </p>
           ) : null}
 
           <p className="text-[11px] text-[#6b6a80]/70">
-            Tip: open{" "}
-            <span className="font-mono text-[#f0eff5]/60">/team?year=2024-2025</span> for any year.
+            {t.teamPage.tip}{" "}
+            <span className="font-mono text-[#f0eff5]/60">/team?year=2024-2025</span>{" "}
+            {t.teamPage.tipSuffix}
           </p>
         </header>
 
@@ -296,7 +299,7 @@ export function TeamDirectory({
                 setSearch(e.target.value);
                 setVisibleCount(PAGE_SIZE);
               }}
-              placeholder="Search members…"
+              placeholder={t.teamPage.searchPlaceholder}
               className="w-full rounded-[10px] border border-white/[0.07] bg-[#0d0d18] py-2.5 pl-9 pr-3 text-[13px] text-[#f0eff5] outline-none transition placeholder:text-[#6b6a80] focus:border-sky-400/40 focus:bg-sky-500/[0.04]"
               autoComplete="off"
             />
@@ -339,7 +342,7 @@ export function TeamDirectory({
           <div className="ml-auto flex rounded-lg border border-white/[0.07] bg-[#0d0d18] p-0.5 max-[560px]:hidden">
             <button
               type="button"
-              title="Grid view"
+              title={t.teamPage.gridView}
               onClick={() => setView("grid")}
               className={cn(
                 "rounded-md p-2 transition",
@@ -350,7 +353,7 @@ export function TeamDirectory({
             </button>
             <button
               type="button"
-              title="List view"
+              title={t.teamPage.listView}
               onClick={() => setView("list")}
               className={cn(
                 "rounded-md p-2 transition",
@@ -366,11 +369,11 @@ export function TeamDirectory({
         <section className="pb-12">
           <div className="mb-5 flex items-center justify-between gap-4">
             <p className="text-xs text-[#6b6a80]">
-              Showing{" "}
+              {t.teamPage.showing}{" "}
               <strong className="font-medium text-[#f0eff5]">
                 {loading ? "—" : searched.length}
               </strong>{" "}
-              members
+              {t.teamPage.members}
             </p>
           </div>
 
@@ -386,18 +389,18 @@ export function TeamDirectory({
           ) : members.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-3 rounded-[20px] border border-white/[0.07] px-6 py-20 text-center">
               <Frown className="size-10 text-[#6b6a80]" strokeWidth={1.5} />
-              <p className="text-base font-medium text-[#f0eff5]">No members for this view yet</p>
+              <p className="text-base font-medium text-[#f0eff5]">{t.teamPage.noMembersYet}</p>
               <p className="max-w-md text-sm font-light text-[#6b6a80]">
-                When members are published for{" "}
-                <span className="font-mono text-[#f0eff5]/70">{academicYear}</span>, they will appear
-                here.
+                {t.teamPage.noMembersYetDesc}{" "}
+                <span className="font-mono text-[#f0eff5]/70">{academicYear}</span>
+                {t.teamPage.noMembersYetDescSuffix}
               </p>
             </div>
           ) : searched.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-3 rounded-[20px] border border-white/[0.07] px-6 py-20 text-center">
               <Frown className="size-10 text-[#6b6a80]" strokeWidth={1.5} />
-              <p className="text-base font-medium text-[#f0eff5]">No members found</p>
-              <p className="text-sm font-light text-[#6b6a80]">Try adjusting your search or filter.</p>
+              <p className="text-base font-medium text-[#f0eff5]">{t.teamPage.noMembersFound}</p>
+              <p className="text-sm font-light text-[#6b6a80]">{t.teamPage.noMembersFoundDesc}</p>
             </div>
           ) : (
             <div
@@ -415,7 +418,7 @@ export function TeamDirectory({
           )}
 
           {!loading && filter !== "All" && members.length > 0 && filteredByRole.length === 0 ? (
-            <p className="mt-10 text-center text-sm text-[#6b6a80]">No members in this category.</p>
+            <p className="mt-10 text-center text-sm text-[#6b6a80]">{t.teamPage.noMembersInCategory}</p>
           ) : null}
 
           {canLoadMore ? (
@@ -425,7 +428,7 @@ export function TeamDirectory({
                 onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
                 className="rounded-full border border-white/[0.13] bg-white/[0.06] px-8 py-3 text-sm font-medium text-[#f0eff5] transition hover:border-white/25 hover:bg-white/10"
               >
-                Load more
+                {t.teamPage.loadMore}
               </button>
             </div>
           ) : null}
