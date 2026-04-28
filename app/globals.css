@@ -1056,3 +1056,42 @@ h3 {
   animation: ambientFloat 22s ease-in-out infinite reverse;
   will-change: transform;
 }
+
+[data-theme="light"] #events .events-carousel-dot .block {
+  background-color: rgba(15, 23, 42, 0.55);
+  box-shadow: none;
+}
+[data-theme="light"] #events .events-carousel-dot:hover .block {
+  background-color: rgba(15, 23, 42, 0.8);
+}
+[data-theme="light"] #events .events-carousel-play-visual {
+  background-color: rgba(15, 23, 42, 0.1);
+  border-color: rgba(15, 23, 42, 0.28);
+}
+[data-theme="light"] #events .events-carousel-play-visual:where(.group:hover *) {
+  background-color: rgba(15, 23, 42, 0.18);
+  border-color: rgba(15, 23, 42, 0.42);
+}
+[data-theme="light"] #events .events-carousel-play-hit {
+  color: #0f172a;
+}
+[data-theme="light"] #events .\[color\:\#fff\] {
+  color: #0f172a !important;
+}
+[data-theme="light"] #events .\[color\:rgba\(255\,255\,255\,0\.82\)\] {
+  color: #334155 !important;
+}
+[data-theme="light"] #events .\[color\:rgba\(255\,255\,255\,0\.78\)\] {
+  color: #475569 !important;
+}
+[data-theme="light"] #events .bg-black\/80 {
+  background-color: rgba(255, 255, 255, 0.97) !important;
+  border-color: rgba(15, 23, 42, 0.12) !important;
+}
+[data-theme="light"] #events .bg-black\/20 {
+  background-color: rgba(241, 245, 249, 0.8) !important;
+  border-color: rgba(15, 23, 42, 0.1) !important;
+}
+[data-theme="light"] #events .bg-gradient-to-t {
+  background: linear-gradient(to top, rgba(248,250,252,0.9), rgba(248,250,252,0.3), rgba(248,250,252,0.05)) !important;
+}

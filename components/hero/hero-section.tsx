@@ -203,7 +203,7 @@ export function HeroSection() {
     const [y, m] = key.split("-").map((v) => Number(v));
     return { label: new Date(y, m - 1, 1).toLocaleDateString(undefined, { month: "short", year: "numeric" }), count };
   });
-  const growthActiveMonths = growthSeries.filter((x) => x.count > 0).length;
+  const totalGrowthMembers = growthSeries.reduce((sum, x) => sum + x.count, 0);
   const growthMax = Math.max(1, ...growthSeries.map((x) => x.count));
 
   return (
@@ -529,7 +529,7 @@ export function HeroSection() {
                   <p className="text-sm font-semibold text-white">{hero.growth.title}</p>
                 </div>
               </div>
-              {growthActiveMonths < 2 ? (
+              {totalGrowthMembers < 2 ? (
                 <p className="text-xs text-slate-400">{t.hero.notEnoughData}</p>
               ) : (
                 <div className="flex h-10 items-end gap-[3px]">
