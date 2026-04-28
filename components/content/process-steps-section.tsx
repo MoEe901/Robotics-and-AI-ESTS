@@ -60,6 +60,18 @@ export function ProcessStepsSection({ config }: ProcessStepsSectionProps) {
     const els = rootRef.current?.querySelectorAll<HTMLElement>("[data-process-step]");
     if (!els?.length) return;
 
+    /** Reveal any step whose top edge is within the viewport. */
+    function sweepVisible() {
+      if (!els) return;
+      els.forEach((el) => {
+        const rect = el.getBoundingClientRect();
+        if (rect.top < window.innerHeight * 0.98) {
+          const idx = Number(el.getAttribute("data-step-index"));
+          if (!Number.isNaN(idx)) setVisible((prev) => (prev[idx] ? prev : { ...prev, [idx]: true }));
+        }
+      });
+    }
+
     const obs = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -67,27 +79,40 @@ export function ProcessStepsSection({ config }: ProcessStepsSectionProps) {
           const el = entry.target as HTMLElement;
           const idx = Number(el.getAttribute("data-step-index"));
           if (Number.isNaN(idx)) return;
-          window.setTimeout(() => {
-            setVisible((prev) => ({ ...prev, [idx]: true }));
-          }, idx * 80);
+          obs.unobserve(el);
+          setVisible((prev) => (prev[idx] ? prev : { ...prev, [idx]: true }));
         });
       },
-      { threshold: 0.12, rootMargin: "0px 0px -8% 0px" },
+      { threshold: 0.05 },
     );
 
     els.forEach((el) => obs.observe(el));
 
-    window.setTimeout(() => {
-      els.forEach((el) => {
-        const rect = el.getBoundingClientRect();
-        if (rect.top < window.innerHeight * 0.92) {
+    // Multi-sweep fallback: catches steps already on-screen at mount or after
+    // a late Firestore data load, regardless of scroll position.
+    const t1 = window.setTimeout(sweepVisible, 60);
+    const t2 = window.setTimeout(sweepVisible, 350);
+    const t3 = window.setTimeout(sweepVisible, 900);
+    // Hard safety net: reveal everything after 1.8 s no matter what.
+    const t4 = window.setTimeout(() => {
+      if (!els) return;
+      setVisible((prev) => {
+        const next = { ...prev };
+        els.forEach((el) => {
           const idx = Number(el.getAttribute("data-step-index"));
-          if (!Number.isNaN(idx)) setVisible((prev) => ({ ...prev, [idx]: true }));
-        }
+          if (!Number.isNaN(idx)) next[idx] = true;
+        });
+        return next;
       });
-    }, 80);
+    }, 1800);
 
-    return () => obs.disconnect();
+    return () => {
+      obs.disconnect();
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
+      window.clearTimeout(t3);
+      window.clearTimeout(t4);
+    };
   }, [steps.length]);
 
   return (
