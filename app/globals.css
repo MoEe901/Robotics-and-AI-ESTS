@@ -1049,4 +1049,10 @@ h3 {
 
 /* Slow ambient floating for decorative blobs */
 .ambient-blob {
-  animation: ambientF
+  animation: ambientFloat 14s ease-in-out infinite;
+  will-change: transform;
+}
+.ambient-blob-slow {
+  animation: ambientFloat 22s ease-in-out infinite reverse;
+  will-change: transform;
+}
