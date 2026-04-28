@@ -279,7 +279,7 @@ export function HomeSections({
         <span className="font-jetbrains mb-2 block text-[10px] uppercase tracking-[0.3em] text-cyan-400">
           {"// Upcoming & Past"}
         </span>
-        <h2 className="font-syne text-[clamp(2rem,4vw,3.2rem)] font-extrabold leading-[1.05] tracking-tight text-white">
+        <h2 className="font-heading typo-section-heading font-extrabold tracking-tight text-white">
           {(() => {
             const parts = eventsTitle.trim().split(/\s+/);
             if (parts.length === 1) {
@@ -313,7 +313,7 @@ export function HomeSections({
         <span className="font-jetbrains mb-2 block text-[10px] uppercase tracking-[0.3em] text-cyan-400">
           {"// Club Fundamentals"}
         </span>
-        <h2 className="font-syne text-[clamp(2rem,4vw,3.2rem)] font-extrabold leading-[1.05] tracking-tight text-white">
+        <h2 className="font-heading typo-section-heading font-extrabold tracking-tight text-white">
           {(() => {
             const t = knowUsConfig?.sectionTitle?.trim() || "Know Us";
             const parts = t.split(/\s+/);
@@ -362,7 +362,7 @@ export function HomeSections({
           <span className="font-jetbrains mb-2 block text-[10px] uppercase tracking-[0.3em] text-cyan-400">
             {"// Partners"}
           </span>
-          <h2 className="font-syne text-[clamp(2rem,4vw,3.2rem)] font-extrabold leading-[1.05] tracking-tight text-white">
+          <h2 className="font-heading typo-section-heading font-extrabold tracking-tight text-white">
             {partnerTitle}
           </h2>
           <PartnersMarquee
@@ -551,5 +551,3 @@ export function HomeSections({
     </main>
   );
 }
-
-

@@ -304,11 +304,44 @@ body {
   font-family: var(--font-syne), sans-serif;
 }
 
-/* Bebas Neue display accent font — used on hero gradient lines and other accent headlines.
-   Condensed, monolinear display face; pair with tracking-[0.04em] or wider so the
-   gradient fill reads cleanly between strokes at display scale. */
+/* ── Typography system — CSS custom properties ─────────────────────────────
+   Defaults here; overridden at runtime by TypographyProvider (Firestore).
+   The clamp() floor/ceiling guard against unsafe admin values. */
+:root {
+  /* Font families — populated from the font registry */
+  --typo-accent-family:  var(--font-bebas-neue), 'Bebas Neue', sans-serif;
+  --typo-heading-family: var(--font-syne), 'Syne', sans-serif;
+  /* Sizes */
+  --typo-hero-size:             clamp(1.4rem, 7.2cqi, 9rem);
+  --typo-line-height-hero:      0.9;
+  --typo-section-heading-size:  clamp(2rem, 4vw, 3.2rem);
+  --typo-line-height-section:   1.05;
+  /* Accent letter-spacing */
+  --typo-letter-spacing-accent: 0.04em;
+}
+
+/* .font-bebas is now dynamic — it resolves to whatever accent font the
+   admin has selected.  Backward-compatible: every existing usage of
+   .font-bebas continues to work and now also responds to admin changes. */
 .font-bebas {
-  font-family: var(--font-bebas-neue), var(--font-syne), sans-serif;
+  font-family: var(--typo-accent-family);
+  letter-spacing: var(--typo-letter-spacing-accent);
+}
+
+/* Semantic alias used by hero h1 (non-accent lines) and section h2 elements. */
+.font-heading {
+  font-family: var(--typo-heading-family);
+}
+
+/* Size utilities driven by the typography system. */
+.typo-hero-title {
+  font-size: var(--typo-hero-size);
+  line-height: var(--typo-line-height-hero);
+}
+
+.typo-section-heading {
+  font-size: var(--typo-section-heading-size);
+  line-height: var(--typo-line-height-section);
 }
 
 .font-jetbrains {

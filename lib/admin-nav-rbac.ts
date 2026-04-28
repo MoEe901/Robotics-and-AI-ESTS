@@ -16,6 +16,7 @@ const ALL_HREFS = [
   "/admin/notifications",
   "/admin/access",
   "/admin/layout",
+  "/admin/typography",
 ] as const;
 
 /** Minimum URLs each role may see in the admin sidebar. */

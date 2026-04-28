@@ -22,6 +22,7 @@ import {
   Sun,
   Users,
   X,
+  Type,
   type LucideIcon,
 } from "lucide-react";
 import Image from "next/image";
@@ -76,6 +77,7 @@ export const ADMIN_NAV_ITEMS: readonly AdminNavItem[] = [
   { href: "/admin/notifications", label: "Notifications", icon: Mail },
   { href: "/admin/activity", label: "Hero cards", icon: Activity },
   { href: "/admin/footer-config", label: "Footer", icon: PanelBottom },
+  { href: "/admin/typography", label: "Typography", icon: Type },
   { href: "/admin/layout", label: "Layout", icon: LayoutTemplate },
 ] as const;
 

@@ -371,15 +371,7 @@ export function HeroSection() {
           </div>
 
           <h1
-            className={cn(
-              "font-syne max-w-full font-extrabold uppercase leading-[0.9] tracking-tight [hyphens:none]",
-              /* cqi = % of the actual text column width (set by container-type on parent).
-                 7.2cqi (up from 6.5) makes the whole headline ~10 % larger at every
-                 breakpoint while the column-width constraint still prevents overflow.
-                 Klaxon accent lines are wider than Bebas Neue — the cqi unit absorbs
-                 that naturally since it scales to the column, not the viewport. */
-              "text-[clamp(1.4rem,7.2cqi,9rem)]",
-            )}
+            className="font-heading typo-hero-title max-w-full font-extrabold uppercase tracking-tight [hyphens:none]"
           >
             {hero.titleLines.map((line, idx) => {
               const accent = hero.accentIndices.includes(idx);
@@ -396,9 +388,9 @@ export function HeroSection() {
                              Syne's default so the gradient reads cleanly between strokes
                            – font-normal: Bebas Neue is a display-weight 400; keeps the
                              browser from applying faux-bold over the letterforms */
-                        "font-bebas font-normal hero-title-grad tracking-[0.04em] sm:tracking-[0.06em]"
+                        "font-bebas font-normal hero-title-grad"
                       : /* Non-accent lines stay in Syne ExtraBold — structural, geometric, white */
-                        "text-white tracking-[0.035em] sm:tracking-[0.05em]",
+                        "font-heading text-white tracking-[0.035em] sm:tracking-[0.05em]",
                   )}
                   style={{ animation: `heroFadeUp 0.8s ease both ${delay}s` }}
                 >
