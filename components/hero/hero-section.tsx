@@ -413,14 +413,14 @@ export function HeroSection() {
           >
             <Link
               href={hero.primaryCta.href || "/#apply"}
-              className="btn-shine font-jetbrains inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-gradient-to-br from-violet-600 to-cyan-500 px-6 py-3.5 text-[12px] font-medium uppercase tracking-[0.08em] text-white shadow-[0_0_30px_rgba(124,58,237,0.45)] transition hover:-translate-y-1 hover:shadow-[0_0_55px_rgba(124,58,237,0.65)] sm:min-h-0 sm:w-auto sm:justify-start sm:px-8"
+              className="btn-shine font-jetbrains inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-gradient-to-br from-violet-600 to-cyan-500 px-6 py-3.5 text-[12px] font-medium uppercase tracking-[0.08em] text-white shadow-[0_0_30px_rgba(124,58,237,0.45)] transition-[transform,box-shadow] duration-[var(--motion-dur-normal)] ease-[var(--motion-ease-lux)] hover:-translate-y-1 hover:shadow-[0_0_55px_rgba(124,58,237,0.65)] active:scale-[0.975] active:translate-y-0 sm:min-h-0 sm:w-auto sm:justify-start sm:px-8"
             >
               <ClipboardList className="size-4 shrink-0" strokeWidth={2} />
               {hero.primaryCta.label}
             </Link>
             <Link
               href={hero.secondaryCta.href || "/#events"}
-              className="font-jetbrains inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full border border-white/[0.15] bg-transparent px-6 py-3.5 text-[12px] font-medium uppercase tracking-[0.08em] text-slate-300 transition hover:border-violet-500/50 hover:text-white sm:min-h-0 sm:w-auto sm:justify-start sm:px-7"
+              className="font-jetbrains inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full border border-white/[0.15] bg-transparent px-6 py-3.5 text-[12px] font-medium uppercase tracking-[0.08em] text-slate-300 transition-[transform,border-color,color,box-shadow] duration-[var(--motion-dur-normal)] ease-[var(--motion-ease-lux)] hover:-translate-y-px hover:border-violet-500/50 hover:text-white hover:shadow-[0_0_22px_rgba(124,58,237,0.2)] active:scale-[0.975] active:translate-y-0 sm:min-h-0 sm:w-auto sm:justify-start sm:px-7"
             >
               <Calendar className="size-4 shrink-0" strokeWidth={2} />
               {hero.secondaryCta.label}
@@ -436,7 +436,7 @@ export function HeroSection() {
         <div className="mx-auto flex w-full max-w-[300px] flex-col gap-4 lg:ml-auto lg:mr-0">
           {hero.heroCards.activity.isVisible && !activityError && (activityLoading || activityRows.length > 0) ? (
           <div
-            className="w-full max-w-[300px] rounded-2xl border border-violet-500/25 bg-[rgba(13,15,26,0.15)] p-5 backdrop-blur-[16px] transition hover:-translate-x-1 hover:border-violet-500/45"
+            className="card-spotlight w-full max-w-[300px] rounded-2xl border border-violet-500/25 bg-[rgba(13,15,26,0.15)] p-5 backdrop-blur-[16px] transition-[transform,border-color,box-shadow] duration-[var(--motion-dur-normal)] ease-[var(--motion-ease-lux)] hover:-translate-x-1.5 hover:border-violet-500/50 hover:shadow-[0_0_24px_rgba(124,58,237,0.15)]"
             style={{ animation: "heroFadeLeft 1s ease both 0.65s" }}
           >
             <div style={{ animation: "heroCardFloat 6s ease-in-out infinite 1s" }}>
@@ -472,7 +472,7 @@ export function HeroSection() {
 
           {hero.heroCards.techStack.isVisible ? (
           <div
-            className="w-full max-w-[300px] rounded-2xl border border-violet-500/25 bg-[rgba(13,15,26,0.15)] p-5 backdrop-blur-[16px] transition hover:-translate-x-1 hover:border-violet-500/45"
+            className="card-spotlight w-full max-w-[300px] rounded-2xl border border-violet-500/25 bg-[rgba(13,15,26,0.15)] p-5 backdrop-blur-[16px] transition-[transform,border-color,box-shadow] duration-[var(--motion-dur-normal)] ease-[var(--motion-ease-lux)] hover:-translate-x-1.5 hover:border-violet-500/50 hover:shadow-[0_0_24px_rgba(124,58,237,0.15)]"
             style={{ animation: "heroFadeLeft 1s ease both 0.72s" }}
           >
             <div style={{ animation: "heroCardFloat 7s ease-in-out infinite 0.5s" }}>
@@ -514,7 +514,7 @@ export function HeroSection() {
 
           {hero.heroCards.growth.isVisible ? (
           <div
-            className="w-full max-w-[300px] rounded-2xl border border-violet-500/25 bg-[rgba(13,15,26,0.15)] p-5 backdrop-blur-[16px] transition hover:-translate-x-1 hover:border-violet-500/45"
+            className="card-spotlight w-full max-w-[300px] rounded-2xl border border-violet-500/25 bg-[rgba(13,15,26,0.15)] p-5 backdrop-blur-[16px] transition-[transform,border-color,box-shadow] duration-[var(--motion-dur-normal)] ease-[var(--motion-ease-lux)] hover:-translate-x-1.5 hover:border-violet-500/50 hover:shadow-[0_0_24px_rgba(124,58,237,0.15)]"
             style={{ animation: "heroFadeLeft 1s ease both 0.78s" }}
           >
             <div style={{ animation: "heroCardFloat 5.5s ease-in-out infinite 1s" }}>

@@ -339,7 +339,7 @@ export function HomeSections({
             return (
               <article
                 key={item.title}
-                className="card-lift-3d bg-[#0d0f1a] p-8 transition-colors hover:bg-violet-500/[0.04] md:p-10"
+                className="card-lift-3d card-spotlight bg-[#0d0f1a] p-8 transition-colors hover:bg-violet-500/[0.04] md:p-10"
               >
                 <div className="mb-5 flex size-11 items-center justify-center rounded-xl border border-violet-500/20 bg-violet-500/[0.08] text-violet-200">
                   <KnowIcon className="size-5" strokeWidth={1.75} />
@@ -420,7 +420,7 @@ export function HomeSections({
                   return (
                     <div
                       key={`${h.title}-${idx}`}
-                      className="flex items-center gap-3 rounded-xl border border-violet-500/10 bg-violet-500/[0.03] px-4 py-3 transition hover:translate-x-1.5 hover:border-violet-500/30 hover:bg-violet-500/[0.07]"
+                      className="flex items-center gap-3 rounded-xl border border-violet-500/10 bg-violet-500/[0.03] px-4 py-3 transition-[transform,border-color,background-color] duration-[var(--motion-dur-normal)] ease-[var(--motion-ease-lux)] hover:translate-x-2 hover:border-violet-500/30 hover:bg-violet-500/[0.07]"
                     >
                       <div className={`inline-flex size-8 items-center justify-center rounded-lg ${ring}`}>
                         <Icon className="size-4" />
@@ -439,7 +439,7 @@ export function HomeSections({
               {whyJoin.cards.map((card, idx) => (
                 <article
                   key={card.title}
-                  className="card-lift-3d group relative overflow-hidden bg-[#0d0f1a] p-6 transition-colors hover:bg-violet-500/[0.05] md:p-8"
+                  className="card-lift-3d card-spotlight group relative overflow-hidden bg-[#0d0f1a] p-6 transition-colors hover:bg-violet-500/[0.05] md:p-8"
                 >
                   <p className="font-jetbrains pointer-events-none absolute right-5 top-4 text-4xl font-medium text-violet-500/[0.12] md:text-5xl">
                     {String(idx + 1).padStart(2, "0")}
@@ -488,7 +488,7 @@ export function HomeSections({
               return (
                 <article
                   key={card.title}
-                  className="card-lift-3d group relative overflow-hidden bg-[#0d0f1a] p-6 transition-colors hover:bg-violet-500/[0.04] md:p-8"
+                  className="card-lift-3d card-spotlight group relative overflow-hidden bg-[#0d0f1a] p-6 transition-colors hover:bg-violet-500/[0.04] md:p-8"
                 >
                   <span
                     className="pointer-events-none absolute left-0 top-0 h-0 w-[3px] bg-gradient-to-b from-violet-600 to-cyan-500 transition-all duration-500 group-hover:h-full"

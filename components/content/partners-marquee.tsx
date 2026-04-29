@@ -96,14 +96,14 @@ export function PartnersMarquee({ logos, gapPx, durationSec, logoBasis }: Partne
             aria-hidden={repeatIdx > 0 ? "true" : undefined}
           >
             {prepared.map((logo) => (
-              <div key={`${repeatIdx}-${logo.key}`} className="shrink-0" style={{ flexBasis: logoBasis }}>
+              <div key={`${repeatIdx}-${logo.key}`} className="group shrink-0" style={{ flexBasis: logoBasis }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={logo.imageUrl}
                   alt={logo.alt}
                   loading="eager"
                   decoding="async"
-                  className="h-14 w-full object-contain opacity-95 transition-[filter] duration-300"
+                  className="h-14 w-full object-contain opacity-70 transition-[filter,opacity] duration-[var(--motion-dur-slow)] group-hover:opacity-100"
                   style={{
                     filter: logoFilter(logo.sourceTone ?? "light", theme),
                   }}

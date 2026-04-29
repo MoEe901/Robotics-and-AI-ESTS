@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useGsapStagger } from "@/lib/hooks/use-gsap-reveal";
 
 import type { ProcessStepsConfig } from "@/lib/firebase/types";
 import { DEFAULT_PROCESS_STEPS_CONFIG } from "@/lib/content/process-steps-defaults";
@@ -165,7 +166,7 @@ export function ProcessStepsSection({ config }: ProcessStepsSectionProps) {
                   {/* timeline node — col 1 on mobile, center on md */}
                   <div className="relative z-[1] flex flex-col items-center gap-2 md:col-start-2 md:row-start-1">
                     <div
-                      className={`flex size-[52px] shrink-0 items-center justify-center rounded-full border bg-[#0e0e14] transition-transform duration-300 group-hover:scale-105 ${accent.ring}`}
+                      className={`flex size-[52px] shrink-0 items-center justify-center rounded-full border bg-[#0e0e14] transition-[transform,box-shadow] duration-[var(--motion-dur-normal)] ease-[var(--motion-ease-spring)] group-hover:scale-110 group-hover:shadow-[0_0_24px_var(--step-glow)] ${accent.ring}`}
                     >
                       <Icon className="size-[22px]" strokeWidth={1.6} aria-hidden />
                     </div>
@@ -178,7 +179,7 @@ export function ProcessStepsSection({ config }: ProcessStepsSectionProps) {
                   <div
                     className={`relative rounded-2xl border border-white/10 bg-[#0e0e14]/90 p-6 shadow-inner md:row-start-1 md:p-8 ${
                       even ? "md:col-start-3" : "md:col-start-1"
-                    } ${accent.cardHover} transition-transform duration-300 group-hover:-translate-y-0.5`}
+                    } ${accent.cardHover} transition-[transform,border-color,box-shadow] duration-[var(--motion-dur-normal)] ease-[var(--motion-ease-lux)] group-hover:-translate-y-1`}
                   >
                     <div
                       className={`pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br ${accent.glow} to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100`}

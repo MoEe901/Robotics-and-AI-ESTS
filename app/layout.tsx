@@ -3,6 +3,7 @@ import { Bebas_Neue, Inter, JetBrains_Mono, Space_Grotesk, Syne } from "next/fon
 
 import { FirestoreDebugRawTeamMembers } from "@/components/firebase/firestore-debug-raw";
 import { StartupLoader } from "@/components/layout/startup-loader";
+import { ScrollProgress } from "@/components/layout/scroll-progress";
 import { ThemeRoot } from "@/components/layout/theme-root";
 import { LanguageProvider } from "@/lib/i18n/context";
 import { TypographyProvider } from "@/components/providers/typography-provider";
@@ -60,6 +61,7 @@ export default function RootLayout({
         <ThemeRoot>
           <LanguageProvider>
             <TypographyProvider>
+            <ScrollProgress />
             <StartupLoader>
               {process.env.NODE_ENV === "development" ? <FirestoreDebugRawTeamMembers /> : null}
               <div className="relative min-h-0 flex-1">{children}</div>

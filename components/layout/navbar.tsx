@@ -13,26 +13,49 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Menu, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { easeSnappy, durS } from "@/lib/motion";
 
 export function Navbar() {
   const { data: navbarConfig } = useFirestoreDoc("siteConfig/navbar", (raw) => parseNavbarDoc(raw));
   const nav = navbarConfig ?? DEFAULT_NAVBAR_CONFIG;
   const { t, locale } = useLanguage();
   const [open, setOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [activeHref, setActiveHref] = useState<string | null>(null);
+  const indicatorRef = useRef<HTMLSpanElement>(null);
+  const navRef = useRef<HTMLElement>(null);
 
-  /** Translate a CMS nav link label using the locale map (no-op in EN). */
   function xlLink(label: string) {
     if (locale === "en") return label;
     return t.nav.linkLabelMap[label.toLowerCase()] ?? label;
   }
-  const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 48);
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  /** Move the sliding indicator to whichever link is hovered. */
+  function handleLinkEnter(e: React.PointerEvent<HTMLAnchorElement>) {
+    const link = e.currentTarget;
+    const nav = navRef.current;
+    const indicator = indicatorRef.current;
+    if (!nav || !indicator) return;
+    const navRect = nav.getBoundingClientRect();
+    const linkRect = link.getBoundingClientRect();
+    indicator.style.width  = `${linkRect.width}px`;
+    indicator.style.left   = `${linkRect.left - navRect.left}px`;
+    indicator.style.opacity = "1";
+    setActiveHref(link.getAttribute("href") ?? null);
+  }
+
+  function handleNavLeave() {
+    const indicator = indicatorRef.current;
+    if (indicator) indicator.style.opacity = "0";
+    setActiveHref(null);
+  }
 
   const navLinks = nav.links.filter((item) => item.isVisible && item.href !== "/#apply");
   const applyNav = nav.links.find((item) => item.isVisible && item.href === "/#apply");
@@ -44,18 +67,18 @@ export function Navbar() {
   return (
     <>
       <motion.header
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, ease: "easeOut" }}
-        className={`fixed inset-x-0 top-0 z-50 mx-auto mt-2 flex w-[min(calc(100%-0.9rem),1100px)] max-w-full items-center justify-between gap-1.5 rounded-full border px-2 py-2 backdrop-blur-[20px] backdrop-saturate-150 transition-all duration-[400ms] ease-in-out sm:mt-4 sm:w-[min(calc(100%-1.25rem),1100px)] sm:gap-2 sm:px-3 sm:py-2.5 md:mt-6 md:gap-3 md:px-7 md:py-3.5 ${shellClass}`}
+        initial={{ opacity: 0, y: -20, filter: "blur(8px)" }}
+        animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+        transition={{ duration: durS.reveal, ease: easeSnappy, filter: { duration: 0.5 } }}
+        className={`fixed inset-x-0 top-0 z-50 mx-auto mt-2 flex w-[min(calc(100%-0.9rem),1100px)] max-w-full items-center justify-between gap-1.5 rounded-full border px-2 py-2 backdrop-blur-[20px] backdrop-saturate-150 transition-[border-color,background-color,box-shadow] duration-[400ms] ease-in-out sm:mt-4 sm:w-[min(calc(100%-1.25rem),1100px)] sm:gap-2 sm:px-3 sm:py-2.5 md:mt-6 md:gap-3 md:px-7 md:py-3.5 ${shellClass}`}
       >
         <Link
           href="/"
-          className="flex min-w-0 flex-1 items-center gap-1.5 sm:gap-2 sm:pr-2"
+          className="flex min-w-0 flex-1 items-center gap-1.5 sm:gap-2 sm:pr-2 transition-opacity duration-[var(--motion-dur-fast)] hover:opacity-80"
           onClick={() => setOpen(false)}
         >
           <span
-            className="nav-dot-pulse size-2 shrink-0 rounded-full bg-cyan-400"
+            className="nav-dot-pulse glow-dot size-2 shrink-0 rounded-full bg-cyan-400 text-cyan-400"
             aria-hidden
           />
           <Image
@@ -73,28 +96,42 @@ export function Navbar() {
         </Link>
 
         {/* Desktop nav */}
-        <nav className="ml-auto hidden shrink-0 items-center gap-6 md:flex">
+        <nav
+          ref={navRef}
+          className="relative ml-auto hidden shrink-0 items-center gap-6 md:flex"
+          onPointerLeave={handleNavLeave}
+        >
+          {/* Sliding hover indicator */}
+          <span
+            ref={indicatorRef}
+            aria-hidden
+            className="pointer-events-none absolute -bottom-1 h-px rounded-full bg-gradient-to-r from-violet-400 to-cyan-400 opacity-0"
+            style={{
+              transition: `left ${durS.fast}s ${easeSnappy.join(",")}, width ${durS.fast}s ${easeSnappy.join(",")}, opacity ${durS.fast}s`,
+              left: 0,
+              width: 0,
+            }}
+          />
+
           {navLinks.map((item) => (
             <Link
               key={item.id}
               href={item.href}
               {...(item.isExternal ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-              className="text-[11px] font-medium uppercase tracking-[0.12em] text-slate-400/80 transition-colors duration-200 hover:text-cyan-400"
+              onPointerEnter={handleLinkEnter}
+              className="nav-link-indicator text-[11px] font-medium uppercase tracking-[0.12em] text-slate-400/80 transition-colors duration-[var(--motion-dur-fast)] hover:text-white"
             >
               {xlLink(item.label)}
             </Link>
           ))}
 
-          {/* Language switcher */}
           <LanguageSwitcher />
-
-          {/* Theme toggle */}
           {nav.showThemeToggle ? <ThemeToggle /> : null}
 
           {applyNav ? (
             <Link
               href={nav.ctaButton.href || applyNav.href}
-              className="btn-shine font-jetbrains rounded-full bg-gradient-to-br from-violet-600 to-cyan-500 px-5 py-2 text-[11px] font-medium uppercase tracking-[0.05em] text-white shadow-[0_0_22px_rgba(124,58,237,0.38)] transition hover:-translate-y-px hover:shadow-[0_0_38px_rgba(124,58,237,0.58)]"
+              className="btn-magnetic btn-shine font-jetbrains rounded-full bg-gradient-to-br from-violet-600 to-cyan-500 px-5 py-2 text-[11px] font-medium uppercase tracking-[0.05em] text-white shadow-[0_0_22px_rgba(124,58,237,0.38)] transition-[transform,box-shadow] duration-[var(--motion-dur-normal)] ease-[var(--motion-ease-lux)] hover:-translate-y-px hover:shadow-[0_0_38px_rgba(124,58,237,0.58)] active:scale-[0.975]"
             >
               {nav.ctaButton.label}
             </Link>
@@ -103,14 +140,38 @@ export function Navbar() {
 
         {/* Mobile hamburger */}
         <div className="flex shrink-0 items-center gap-1 sm:gap-1.5 md:hidden">
-          <button
+          <motion.button
             type="button"
-            className="inline-flex size-9 shrink-0 items-center justify-center rounded-full border border-violet-500/25 text-white/85 sm:size-10"
+            whileTap={{ scale: 0.9 }}
+            transition={{ duration: durS.instant }}
+            className="inline-flex size-9 shrink-0 items-center justify-center rounded-full border border-violet-500/25 text-white/85 transition-colors duration-[var(--motion-dur-fast)] hover:border-violet-500/50 hover:text-white sm:size-10"
             aria-label={open ? t.nav.closeMenu : t.nav.openMenu}
             onClick={() => setOpen((v) => !v)}
           >
-            {open ? <X className="size-4" /> : <Menu className="size-4" />}
-          </button>
+            <AnimatePresence mode="wait" initial={false}>
+              {open ? (
+                <motion.span
+                  key="x"
+                  initial={{ rotate: -90, opacity: 0 }}
+                  animate={{ rotate: 0, opacity: 1 }}
+                  exit={{ rotate: 90, opacity: 0 }}
+                  transition={{ duration: durS.fast }}
+                >
+                  <X className="size-4" />
+                </motion.span>
+              ) : (
+                <motion.span
+                  key="menu"
+                  initial={{ rotate: 90, opacity: 0 }}
+                  animate={{ rotate: 0, opacity: 1 }}
+                  exit={{ rotate: -90, opacity: 0 }}
+                  transition={{ duration: durS.fast }}
+                >
+                  <Menu className="size-4" />
+                </motion.span>
+              )}
+            </AnimatePresence>
+          </motion.button>
         </div>
       </motion.header>
 
@@ -119,35 +180,46 @@ export function Navbar() {
         {open ? (
           <motion.div
             key="mobile-menu"
-            initial={{ opacity: 0, y: -10, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -8, scale: 0.98 }}
-            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+            initial={{ opacity: 0, y: -8, scale: 0.96, filter: "blur(8px)" }}
+            animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
+            exit={{ opacity: 0, y: -6, scale: 0.97, filter: "blur(4px)" }}
+            transition={{ duration: durS.normal, ease: easeSnappy }}
             className="fixed inset-x-0 top-[64px] z-40 mx-auto w-[min(calc(100%-1rem),1100px)] rounded-2xl border border-violet-500/25 bg-[rgba(13,15,26,0.92)] p-2.5 backdrop-blur-xl sm:top-[74px] sm:w-[min(calc(100%-1.25rem),1100px)] sm:p-3 md:hidden"
           >
             <nav className="flex flex-col gap-1">
-              {navLinks.map((item) => (
-                <Link
+              {navLinks.map((item, i) => (
+                <motion.div
                   key={item.id}
-                  href={item.href}
-                  {...(item.isExternal ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-                  onClick={() => setOpen(false)}
-                  className="rounded-xl px-3 py-2 text-sm font-medium uppercase tracking-wide text-slate-300 hover:bg-violet-500/10 hover:text-white"
+                  initial={{ opacity: 0, x: -12 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: durS.normal, delay: i * 0.04, ease: easeSnappy }}
                 >
-                  {xlLink(item.label)}
-                </Link>
+                  <Link
+                    href={item.href}
+                    {...(item.isExternal ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+                    onClick={() => setOpen(false)}
+                    className="block rounded-xl px-3 py-2 text-sm font-medium uppercase tracking-wide text-slate-300 transition-colors duration-[var(--motion-dur-fast)] hover:bg-violet-500/10 hover:text-white"
+                  >
+                    {xlLink(item.label)}
+                  </Link>
+                </motion.div>
               ))}
               {applyNav ? (
-                <Link
-                  href={nav.ctaButton.href || applyNav.href}
-                  onClick={() => setOpen(false)}
-                  className="btn-shine font-jetbrains mt-1 rounded-xl bg-gradient-to-br from-violet-600 to-cyan-500 px-3 py-2.5 text-center text-xs font-medium uppercase tracking-wide text-white"
+                <motion.div
+                  initial={{ opacity: 0, x: -12 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: durS.normal, delay: navLinks.length * 0.04, ease: easeSnappy }}
                 >
-                  {nav.ctaButton.label}
-                </Link>
+                  <Link
+                    href={nav.ctaButton.href || applyNav.href}
+                    onClick={() => setOpen(false)}
+                    className="btn-shine font-jetbrains mt-1 block rounded-xl bg-gradient-to-br from-violet-600 to-cyan-500 px-3 py-2.5 text-center text-xs font-medium uppercase tracking-wide text-white transition-opacity hover:opacity-90 active:opacity-80"
+                  >
+                    {nav.ctaButton.label}
+                  </Link>
+                </motion.div>
               ) : null}
 
-              {/* Theme toggle + language switcher — mobile */}
               <div className="mt-1 flex items-center justify-between px-1 pb-1">
                 <LanguageSwitcherMobile />
                 {nav.showThemeToggle ? (

@@ -2,6 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { motion } from "framer-motion";
+import { durS, easeLux, stagger } from "@/lib/motion";
 
 import {
   DEFAULT_FOOTER_CONFIG,
@@ -145,7 +147,7 @@ export function Footer() {
                   <li key={`${col.heading}-${item.label}`}>
                     <Link
                       href={item.href}
-                      className="text-[13px] text-slate-400/55 transition-colors duration-200 hover:text-cyan-400"
+                      className="footer-link text-[13px] text-slate-400/55 transition-colors duration-[var(--motion-dur-fast)] hover:text-cyan-400"
                     >
                       {item.label}
                     </Link>
@@ -168,7 +170,7 @@ export function Footer() {
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label={SOCIAL_LABEL[s.platform]}
-                    className="flex size-9 items-center justify-center rounded-full border border-violet-500/20 text-slate-400/70 transition-all duration-200 hover:border-cyan-400/35 hover:text-cyan-400"
+                    className="pill-hover flex size-9 items-center justify-center rounded-full border border-violet-500/20 text-slate-400/70 transition-[transform,border-color,color] duration-[var(--motion-dur-fast)] hover:border-cyan-400/40 hover:text-cyan-400 hover:shadow-[0_0_16px_rgba(34,211,238,0.2)]"
                   >
                     {SOCIAL_ICONS[s.platform]}
                   </a>

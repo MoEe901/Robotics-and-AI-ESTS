@@ -1,3 +1,5 @@
+"use client";
+
 import { ChevronRight } from "lucide-react";
 import Link from "next/link";
 
@@ -5,6 +7,7 @@ import type { TeamMemberListItem } from "@/lib/team/types";
 import { formatRoleTitles } from "@/lib/team/format-roles";
 import { memberImageSrc } from "@/lib/team/image-url";
 import { TAXONOMY_NOT_SET, taxonomyDisplay } from "@/lib/team/taxonomy";
+import { useSpotlight } from "@/lib/hooks/use-spotlight";
 import { cn } from "@/lib/utils";
 
 export type MemberCardCategory =
@@ -54,6 +57,15 @@ const catBadgeClass: Record<MemberCardCategory, string> = {
   other: "border border-white/[0.13] bg-white/[0.08] text-[#6b6a80]",
 };
 
+const catSpotlightClass: Record<MemberCardCategory, string> = {
+  executive: "card-spotlight",
+  professor: "card-spotlight",
+  doctoral: "card-spotlight",
+  design: "card-spotlight",
+  media: "card-spotlight",
+  other: "card-spotlight",
+};
+
 type TeamMemberCardProps = {
   member: TeamMemberListItem;
   view?: "grid" | "list";
@@ -75,27 +87,36 @@ export function TeamMemberCard({ member, view = "grid" }: TeamMemberCardProps) {
   const cat = memberCardCategory(member);
   const badgeText = member.roleType?.trim() || deptLabel;
 
+  const { ref, handlers } = useSpotlight<HTMLElement>();
+
   const inner = (
     <article
+      ref={ref}
+      {...(view === "grid" ? handlers : {})}
       data-cat={cat}
       className={cn(
-        "group relative cursor-pointer overflow-hidden rounded-[20px] border border-white/[0.07] bg-[#0d0d18] text-[#f0eff5] transition duration-300",
+        "group relative cursor-pointer overflow-hidden rounded-[20px] border border-white/[0.07] bg-[#0d0d18] text-[#f0eff5]",
         view === "list"
-          ? "flex items-stretch gap-0 rounded-[14px]"
-          : "flex h-full w-full min-w-0 flex-col hover:-translate-y-1 hover:shadow-[0_20px_60px_rgba(0,0,0,0.5)]",
+          ? "flex items-stretch gap-0 rounded-[14px] transition-[border-color] duration-[var(--motion-dur-normal)]"
+          : cn(
+              "flex h-full w-full min-w-0 flex-col",
+              catSpotlightClass[cat],
+            ),
         catBorderHover[cat],
+        "transition-[transform,box-shadow,border-color] duration-[var(--motion-dur-normal)] ease-[var(--motion-ease-lux)]",
+        view === "grid" && "hover:-translate-y-[5px] hover:shadow-[0_24px_64px_rgba(0,0,0,0.5),0_0_0_1px_rgba(124,58,237,0.1)]",
       )}
     >
       <div
         className={cn(
-          "relative shrink-0 overflow-hidden bg-[#111120]",
+          "team-img-wrap relative shrink-0 overflow-hidden bg-[#111120]",
           view === "grid" ? "h-[240px] w-full max-sm:h-[180px]" : "h-20 w-20 rounded-xl sm:h-20 sm:w-20",
         )}
       >
         <img
           src={src}
           alt={member.name}
-          className="size-full object-cover object-top brightness-[0.85] saturate-[0.85] transition duration-500 group-hover:scale-[1.06] group-hover:brightness-[0.95] group-hover:saturate-100"
+          className="size-full object-cover object-top brightness-[0.85] saturate-[0.85]"
           loading="lazy"
           decoding="async"
         />
@@ -107,7 +128,7 @@ export function TeamMemberCard({ member, view = "grid" }: TeamMemberCardProps) {
             />
             <span
               className={cn(
-                "absolute left-3.5 top-3.5 z-[2] rounded-full px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.18em] backdrop-blur-md sm:left-3.5 sm:top-3.5",
+                "absolute left-3.5 top-3.5 z-[2] rounded-full px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.18em] backdrop-blur-md transition-transform duration-[var(--motion-dur-fast)] group-hover:scale-[1.04] sm:left-3.5 sm:top-3.5",
                 catBadgeClass[cat],
               )}
             >
@@ -131,7 +152,7 @@ export function TeamMemberCard({ member, view = "grid" }: TeamMemberCardProps) {
             view === "list" ? "flex flex-1 flex-col justify-center gap-0" : "flex min-h-0 flex-1 flex-col",
           )}
         >
-          <p className="mb-1 text-[17px] font-medium tracking-tight text-[#f0eff5]">{member.name}</p>
+          <p className="mb-1 text-[17px] font-medium tracking-tight text-[#f0eff5] transition-colors duration-[var(--motion-dur-fast)] group-hover:text-white">{member.name}</p>
           <p
             className={cn(
               "flex items-center gap-1.5 text-xs font-light text-[#6b6a80]",
@@ -156,9 +177,10 @@ export function TeamMemberCard({ member, view = "grid" }: TeamMemberCardProps) {
 
         <div
           className={cn(
-            "flex size-8 shrink-0 items-center justify-center rounded-lg border border-white/[0.13] bg-white/[0.05] text-[#6b6a80] transition duration-200",
+            "flex size-8 shrink-0 items-center justify-center rounded-lg border border-white/[0.13] bg-white/[0.05] text-[#6b6a80]",
+            "transition-[transform,background-color,border-color,color,opacity] duration-[var(--motion-dur-normal)] ease-[var(--motion-ease-lux)]",
             view === "grid"
-              ? "absolute bottom-5 right-5 opacity-0 group-hover:opacity-100"
+              ? "absolute bottom-5 right-5 opacity-0 translate-x-2 group-hover:opacity-100 group-hover:translate-x-0"
               : "relative mr-4 opacity-100",
             catArrowHover[cat],
           )}

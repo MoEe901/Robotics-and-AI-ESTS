@@ -1095,3 +1095,325 @@ h3 {
 [data-theme="light"] #events .bg-gradient-to-t {
   background: linear-gradient(to top, rgba(248,250,252,0.9), rgba(248,250,252,0.3), rgba(248,250,252,0.05)) !important;
 }
+
+/* ============================================================
+   MOTION DESIGN SYSTEM — CSS layer
+   All animation atoms live here. Components reference these
+   tokens so durations/easings stay consistent globally.
+   ============================================================ */
+
+:root {
+  /* Duration tokens */
+  --motion-dur-instant:  80ms;
+  --motion-dur-fast:    150ms;
+  --motion-dur-normal:  260ms;
+  --motion-dur-slow:    420ms;
+  --motion-dur-slower:  650ms;
+  --motion-dur-reveal:  880ms;
+
+  /* Easing tokens */
+  --motion-ease-lux:    cubic-bezier(0.16, 1, 0.3, 1);
+  --motion-ease-snappy: cubic-bezier(0.22, 1, 0.36, 1);
+  --motion-ease-out:    cubic-bezier(0, 0, 0.2, 1);
+  --motion-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --motion-ease-inout:  cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Spotlight defaults */
+  --spotlight-x: 50%;
+  --spotlight-y: 50%;
+}
+
+/* Respect reduced-motion everywhere */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ---- Button ripple ---------------------------------------- */
+.btn-ripple {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.22);
+  pointer-events: none;
+  transform: scale(0);
+  animation: btnRipple var(--motion-dur-slower) var(--motion-ease-out) forwards;
+}
+[data-theme="light"] .btn-ripple {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+@keyframes btnRipple {
+  to {
+    transform: scale(1);
+    opacity: 0;
+  }
+}
+
+/* ---- Spotlight card effect --------------------------------
+   Add class "card-spotlight" + the useSpotlight hook.
+   Renders a soft radial glow that follows the cursor.          */
+.card-spotlight {
+  --spotlight-opacity: 0;
+  position: relative;
+  overflow: hidden;
+  transition:
+    transform var(--motion-dur-normal) var(--motion-ease-lux),
+    box-shadow var(--motion-dur-normal) var(--motion-ease-lux),
+    border-color var(--motion-dur-normal) var(--motion-ease-out);
+}
+.card-spotlight::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    280px circle at var(--spotlight-x) var(--spotlight-y),
+    rgba(124, 58, 237, 0.13) 0%,
+    transparent 70%
+  );
+  opacity: var(--spotlight-opacity);
+  transition: opacity var(--motion-dur-fast) var(--motion-ease-out);
+  pointer-events: none;
+  z-index: 0;
+  border-radius: inherit;
+}
+.card-spotlight:hover {
+  --spotlight-opacity: 1;
+}
+
+/* Cyan spotlight variant */
+.card-spotlight-cyan::before {
+  background: radial-gradient(
+    260px circle at var(--spotlight-x) var(--spotlight-y),
+    rgba(6, 182, 212, 0.11) 0%,
+    transparent 70%
+  );
+}
+
+/* ---- Magnetic button base --------------------------------- */
+.btn-magnetic {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    transform var(--motion-dur-fast) var(--motion-ease-spring),
+    box-shadow var(--motion-dur-normal) var(--motion-ease-lux);
+  will-change: transform;
+}
+
+/* ---- Improved card-lift-3d -------------------------------- */
+.card-lift-3d {
+  transition:
+    transform var(--motion-dur-normal) var(--motion-ease-lux),
+    box-shadow var(--motion-dur-normal) var(--motion-ease-lux),
+    border-color var(--motion-dur-normal) var(--motion-ease-out);
+  transform-style: preserve-3d;
+}
+.card-lift-3d:hover {
+  transform: translateY(-4px) scale(1.008);
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.45),
+    0 0 0 1px rgba(124, 58, 237, 0.12);
+}
+.card-lift-3d:active {
+  transform: translateY(-1px) scale(1.002);
+}
+
+/* ---- Staggered fade-in utility ----------------------------
+   Add inline --stagger-i CSS variable on children.            */
+.stagger-child {
+  animation:
+    staggerFadeUp var(--motion-dur-reveal) var(--motion-ease-lux) both;
+  animation-delay: calc(var(--stagger-i, 0) * 65ms);
+}
+
+@keyframes staggerFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+    filter: blur(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0px);
+  }
+}
+
+/* ---- Link underline slide indicator -----------------------
+   Add class "nav-link-indicator" to nav anchors.              */
+.nav-link-indicator {
+  position: relative;
+  overflow: hidden;
+}
+.nav-link-indicator::after {
+  content: "";
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 100%;
+  height: 1.5px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: right center;
+  transition: transform var(--motion-dur-fast) var(--motion-ease-snappy);
+  border-radius: 2px;
+}
+.nav-link-indicator:hover::after,
+.nav-link-indicator[aria-current="page"]::after {
+  transform: scaleX(1);
+  transform-origin: left center;
+}
+
+/* ---- Section heading gradient animate -------------------- */
+@keyframes gradientShift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.hero-title-grad-animate {
+  background-size: 200% 200%;
+  animation: gradientShift 6s ease infinite;
+}
+
+/* ---- Skeleton shimmer ------------------------------------- */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.04) 25%,
+    rgba(255, 255, 255, 0.10) 50%,
+    rgba(255, 255, 255, 0.04) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeletonShimmer 1.8s ease-in-out infinite;
+  border-radius: 6px;
+}
+@keyframes skeletonShimmer {
+  from { background-position: 200% 0; }
+  to   { background-position: -200% 0; }
+}
+
+/* ---- Focus ring upgrade ----------------------------------- */
+:focus-visible {
+  outline: 2px solid rgba(124, 58, 237, 0.7);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* ---- Smooth page entrance --------------------------------- */
+.page-enter {
+  animation: pageEnter var(--motion-dur-reveal) var(--motion-ease-lux) both;
+}
+@keyframes pageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0px);
+  }
+}
+
+/* ---- FAQ accordion spring feel ---------------------------- */
+.faq-answer-grid {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition:
+    grid-template-rows var(--motion-dur-slow) var(--motion-ease-lux);
+}
+.faq-answer-grid.open {
+  grid-template-rows: 1fr;
+}
+.faq-answer-grid > div {
+  overflow: hidden;
+}
+
+/* ---- Footer link hover ----------------------------------- */
+.footer-link {
+  position: relative;
+  display: inline-block;
+  transition: color var(--motion-dur-fast) var(--motion-ease-out);
+}
+.footer-link::after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform var(--motion-dur-fast) var(--motion-ease-snappy);
+}
+.footer-link:hover::after {
+  transform: scaleX(1);
+  transform-origin: left;
+}
+
+/* ---- Glowing dot pulse (enhanced) ------------------------ */
+.glow-dot {
+  animation: glowDotPulse 2.4s ease-in-out infinite;
+}
+@keyframes glowDotPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 currentColor;
+    opacity: 1;
+  }
+  50% {
+    box-shadow: 0 0 0 5px transparent;
+    opacity: 0.7;
+  }
+}
+
+/* ---- Team card image parallax ---------------------------- */
+.team-img-wrap img {
+  transition:
+    transform var(--motion-dur-slow) var(--motion-ease-lux),
+    filter var(--motion-dur-slow) var(--motion-ease-out);
+}
+.team-img-wrap:hover img {
+  transform: scale(1.07) translateY(-4px);
+  filter: brightness(0.95) saturate(1.05);
+}
+
+/* ---- Inter-element connection line draw ------------------ */
+@keyframes lineDraw {
+  from { stroke-dashoffset: 1; }
+  to   { stroke-dashoffset: 0; }
+}
+.line-draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  pathLength: 1;
+}
+.line-draw.animate {
+  animation: lineDraw var(--motion-dur-crawl, 1.2s) var(--motion-ease-lux) forwards;
+}
+
+/* ---- Magnetic hover (JS-driven transform) ---------------- */
+.magnetic-wrap {
+  display: inline-flex;
+  transition: transform var(--motion-dur-fast) var(--motion-ease-spring);
+  will-change: transform;
+}
+
+/* ---- Hover lift for interactive pills / badges ----------- */
+.pill-hover {
+  transition:
+    transform var(--motion-dur-fast) var(--motion-ease-spring),
+    background-color var(--motion-dur-fast) var(--motion-ease-out),
+    border-color var(--motion-dur-fast) var(--motion-ease-out);
+}
+.pill-hover:hover {
+  transform: translateY(-2px);
+}
+.pill-hover:active {
+  transform: translateY(0);
+}
