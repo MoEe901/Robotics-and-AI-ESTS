@@ -269,6 +269,7 @@ export type Translations = {
       titleLine: string;
       titleAccent: string;
       description: string;
+      buttonLabels?: Record<string, string>;
     };
   };
 
