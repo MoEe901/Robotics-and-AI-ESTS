@@ -7,6 +7,7 @@ import { motion, useMotionValue, useScroll, useSpring, useTransform } from "fram
 import { useCallback, useMemo, useRef, useState } from "react";
 
 import { HeroParticleCanvas } from "@/components/hero/hero-particle-canvas";
+import { HeroFloatingShapes } from "@/components/hero/hero-floating-shapes";
 import { HeroStatsStrip } from "@/components/hero/hero-stats-strip";
 import { DEFAULT_HERO_PUBLIC } from "@/lib/content/site-content-parser";
 import { db } from "@/lib/firebase";
@@ -294,6 +295,9 @@ export function HeroSection() {
 
       <HeroParticleCanvas />
 
+      {/* 3-D floating geometric shapes — mouse-reactive, pause when off-screen */}
+      <HeroFloatingShapes />
+
       <div
         className="pointer-events-none absolute inset-0 z-[3]"
         style={{
@@ -401,7 +405,7 @@ export function HeroSection() {
           </h1>
 
           <p
-            className="mt-6 max-w-[min(96vw,520px)] text-[clamp(1rem,3.4vw,1.05rem)] font-light leading-[1.65] text-slate-400/90 sm:mt-7 sm:leading-[1.8] lg:mt-7 lg:leading-[1.85]"
+            className="mt-6 max-w-[min(96vw,580px)] text-[clamp(1.05rem,3.6vw,1.2rem)] font-light leading-[1.7] text-slate-400/90 sm:mt-8 sm:leading-[1.8] lg:mt-8 lg:leading-[1.85]"
             style={{ animation: "heroFadeUp 0.8s ease both 0.42s" }}
           >
             {hero.description}
@@ -413,14 +417,14 @@ export function HeroSection() {
           >
             <Link
               href={hero.primaryCta.href || "/#apply"}
-              className="btn-shine font-jetbrains inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-gradient-to-br from-violet-600 to-cyan-500 px-6 py-3.5 text-[12px] font-medium uppercase tracking-[0.08em] text-white shadow-[0_0_30px_rgba(124,58,237,0.45)] transition-[transform,box-shadow] duration-[var(--motion-dur-normal)] ease-[var(--motion-ease-lux)] hover:-translate-y-1 hover:shadow-[0_0_55px_rgba(124,58,237,0.65)] active:scale-[0.975] active:translate-y-0 sm:min-h-0 sm:w-auto sm:justify-start sm:px-8"
+              className="btn-shine font-jetbrains inline-flex min-h-[52px] w-full items-center justify-center gap-2.5 rounded-full bg-gradient-to-br from-violet-600 to-cyan-500 px-8 py-4 text-[13px] font-semibold uppercase tracking-[0.08em] text-white shadow-[0_0_30px_rgba(124,58,237,0.45)] transition-[transform,box-shadow] duration-[var(--motion-dur-normal)] ease-[var(--motion-ease-lux)] hover:-translate-y-1 hover:shadow-[0_0_55px_rgba(124,58,237,0.65)] active:scale-[0.975] active:translate-y-0 sm:min-h-0 sm:w-auto sm:justify-start sm:px-10 sm:py-4"
             >
               <ClipboardList className="size-4 shrink-0" strokeWidth={2} />
               {hero.primaryCta.label}
             </Link>
             <Link
               href={hero.secondaryCta.href || "/#events"}
-              className="font-jetbrains inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full border border-white/[0.15] bg-transparent px-6 py-3.5 text-[12px] font-medium uppercase tracking-[0.08em] text-slate-300 transition-[transform,border-color,color,box-shadow] duration-[var(--motion-dur-normal)] ease-[var(--motion-ease-lux)] hover:-translate-y-px hover:border-violet-500/50 hover:text-white hover:shadow-[0_0_22px_rgba(124,58,237,0.2)] active:scale-[0.975] active:translate-y-0 sm:min-h-0 sm:w-auto sm:justify-start sm:px-7"
+              className="font-jetbrains inline-flex min-h-[52px] w-full items-center justify-center gap-2.5 rounded-full border border-white/[0.15] bg-transparent px-8 py-4 text-[13px] font-semibold uppercase tracking-[0.08em] text-slate-300 transition-[transform,border-color,color,box-shadow] duration-[var(--motion-dur-normal)] ease-[var(--motion-ease-lux)] hover:-translate-y-px hover:border-violet-500/50 hover:text-white hover:shadow-[0_0_22px_rgba(124,58,237,0.2)] active:scale-[0.975] active:translate-y-0 sm:min-h-0 sm:w-auto sm:justify-start sm:px-9 sm:py-4"
             >
               <Calendar className="size-4 shrink-0" strokeWidth={2} />
               {hero.secondaryCta.label}
@@ -436,12 +440,12 @@ export function HeroSection() {
         <div className="mx-auto flex w-full max-w-[300px] flex-col gap-4 lg:ml-auto lg:mr-0">
           {hero.heroCards.activity.isVisible && !activityError && (activityLoading || activityRows.length > 0) ? (
           <div
-            className="card-spotlight w-full max-w-[300px] rounded-2xl border border-violet-500/25 bg-[rgba(13,15,26,0.15)] p-5 backdrop-blur-[16px] transition-[transform,border-color,box-shadow] duration-[var(--motion-dur-normal)] ease-[var(--motion-ease-lux)] hover:-translate-x-1.5 hover:border-violet-500/50 hover:shadow-[0_0_24px_rgba(124,58,237,0.15)]"
+            className="glass-strong glass-prism card-spotlight w-full max-w-[300px] rounded-2xl p-5 transition-[transform,box-shadow] duration-[var(--motion-dur-normal)] ease-[var(--motion-ease-lux)] hover:-translate-x-1.5"
             style={{ animation: "heroFadeLeft 1s ease both 0.65s" }}
           >
             <div style={{ animation: "heroCardFloat 6s ease-in-out infinite 1s" }}>
               <div className="mb-3 flex items-center gap-3">
-                <div className="flex size-[30px] shrink-0 items-center justify-center rounded-lg bg-violet-500/15 text-violet-300">
+                <div className="flex size-[30px] shrink-0 items-center justify-center rounded-lg bg-[var(--accent-primary)]/10 text-[var(--accent-primary)]">
                   <Zap className="size-[17px]" strokeWidth={1.8} />
                 </div>
                 <div className="min-w-0 flex-1">
@@ -472,7 +476,7 @@ export function HeroSection() {
 
           {hero.heroCards.techStack.isVisible ? (
           <div
-            className="card-spotlight w-full max-w-[300px] rounded-2xl border border-violet-500/25 bg-[rgba(13,15,26,0.15)] p-5 backdrop-blur-[16px] transition-[transform,border-color,box-shadow] duration-[var(--motion-dur-normal)] ease-[var(--motion-ease-lux)] hover:-translate-x-1.5 hover:border-violet-500/50 hover:shadow-[0_0_24px_rgba(124,58,237,0.15)]"
+            className="glass-strong glass-prism card-spotlight w-full max-w-[300px] rounded-2xl p-5 transition-[transform,box-shadow] duration-[var(--motion-dur-normal)] ease-[var(--motion-ease-lux)] hover:-translate-x-1.5"
             style={{ animation: "heroFadeLeft 1s ease both 0.72s" }}
           >
             <div style={{ animation: "heroCardFloat 7s ease-in-out infinite 0.5s" }}>
@@ -493,7 +497,7 @@ export function HeroSection() {
                     item.accent === "cyan"
                       ? "border-cyan-400/25 bg-cyan-400/[0.08] text-cyan-400"
                       : item.accent === "violet"
-                        ? "border-violet-500/25 bg-violet-500/[0.08] text-violet-300"
+                        ? "border-[var(--accent-primary)]/30 bg-[var(--accent-primary)]/10 text-[var(--accent-primary)]"
                         : "border-fuchsia-400/25 bg-fuchsia-400/[0.08] text-fuchsia-300";
                   return (
                     <span
@@ -514,7 +518,7 @@ export function HeroSection() {
 
           {hero.heroCards.growth.isVisible ? (
           <div
-            className="card-spotlight w-full max-w-[300px] rounded-2xl border border-violet-500/25 bg-[rgba(13,15,26,0.15)] p-5 backdrop-blur-[16px] transition-[transform,border-color,box-shadow] duration-[var(--motion-dur-normal)] ease-[var(--motion-ease-lux)] hover:-translate-x-1.5 hover:border-violet-500/50 hover:shadow-[0_0_24px_rgba(124,58,237,0.15)]"
+            className="glass-strong glass-prism card-spotlight w-full max-w-[300px] rounded-2xl p-5 transition-[transform,box-shadow] duration-[var(--motion-dur-normal)] ease-[var(--motion-ease-lux)] hover:-translate-x-1.5"
             style={{ animation: "heroFadeLeft 1s ease both 0.78s" }}
           >
             <div style={{ animation: "heroCardFloat 5.5s ease-in-out infinite 1s" }}>

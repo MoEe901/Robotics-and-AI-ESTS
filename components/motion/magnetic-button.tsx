@@ -20,7 +20,7 @@ export function MagneticButton({
   children,
   className,
   strength = 0.35,
-  as: Tag = "div",
+  as: _Tag = "div",
 }: MagneticButtonProps) {
   const ref = useRef<HTMLDivElement>(null);
   const x = useMotionValue(0);

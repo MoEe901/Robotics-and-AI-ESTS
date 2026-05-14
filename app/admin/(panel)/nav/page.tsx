@@ -1,5 +1,6 @@
-import { NavbarConfigClient } from "@/components/admin/navbar-config-client";
+import { redirect } from "next/navigation";
 
-export default function AdminNavPage() {
-  return <NavbarConfigClient />;
+/** Redirect legacy /admin/nav to canonical /admin/navbar route. */
+export default function AdminNavRedirect() {
+  redirect("/admin/navbar");
 }

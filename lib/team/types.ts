@@ -22,6 +22,9 @@ export type TeamMemberListItem = {
   /** Card / list blurb */
   bio?: string;
   shortBio?: string;
+  /** French translations — optional CMS fields */
+  bioFr?: string;
+  shortBioFr?: string;
   /** Firebase Storage (or HTTPS) URL */
   imageUrl?: string;
   /** Legacy: unused with Firebase; prefer imageUrl */
@@ -37,12 +40,16 @@ export type TeamMemberListItem = {
 
 export type TeamExpertiseEntry = {
   title: string;
+  /** Optional French translation of the expertise title. */
+  titleFr?: string;
   /** 0..100 progress-bar value */
   level: number;
 };
 
 export type TeamMemberProfile = TeamMemberListItem & {
   fullDescription?: string;
+  /** French translation — optional CMS field */
+  fullDescriptionFr?: string;
   contacts?: TeamContact[] | null;
   birthday?: string;
   visibility?: TeamMemberVisibility;

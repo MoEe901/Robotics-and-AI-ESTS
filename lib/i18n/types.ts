@@ -299,6 +299,26 @@ export type Translations = {
     titleAccent: string;
     steps: { badge: string; title: string; description: string; iconKey: string }[];
   };
+  /** CMS value translation maps */
+  cmsMap: {
+    roleType: Record<string, string>;
+    topics: Record<string, string>;
+  };
+
+  /** Footer */
+  footer: {
+    brandName: string;
+    tagline: string;
+    clubColumn: string;
+    infoColumn: string;
+    connectColumn: string;
+    socialColumn: string;
+    clubLinks: { label: string; href: string }[];
+    infoLinks: { label: string; href: string }[];
+    connectLinks: { label: string; href: string }[];
+    allSystemsOperational: string;
+    estBadge: string;
+  };
 };
 
 export type Locale = "en" | "fr";

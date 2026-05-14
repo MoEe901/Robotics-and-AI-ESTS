@@ -1,23 +1,22 @@
 import { NextResponse } from "next/server";
-import { addDoc, collection, serverTimestamp, updateDoc } from "firebase/firestore";
 import { z } from "zod";
-import { Resend } from "resend";
+import { FieldValue } from "firebase-admin/firestore";
 
-import { db, isFirebaseConfigured } from "@/lib/firebase";
+import { getAdminFirestore } from "@/lib/server/firebase-admin";
+import { escapeHtml } from "@/lib/escape-html";
 import { getApplyFormNotificationRecipients } from "@/lib/submission-notifications";
+import { sendEmail } from "@/lib/send-email";
 
 const applySchema = z.object({
   firstName: z.string().trim().min(1),
   lastName: z.string().trim().min(1),
   educationYear: z.string().trim().min(1),
   department: z.string().trim().min(1),
-  // Must have a real TLD (≥ 2 chars) — rejects obvious dummy addresses
   email: z
     .string()
     .trim()
     .email()
     .regex(/^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/, "Invalid email format."),
-  // Digits only; optional leading + once; at least 6 digits
   phone: z
     .string()
     .trim()
@@ -25,26 +24,10 @@ const applySchema = z.object({
   message: z.string().trim().max(4000).optional(),
 });
 
-/** Escape HTML special characters to prevent XSS in email clients. */
-function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
-
 async function sendApplyNotification(
   id: string,
   data: z.infer<typeof applySchema>,
 ): Promise<void> {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
-    console.warn("[apply] RESEND_API_KEY missing, skipping email send.");
-    return;
-  }
-
   const to = await getApplyFormNotificationRecipients();
   if (to.length === 0) {
     console.warn(
@@ -54,8 +37,6 @@ async function sendApplyNotification(
     return;
   }
 
-  const resend = new Resend(apiKey);
-  const from = process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev";
   const site = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
   const safeId = encodeURIComponent(id);
 
@@ -73,33 +54,27 @@ async function sendApplyNotification(
     .map(
       ([k, v]) =>
         `<tr>` +
-        `<td style="padding:6px 10px;border:1px solid #ddd;font-weight:600;">${escapeHtml(k)}</td>` +
-        `<td style="padding:6px 10px;border:1px solid #ddd;">${escapeHtml(v)}</td>` +
+        `<td style="padding:8px 12px;border:1px solid #e0e0e0;font-weight:600;background:#f8f9fa;">${escapeHtml(k)}</td>` +
+        `<td style="padding:8px 12px;border:1px solid #e0e0e0;">${escapeHtml(v)}</td>` +
         `</tr>`,
     )
     .join("");
 
-  await resend.emails.send({
-    from,
+  await sendEmail({
     to,
     subject: `New Apply submission — ${data.firstName} ${data.lastName}`,
     html:
-      `<div style="font-family:Arial,sans-serif">` +
-      `<h3>New club application</h3>` +
-      `<table style="border-collapse:collapse">${rows}</table>` +
-      `<p><a href="${site}/admin/submissions/${safeId}">Open in admin</a></p>` +
+      `<div style="font-family:Arial,sans-serif;max-width:600px;">` +
+      `<h2 style="color:#1a1a2e;">New Club Application</h2>` +
+      `<table style="border-collapse:collapse;width:100%;margin:16px 0;">${rows}</table>` +
+      `<p style="margin-top:16px;"><a href="${site}/admin/submissions/${safeId}" style="color:#0066cc;">Open in admin panel</a></p>` +
+      `<hr style="border:none;border-top:1px solid #eee;margin-top:24px;">` +
+      `<p style="font-size:12px;color:#999;">Robotics & AI Club · EST Safi, Morocco</p>` +
       `</div>`,
   });
 }
 
 export async function POST(request: Request) {
-  if (!isFirebaseConfigured()) {
-    return NextResponse.json(
-      { error: "Firebase is not configured. Set NEXT_PUBLIC_FIREBASE_* variables." },
-      { status: 503 },
-    );
-  }
-
   let body: unknown;
   try {
     body = await request.json();
@@ -120,9 +95,11 @@ export async function POST(request: Request) {
       ? parsed.data.message
       : undefined;
 
-  let ref;
+  const db = getAdminFirestore();
+
+  let refId: string;
   try {
-    ref = await addDoc(collection(db(), "applySubmissions"), {
+    const ref = await db.collection("applySubmissions").add({
       firstName: parsed.data.firstName,
       lastName: parsed.data.lastName,
       educationYear: parsed.data.educationYear,
@@ -130,28 +107,31 @@ export async function POST(request: Request) {
       email: parsed.data.email,
       phone: parsed.data.phone,
       ...(message ? { message } : {}),
-      createdAt: serverTimestamp(),
+      createdAt: FieldValue.serverTimestamp(),
       notificationSent: false,
       notificationError: "",
     });
+    refId = ref.id;
   } catch (e) {
     const errMsg = e instanceof Error ? e.message : "Application write failed";
     return NextResponse.json({ error: errMsg }, { status: 500 });
   }
 
-  // Send notification email — fire-and-forget so it doesn't delay the response.
-  void sendApplyNotification(ref.id, parsed.data)
+  void sendApplyNotification(refId, parsed.data)
     .then(async () => {
-      await updateDoc(ref, { notificationSent: true, notificationError: "" });
+      await db.collection("applySubmissions").doc(refId).update({
+        notificationSent: true,
+        notificationError: "",
+      });
     })
     .catch(async (e) => {
       const msg = e instanceof Error ? e.message : String(e);
       console.error("[apply] email failed", msg);
-      await updateDoc(ref, {
+      await db.collection("applySubmissions").doc(refId).update({
         notificationSent: false,
         notificationError: msg.slice(0, 500),
       });
     });
 
-  return NextResponse.json({ success: true, id: ref.id }, { status: 201 });
+  return NextResponse.json({ success: true, id: refId }, { status: 201 });
 }

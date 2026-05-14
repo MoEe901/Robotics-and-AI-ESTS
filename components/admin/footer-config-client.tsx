@@ -93,6 +93,11 @@ export function FooterConfigClient() {
   const [copyrightText, setCopyrightText] = useState(DEFAULT_FOOTER_CONFIG.copyrightText);
   const [versionLine, setVersionLine] = useState(DEFAULT_FOOTER_CONFIG.versionLine);
 
+  // Brand extras
+  const [brandName, setBrandName] = useState(DEFAULT_FOOTER_CONFIG.brandName ?? "Robotics & AI Club");
+  const [estBadge, setEstBadge] = useState(DEFAULT_FOOTER_CONFIG.estBadge ?? "Est. 2024 · Rabat, Morocco");
+  const [techPills, setTechPills] = useState((DEFAULT_FOOTER_CONFIG.techPills ?? ["React", "Next.js", "Three.js"]).join(", "));
+
   useEffect(() => {
     let cancelled = false;
     void (async () => {
@@ -163,6 +168,15 @@ export function FooterConfigClient() {
         // Bottom bar
         setCopyrightText(str("copyrightText", DEFAULT_FOOTER_CONFIG.copyrightText));
         setVersionLine(str("versionLine", DEFAULT_FOOTER_CONFIG.versionLine));
+
+        // Brand extras
+        setBrandName(str("brandName", DEFAULT_FOOTER_CONFIG.brandName ?? "Robotics & AI Club"));
+        setEstBadge(str("estBadge", DEFAULT_FOOTER_CONFIG.estBadge ?? "Est. 2024 · Rabat, Morocco"));
+        if (Array.isArray(r.techPills) && r.techPills.length > 0) {
+          setTechPills((r.techPills as string[]).join(", "));
+        } else {
+          setTechPills((DEFAULT_FOOTER_CONFIG.techPills ?? ["React", "Next.js", "Three.js"]).join(", "));
+        }
       } catch (e) {
         if (!cancelled) {
           setError(e instanceof Error ? e.message : "Failed to load footer config.");
@@ -278,6 +292,14 @@ export function FooterConfigClient() {
           showBrandColumn,
           showSocialColumn,
           showBottomBar,
+
+          // Brand extras
+          brandName: brandName.trim() || DEFAULT_FOOTER_CONFIG.brandName,
+          estBadge: estBadge.trim() || DEFAULT_FOOTER_CONFIG.estBadge,
+          techPills: techPills
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean),
         },
         { merge: true },
       );
@@ -388,6 +410,15 @@ export function FooterConfigClient() {
             Brand block
           </p>
           <label className="block text-sm">
+            <span className="text-white/70">Brand name (next to logo)</span>
+            <input
+              value={brandName}
+              onChange={(e) => setBrandName(e.target.value)}
+              placeholder="Robotics & AI Club"
+              className={inputCls}
+            />
+          </label>
+          <label className="block text-sm">
             <span className="text-white/70">Tagline *</span>
             <textarea
               rows={2}
@@ -415,6 +446,18 @@ export function FooterConfigClient() {
               placeholder="École Supérieure de Technologie&#10;Safi, Morocco"
               className={`${inputCls} resize-y`}
             />
+          </label>
+          <label className="block text-sm">
+            <span className="text-white/70">Badge text (small pill below tagline)</span>
+            <input
+              value={estBadge}
+              onChange={(e) => setEstBadge(e.target.value)}
+              placeholder="Est. 2024 · Rabat, Morocco"
+              className={inputCls}
+            />
+            <span className="mt-1 block text-[11px] text-white/40">
+              The small green-dot badge under the tagline, e.g. &quot;Est. 2024 · Rabat, Morocco&quot;
+            </span>
           </label>
         </div>
 
@@ -675,6 +718,18 @@ export function FooterConfigClient() {
               className={inputCls}
             />
           </label>
+          <label className="block text-sm">
+            <span className="text-white/70">Tech pills (center, comma-separated)</span>
+            <input
+              value={techPills}
+              onChange={(e) => setTechPills(e.target.value)}
+              placeholder="React, Next.js, Three.js"
+              className={inputCls}
+            />
+            <span className="mt-1 block text-[11px] text-white/40">
+              Small tags in the center of the bottom bar. Separate with commas. Leave empty to hide.
+            </span>
+          </label>
           <div className="rounded-xl border border-white/8 bg-black/20 p-4">
             <p className="text-[10px] font-semibold uppercase tracking-widest text-white/35">
               Preview
@@ -723,6 +778,9 @@ export function FooterConfigClient() {
             setSocialLinks([...DEFAULT_FOOTER_CONFIG.socialLinks]);
             setCopyrightText(DEFAULT_FOOTER_CONFIG.copyrightText);
             setVersionLine(DEFAULT_FOOTER_CONFIG.versionLine);
+            setBrandName(DEFAULT_FOOTER_CONFIG.brandName ?? "Robotics & AI Club");
+            setEstBadge(DEFAULT_FOOTER_CONFIG.estBadge ?? "Est. 2024 · Rabat, Morocco");
+            setTechPills((DEFAULT_FOOTER_CONFIG.techPills ?? ["React", "Next.js", "Three.js"]).join(", "));
           }}
           className="rounded-full border border-white/20 bg-white/[0.06] px-5 py-2.5 text-sm font-medium text-white/70 transition hover:border-white/35 hover:text-white"
         >

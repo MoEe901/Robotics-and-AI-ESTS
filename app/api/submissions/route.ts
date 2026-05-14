@@ -1,21 +1,13 @@
 import { createHash } from "node:crypto";
 
 import { NextResponse } from "next/server";
-import {
-  addDoc,
-  collection,
-  getDocs,
-  limit,
-  query,
-  serverTimestamp,
-  updateDoc,
-  where,
-} from "firebase/firestore";
 import { z } from "zod";
-import { Resend } from "resend";
+import { FieldValue } from "firebase-admin/firestore";
 
-import { db, isFirebaseConfigured } from "@/lib/firebase";
+import { getAdminFirestore } from "@/lib/server/firebase-admin";
+import { escapeHtml } from "@/lib/escape-html";
 import { getApplyFormNotificationRecipients } from "@/lib/submission-notifications";
+import { sendEmail } from "@/lib/send-email";
 
 const submissionSchema = z.object({
   formId: z.string().min(1).max(60),
@@ -38,26 +30,11 @@ function getClientIp(req: Request): string {
   );
 }
 
-/** Escape HTML special characters to prevent XSS in email clients. */
-function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
-
 async function sendNotification(
   id: string,
   formId: string,
   fields: Record<string, string>,
 ): Promise<void> {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
-    console.warn("[submissions] RESEND_API_KEY missing, skipping email send.");
-    return;
-  }
   const to = await getApplyFormNotificationRecipients();
   if (to.length === 0) {
     console.warn(
@@ -66,8 +43,7 @@ async function sendNotification(
     );
     return;
   }
-  const resend = new Resend(apiKey);
-  const from = process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev";
+
   const site = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
   const subjectFirst = Object.values(fields)[0] ?? "Robotics & AI Club";
   const safeFormId = escapeHtml(formId);
@@ -76,33 +52,27 @@ async function sendNotification(
     .map(
       ([k, v]) =>
         `<tr>` +
-        `<td style="padding:6px 10px;border:1px solid #ddd;font-weight:600;">${escapeHtml(k)}</td>` +
-        `<td style="padding:6px 10px;border:1px solid #ddd;">${escapeHtml(v)}</td>` +
+        `<td style="padding:8px 12px;border:1px solid #e0e0e0;font-weight:600;background:#f8f9fa;">${escapeHtml(k)}</td>` +
+        `<td style="padding:8px 12px;border:1px solid #e0e0e0;">${escapeHtml(v)}</td>` +
         `</tr>`,
     )
     .join("");
 
-  await resend.emails.send({
-    from,
+  await sendEmail({
     to,
-    subject: `New ${formId} submission -- ${subjectFirst}`,
+    subject: `New ${formId} submission — ${subjectFirst}`,
     html:
-      `<div style="font-family:Arial,sans-serif">` +
-      `<h3>New ${safeFormId} submission</h3>` +
-      `<table style="border-collapse:collapse">${rows}</table>` +
-      `<p><a href="${site}/admin/submissions/${safeId}">Open in admin</a></p>` +
+      `<div style="font-family:Arial,sans-serif;max-width:600px;">` +
+      `<h2 style="color:#1a1a2e;">New ${safeFormId} submission</h2>` +
+      `<table style="border-collapse:collapse;width:100%;margin:16px 0;">${rows}</table>` +
+      `<p style="margin-top:16px;"><a href="${site}/admin/submissions/${safeId}" style="color:#0066cc;">Open in admin panel</a></p>` +
+      `<hr style="border:none;border-top:1px solid #eee;margin-top:24px;">` +
+      `<p style="font-size:12px;color:#999;">Robotics & AI Club · EST Safi, Morocco</p>` +
       `</div>`,
   });
 }
 
 export async function POST(request: Request) {
-  if (!isFirebaseConfigured()) {
-    return NextResponse.json(
-      { ok: false, error: "Firebase is not configured." },
-      { status: 503 },
-    );
-  }
-
   let body: unknown;
   try {
     body = await request.json();
@@ -124,25 +94,20 @@ export async function POST(request: Request) {
   const ip = getClientIp(request);
   const uaKey = `${ua}#${ipHash(ip)}`;
 
-  const oneHourAgo = Date.now() - 60 * 60 * 1000;
+  const db = getAdminFirestore();
+
+  // Rate limit check
+  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
   let recentCount = 0;
   try {
-    const recent = await getDocs(
-      query(
-        collection(db(), "submissions"),
-        where("userAgent", "==", uaKey),
-        limit(25),
-      ),
-    );
-    for (const d of recent.docs) {
-      const t = d.data().submittedAt;
-      if (typeof t?.toMillis === "function" && t.toMillis() >= oneHourAgo) {
-        recentCount += 1;
-      }
-    }
+    const recent = await db
+      .collection("submissions")
+      .where("userAgent", "==", uaKey)
+      .where("submittedAt", ">=", oneHourAgo)
+      .limit(10)
+      .get();
+    recentCount = recent.size;
   } catch (e) {
-    // Rules may intentionally block anonymous reads on submissions.
-    // Keep the create path functional; production rate limiting should use Redis.
     if (process.env.NODE_ENV === "development") {
       const msg = e instanceof Error ? e.message : String(e);
       console.warn("[submissions] rate-limit read skipped:", msg);
@@ -156,12 +121,12 @@ export async function POST(request: Request) {
     );
   }
 
-  let ref;
+  let refId: string;
   try {
-    ref = await addDoc(collection(db(), "submissions"), {
+    const ref = await db.collection("submissions").add({
       formId: parsed.data.formId,
       fields: parsed.data.fields,
-      submittedAt: serverTimestamp(),
+      submittedAt: FieldValue.serverTimestamp(),
       userAgent: uaKey,
       status: "new",
       readAt: null,
@@ -169,6 +134,7 @@ export async function POST(request: Request) {
       notificationSent: false,
       notificationError: "",
     });
+    refId = ref.id;
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     console.error("[submissions] write failed", msg);
@@ -178,18 +144,21 @@ export async function POST(request: Request) {
     );
   }
 
-  void sendNotification(ref.id, parsed.data.formId, parsed.data.fields)
+  void sendNotification(refId, parsed.data.formId, parsed.data.fields)
     .then(async () => {
-      await updateDoc(ref, { notificationSent: true, notificationError: "" });
+      await db.collection("submissions").doc(refId).update({
+        notificationSent: true,
+        notificationError: "",
+      });
     })
     .catch(async (e) => {
       const msg = e instanceof Error ? e.message : String(e);
       console.error("[submissions] email failed", msg);
-      await updateDoc(ref, {
+      await db.collection("submissions").doc(refId).update({
         notificationSent: false,
         notificationError: msg.slice(0, 500),
       });
     });
 
-  return NextResponse.json({ ok: true, id: ref.id }, { status: 201 });
+  return NextResponse.json({ ok: true, id: refId }, { status: 201 });
 }

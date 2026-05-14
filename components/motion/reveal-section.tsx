@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useReducedMotion } from "framer-motion";
+import { motion, useReducedMotion, type TargetAndTransition } from "framer-motion";
 
 import {
   type RevealDirection,
@@ -58,8 +58,8 @@ export function RevealSection({
       id={id}
       className={cn(className)}
       style={style}
-      initial={hidden as object}
-      whileInView={visible as object}
+      initial={hidden as TargetAndTransition}
+      whileInView={visible as TargetAndTransition}
       viewport={{ once: true, amount, margin: "0px 0px -6% 0px" }}
       transition={{
         duration: transitionReveal.duration,
@@ -115,8 +115,8 @@ export function StaggerReveal({
         <motion.div
           key={i}
           className={childClassName}
-          initial={hidden as object}
-          whileInView={visible as object}
+          initial={hidden as TargetAndTransition}
+          whileInView={visible as TargetAndTransition}
           viewport={{ once: true, amount: 0.08 }}
           transition={{
             duration: durS.slower,
@@ -128,5 +128,140 @@ export function StaggerReveal({
         </motion.div>
       ))}
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// StaggerGrid — staggered grid of cards, direction alternates by row
+// ---------------------------------------------------------------------------
+
+type StaggerGridProps = {
+  children: React.ReactNode[];
+  className?: string;
+  id?: string;
+  /** Number of columns — used to alternate row direction. Default: 3 */
+  cols?: number;
+  /** Per-column stagger increment. Default: 0.08 */
+  stagger?: number;
+  delay?: number;
+  childClassName?: string;
+};
+
+/**
+ * Grid-aware stagger: items in even rows reveal from left, odd rows from right,
+ * creating a natural sweep effect. Falls back to simple fade under reduced-motion.
+ */
+export function StaggerGrid({
+  children,
+  className,
+  id,
+  cols = 3,
+  stagger: staggerStep = 0.08,
+  delay = 0,
+  childClassName,
+}: StaggerGridProps) {
+  const reduce = useReducedMotion();
+
+  if (reduce) {
+    return (
+      <div id={id} className={className}>
+        {children}
+      </div>
+    );
+  }
+
+  return (
+    <div id={id} className={className}>
+      {children.map((child, i) => {
+        const row = Math.floor(i / cols);
+        const col = i % cols;
+        const dir = row % 2 === 0 ? 1 : -1;
+        const { hidden, visible } = revealVariants("up", 6);
+        return (
+          <motion.div
+            key={i}
+            className={childClassName}
+            initial={{ ...(hidden as TargetAndTransition), x: dir * 20 }}
+            whileInView={{ ...(visible as TargetAndTransition), x: 0 }}
+            viewport={{ once: true, amount: 0.07 }}
+            transition={{
+              duration: durS.slow,
+              ease: easeLux,
+              delay: delay + col * staggerStep + row * (staggerStep * 0.5),
+            }}
+          >
+            {child}
+          </motion.div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// CountUp — animates a number from 0 to target when it enters the viewport
+// ---------------------------------------------------------------------------
+
+type CountUpProps = {
+  to: number;
+  duration?: number;
+  className?: string;
+  suffix?: string;
+  prefix?: string;
+};
+
+/**
+ * Counts a number up from 0 to `to` when scrolled into view.
+ * Respects prefers-reduced-motion (shows final value instantly).
+ */
+export function CountUp({
+  to,
+  duration = 1.6,
+  className,
+  suffix = "",
+  prefix = "",
+}: CountUpProps) {
+  const reduce = useReducedMotion();
+
+  if (reduce) {
+    return (
+      <span className={className}>
+        {prefix}{to}{suffix}
+      </span>
+    );
+  }
+
+  return (
+    <motion.span
+      className={className}
+      initial={{ opacity: 0 }}
+      whileInView={{ opacity: 1 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.01 }}
+    >
+      <motion.span
+        initial={{ "--count": 0 } as TargetAndTransition}
+        whileInView={{ "--count": to } as TargetAndTransition}
+        viewport={{ once: true }}
+        transition={{ duration, ease: [0.16, 1, 0.3, 1] }}
+        style={
+          {
+            "--count": 0,
+            counterReset: "count var(--count)",
+          } as React.CSSProperties
+        }
+      >
+        {prefix}
+        <motion.span
+          initial={{ y: 8, opacity: 0 }}
+          whileInView={{ y: 0, opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+        >
+          {to}
+        </motion.span>
+        {suffix}
+      </motion.span>
+    </motion.span>
   );
 }

@@ -1,6 +1,4 @@
-import { doc, getDoc } from "firebase/firestore";
-
-import { db } from "@/lib/firebase";
+import { getAdminFirestore } from "@/lib/server/firebase-admin";
 
 const DOC_ID = "submissionNotifications";
 
@@ -11,19 +9,20 @@ function isValidEmail(s: string): boolean {
 }
 
 /**
- * Reads `siteConfig/submissionNotifications.applyFormRecipientEmails` (public read).
+ * Reads `siteConfig/submissionNotifications.applyFormRecipientEmails` via Admin SDK.
  * Falls back to `ADMIN_NOTIFICATION_EMAIL` env when the list is empty or missing.
  */
 export async function getApplyFormNotificationRecipients(): Promise<string[]> {
   const envFallback = process.env.ADMIN_NOTIFICATION_EMAIL?.trim();
   try {
-    const snap = await getDoc(doc(db(), "siteConfig", DOC_ID));
-    if (!snap.exists()) {
+    const db = getAdminFirestore();
+    const snap = await db.collection("siteConfig").doc(DOC_ID).get();
+    if (!snap.exists) {
       return envFallback && isValidEmail(envFallback) ? [envFallback] : [];
     }
-    const raw = snap.data() as Record<string, unknown>;
-    const arr = Array.isArray(raw.applyFormRecipientEmails)
-      ? raw.applyFormRecipientEmails
+    const raw = snap.data() as Record<string, unknown> | undefined;
+    const arr = Array.isArray(raw?.applyFormRecipientEmails)
+      ? raw!.applyFormRecipientEmails
       : [];
     const out: string[] = [];
     const seen = new Set<string>();

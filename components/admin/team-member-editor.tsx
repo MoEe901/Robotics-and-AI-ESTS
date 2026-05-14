@@ -15,7 +15,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useAdminSession } from "@/components/admin/admin-session-context";
 import { DEFAULT_TEAM_VISIBILITY, type TeamMemberVisibility } from "@/lib/firebase/types";
 import { db } from "@/lib/firebase";
-import { SOCIAL_PLATFORMS } from "@/lib/team/contacts";
 import {
   DEFAULT_TEAM_CELLS,
   DEFAULT_TEAM_ROLES,
@@ -36,6 +35,7 @@ type ContactDraft = {
 
 type ExpertiseDraft = {
   title: string;
+  titleFr: string;
   level: number;
 };
 
@@ -48,9 +48,10 @@ function parseExpertiseFromDoc(data: DocumentData): ExpertiseDraft[] {
     const o = row as Record<string, unknown>;
     const title = typeof o.title === "string" ? o.title.trim() : "";
     if (!title) continue;
+    const titleFr = typeof o.titleFr === "string" ? o.titleFr.trim() : "";
     const raw = typeof o.level === "number" ? o.level : Number(o.level);
     const level = Number.isFinite(raw) ? Math.max(0, Math.min(100, Math.round(raw))) : 0;
-    out.push({ title, level });
+    out.push({ title, titleFr, level });
   }
   return out;
 }
@@ -133,8 +134,11 @@ export function TeamMemberEditor({ memberId }: Props) {
   const [isActive, setIsActive] = useState(true);
   const [imageUrl, setImageUrl] = useState("");
   const [shortBio, setShortBio] = useState("");
+  const [shortBioFr, setShortBioFr] = useState("");
   const [bio, setBio] = useState("");
+  const [bioFr, setBioFr] = useState("");
   const [fullDescription, setFullDescription] = useState("");
+  const [fullDescriptionFr, setFullDescriptionFr] = useState("");
   const [birthday, setBirthday] = useState("");
   const [startedYear, setStartedYear] = useState("");
   const [expertise, setExpertise] = useState<ExpertiseDraft[]>([]);
@@ -227,8 +231,11 @@ export function TeamMemberEditor({ memberId }: Props) {
         setIsActive(data.isActive !== false);
         setImageUrl(typeof data.imageUrl === "string" ? data.imageUrl : "");
         setShortBio(typeof data.shortBio === "string" ? data.shortBio : "");
+        setShortBioFr(typeof data.shortBioFr === "string" ? data.shortBioFr : "");
         setBio(typeof data.bio === "string" ? data.bio : "");
+        setBioFr(typeof data.bioFr === "string" ? data.bioFr : "");
         setFullDescription(typeof data.fullDescription === "string" ? data.fullDescription : "");
+        setFullDescriptionFr(typeof data.fullDescriptionFr === "string" ? data.fullDescriptionFr : "");
         setStartedYear(
           typeof data.startedYear === "string" ? data.startedYear.trim() : "",
         );
@@ -260,7 +267,21 @@ export function TeamMemberEditor({ memberId }: Props) {
     };
   }, [memberId, sessionReady, session]);
 
-  const contactTypeSuggestions = [...SOCIAL_PLATFORMS, "Email", "Phone", "Discord", "Other"];
+  const contactTypeSuggestions = [
+    "Email", "Phone",
+    "WhatsApp", "Telegram", "Signal", "Messenger", "Viber", "WeChat", "Line", "iMessage",
+    "Instagram", "Snapchat", "Facebook", "Twitter", "X", "TikTok", "Reddit",
+    "Threads", "Mastodon", "Bluesky", "Pinterest", "Tumblr",
+    "LinkedIn", "GitHub", "GitLab", "Bitbucket", "Stack Overflow", "Codepen",
+    "Dev.to", "Hashnode", "HackerRank", "LeetCode", "Kaggle", "Hugging Face",
+    "Behance", "Dribbble", "Figma", "Notion", "Medium", "Substack",
+    "YouTube", "Twitch", "Spotify", "SoundCloud", "Apple Music", "Podcast", "Vimeo",
+    "Discord", "Steam", "Xbox", "PlayStation", "Epic Games",
+    "Google Scholar", "ResearchGate", "ORCID", "Academia.edu",
+    "Website", "Portfolio", "Blog", "RSS", "Calendly",
+    "PayPal", "Venmo", "Ko-fi", "Buy Me a Coffee", "Patreon",
+    "App Store", "Play Store", "Linktree", "Other",
+  ];
   const roleChoices = useMemo(
     () => dedupeCaseInsensitive([...roleOptions, selectedRole]),
     [roleOptions, selectedRole],
@@ -371,6 +392,7 @@ export function TeamMemberEditor({ memberId }: Props) {
     const expertiseClean = expertise
       .map((e) => ({
         title: e.title.trim(),
+        ...(e.titleFr.trim() ? { titleFr: e.titleFr.trim() } : {}),
         level: Math.max(0, Math.min(100, Math.round(Number(e.level) || 0))),
       }))
       .filter((e) => e.title.length > 0);
@@ -390,8 +412,11 @@ export function TeamMemberEditor({ memberId }: Props) {
       isVisible: isActive,
       imageUrl: imageUrl.trim(),
       shortBio: shortBio.trim() || "",
+      shortBioFr: shortBioFr.trim() || "",
       bio: bio.trim() || "",
+      bioFr: bioFr.trim() || "",
       fullDescription: fullDescription.trim() || "",
+      fullDescriptionFr: fullDescriptionFr.trim() || "",
       contacts: contactsClean,
       birthday: birthday.trim() ? birthday.trim() : deleteField(),
       startedYear: startedYearTrim ? startedYearTrim : deleteField(),
@@ -722,6 +747,16 @@ export function TeamMemberEditor({ memberId }: Props) {
           />
         </label>
         <label className="block">
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-white/45">Short bio <span className="text-blue-400/70">(French)</span></span>
+          <textarea
+            value={shortBioFr ?? ""}
+            onChange={(e) => setShortBioFr(e.target.value)}
+            rows={2}
+            placeholder="Version française du bio court…"
+            className="mt-1.5 w-full rounded-xl border border-blue-500/20 bg-blue-500/5 px-4 py-3 text-sm text-white outline-none focus:border-blue-500/50"
+          />
+        </label>
+        <label className="block">
           <span className="text-[11px] font-semibold uppercase tracking-wider text-white/45">Bio</span>
           <textarea
             value={bio}
@@ -731,12 +766,32 @@ export function TeamMemberEditor({ memberId }: Props) {
           />
         </label>
         <label className="block">
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-white/45">Bio <span className="text-blue-400/70">(French)</span></span>
+          <textarea
+            value={bioFr ?? ""}
+            onChange={(e) => setBioFr(e.target.value)}
+            rows={4}
+            placeholder="Version française du bio…"
+            className="mt-1.5 w-full rounded-xl border border-blue-500/20 bg-blue-500/5 px-4 py-3 text-sm text-white outline-none focus:border-blue-500/50"
+          />
+        </label>
+        <label className="block">
           <span className="text-[11px] font-semibold uppercase tracking-wider text-white/45">Full description</span>
           <textarea
             value={fullDescription}
             onChange={(e) => setFullDescription(e.target.value)}
             rows={8}
             className="mt-1.5 w-full rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm text-white outline-none focus:border-blue-500/50"
+          />
+        </label>
+        <label className="block">
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-white/45">Full description <span className="text-blue-400/70">(French)</span></span>
+          <textarea
+            value={fullDescriptionFr ?? ""}
+            onChange={(e) => setFullDescriptionFr(e.target.value)}
+            rows={8}
+            placeholder="Version française de la description complète…"
+            className="mt-1.5 w-full rounded-xl border border-blue-500/20 bg-blue-500/5 px-4 py-3 text-sm text-white outline-none focus:border-blue-500/50"
           />
         </label>
       </section>
@@ -755,7 +810,7 @@ export function TeamMemberEditor({ memberId }: Props) {
           <button
             type="button"
             onClick={() =>
-              setExpertise((prev) => [...prev, { title: "", level: 60 }])
+              setExpertise((prev) => [...prev, { title: "", titleFr: "", level: 60 }])
             }
             className="rounded-xl border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/15"
           >
@@ -773,7 +828,7 @@ export function TeamMemberEditor({ memberId }: Props) {
             {expertise.map((row, i) => (
               <div
                 key={`exp-${i}`}
-                className="grid gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-4 sm:grid-cols-[1fr_auto_auto]"
+                className="grid gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-4 sm:grid-cols-[1fr_1fr_auto_auto]"
               >
                 <label className="block">
                   <span className="text-[10px] font-semibold uppercase tracking-wider text-white/40">
@@ -788,6 +843,21 @@ export function TeamMemberEditor({ memberId }: Props) {
                     }}
                     placeholder="e.g. Embedded Systems"
                     className="mt-1 w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-sm text-white outline-none focus:border-blue-500/50"
+                  />
+                </label>
+                <label className="block">
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-white/40">
+                    Title <span className="text-blue-400/70">(FR)</span>
+                  </span>
+                  <input
+                    value={row.titleFr ?? ""}
+                    onChange={(e) => {
+                      const next = [...expertise];
+                      next[i] = { ...next[i]!, titleFr: e.target.value };
+                      setExpertise(next);
+                    }}
+                    placeholder="ex. Systèmes Embarqués"
+                    className="mt-1 w-full rounded-lg border border-blue-500/20 bg-blue-500/5 px-3 py-2 text-sm text-white outline-none focus:border-blue-500/50"
                   />
                 </label>
                 <label className="block min-w-[180px]">

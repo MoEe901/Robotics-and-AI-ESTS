@@ -41,33 +41,38 @@ const LanguageContext = createContext<LanguageContextValue>({
 
 // ─── Provider ─────────────────────────────────────────────────────────────────
 
+function readStoredLocale(): Locale {
+  if (typeof window === "undefined") return DEFAULT_LOCALE;
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (isLocale(stored)) return stored;
+  } catch {
+    // localStorage unavailable (e.g. private browsing restriction)
+  }
+  return DEFAULT_LOCALE;
+}
+
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [locale, setLocaleState] = useState<Locale>(DEFAULT_LOCALE);
+  const [hydrated, setHydrated] = useState(false);
 
-  // On mount: read persisted preference from localStorage.
-  // The setState is deferred into a microtask so it never fires synchronously
-  // inside the effect body, avoiding cascading renders while keeping SSR-safe
-  // hydration (server always starts at DEFAULT_LOCALE).
+  // After hydration, read the stored locale from localStorage
   useEffect(() => {
-    void Promise.resolve().then(() => {
-      try {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (isLocale(stored)) setLocaleState(stored);
-      } catch {
-        // localStorage unavailable (e.g. private browsing restriction)
-      }
-    });
+    const stored = readStoredLocale();
+    if (stored !== DEFAULT_LOCALE) setLocaleState(stored);
+    setHydrated(true);
   }, []);
 
-  // Sync <html lang> attribute and persist whenever locale changes
+  // Sync <html lang> attribute and persist whenever locale changes (skip before hydration)
   useEffect(() => {
+    if (!hydrated) return;
     document.documentElement.lang = TRANSLATIONS[locale].meta.lang;
     try {
       localStorage.setItem(STORAGE_KEY, locale);
     } catch {
       // Non-fatal
     }
-  }, [locale]);
+  }, [locale, hydrated]);
 
   const setLocale = useCallback((next: Locale) => {
     if (isLocale(next)) setLocaleState(next);
@@ -98,4 +103,23 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
  */
 export function useLanguage(): LanguageContextValue {
   return useContext(LanguageContext);
+}
+
+/**
+ * Translate a CMS string via the cmsMap dictionaries.
+ * Returns the original value when no mapping exists.
+ */
+export function translateCms(
+  translations: Translations,
+  kind: keyof Translations["cmsMap"],
+  value: string,
+): string {
+  const map = translations.cmsMap[kind];
+  if (map[value]) return map[value];
+  // Case-insensitive fallback: CMS values may differ in casing
+  const lower = value.toLowerCase();
+  for (const [k, v] of Object.entries(map)) {
+    if (k.toLowerCase() === lower) return v;
+  }
+  return value;
 }

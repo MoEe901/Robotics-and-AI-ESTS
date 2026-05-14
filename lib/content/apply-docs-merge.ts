@@ -106,6 +106,7 @@ export function mergeApplyCollectionDocs(docsById: Record<string, Record<string,
   if (sub) {
     if (typeof sub.charterText === "string" && sub.charterText.trim()) d.charterLinkText = sub.charterText.trim();
     if (typeof sub.charterUrl === "string" && sub.charterUrl.trim()) d.charterLinkHref = sub.charterUrl.trim();
+    if (typeof sub.charterUrlFr === "string" && sub.charterUrlFr.trim()) d.charterLinkHrefFr = sub.charterUrlFr.trim();
     if (typeof sub.submitNotePrefix === "string" && sub.submitNotePrefix.trim())
       d.submitNotePrefix = sub.submitNotePrefix.trim();
     if (typeof sub.submitLabel === "string" && sub.submitLabel.trim()) d.submitButtonLabel = sub.submitLabel.trim();

@@ -52,9 +52,18 @@ export function SectionsLayoutClient() {
     });
   }
 
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+
   async function save() {
-    await setDoc(doc(db(), "siteConfig", "sections"), { order, visibility }, { merge: true });
-    alert("Sections updated.");
+    setSaveStatus("saving");
+    try {
+      await setDoc(doc(db(), "siteConfig", "sections"), { order, visibility }, { merge: true });
+      setSaveStatus("saved");
+      setTimeout(() => setSaveStatus("idle"), 2000);
+    } catch (e) {
+      console.error("[sections-layout] save failed", e);
+      setSaveStatus("error");
+    }
   }
 
   return (
@@ -71,7 +80,13 @@ export function SectionsLayoutClient() {
           </div>
         ))}
       </div>
-      <button type="button" onClick={() => void save()} className="mt-4 rounded-full bg-blue-600 px-5 py-2 text-sm font-semibold text-white">Save layout</button>
+      <div className="mt-4 flex items-center gap-3">
+        <button type="button" onClick={() => void save()} disabled={saveStatus === "saving"} className="rounded-full bg-blue-600 px-5 py-2 text-sm font-semibold text-white disabled:opacity-50">
+          {saveStatus === "saving" ? "Saving..." : "Save layout"}
+        </button>
+        {saveStatus === "saved" && <span className="text-sm text-green-400">Saved!</span>}
+        {saveStatus === "error" && <span className="text-sm text-red-400">Failed to save. Try again.</span>}
+      </div>
     </div>
   );
 }

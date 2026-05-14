@@ -124,26 +124,26 @@ function asStringArray(value: unknown): string[] {
 
 function parseExpertiseList(
   raw: unknown,
-): { title: string; level: number }[] | undefined {
+): { title: string; titleFr?: string; level: number }[] | undefined {
   if (!Array.isArray(raw) || raw.length === 0) return undefined;
-  const out: { title: string; level: number }[] = [];
+  const out: { title: string; titleFr?: string; level: number }[] = [];
   for (const row of raw) {
     if (!row || typeof row !== "object") continue;
     const o = row as Record<string, unknown>;
     const title = typeof o.title === "string" ? o.title.trim() : "";
     if (!title) continue;
+    const titleFr = typeof o.titleFr === "string" && o.titleFr.trim() ? o.titleFr.trim() : undefined;
     const rawLevel = typeof o.level === "number" ? o.level : Number(o.level);
     const level = Number.isFinite(rawLevel)
       ? Math.max(0, Math.min(100, Math.round(rawLevel)))
       : 0;
-    out.push({ title, level });
+    out.push({ title, ...(titleFr ? { titleFr } : {}), level });
   }
   return out.length ? out : undefined;
 }
 
 function mapTeamDoc(docId: string, data: DocumentData): TeamMemberProfile | null {
   const row = data as Partial<FirestoreTeamMember> & { createdAt?: unknown };
-
   const schoolStatusRaw = typeof row.schoolStatus === "string" ? row.schoolStatus.trim() : "";
   const departmentRaw = typeof row.department === "string" ? row.department.trim() : "";
   const departmentOk =
@@ -196,8 +196,11 @@ function mapTeamDoc(docId: string, data: DocumentData): TeamMemberProfile | null
     imageUrl: typeof row.imageUrl === "string" ? row.imageUrl.trim() : "",
     order: row.order,
     bio: isNonEmptyString(row.bio) ? row.bio.trim() : shortBio,
+    bioFr: isNonEmptyString(row.bioFr) ? row.bioFr.trim() : undefined,
     shortBio,
+    shortBioFr: isNonEmptyString(row.shortBioFr) ? row.shortBioFr.trim() : undefined,
     fullDescription: isNonEmptyString(row.fullDescription) ? row.fullDescription.trim() : undefined,
+    fullDescriptionFr: isNonEmptyString(row.fullDescriptionFr) ? row.fullDescriptionFr.trim() : undefined,
     birthday: isNonEmptyString(row.birthday) ? row.birthday.trim() : undefined,
     contacts,
     visibility: mergeVisibility(row.visibility),
@@ -940,10 +943,6 @@ export function subscribeToApplyConfig(
   );
 }
 
-function parseFooterFromFirestore(raw: Record<string, unknown>): FooterConfig {
-  return parseFooterDoc(raw);
-}
-
 export function subscribeToFooterConfig(
   callback: (config: FooterConfig) => void,
   onError?: (error: Error) => void,
@@ -955,7 +954,7 @@ export function subscribeToFooterConfig(
         callback({ ...DEFAULT_FOOTER_CONFIG });
         return;
       }
-      callback(parseFooterFromFirestore(snapshot.data() as Record<string, unknown>));
+      callback(parseFooterDoc(snapshot.data() as Record<string, unknown>));
     },
     (error) => {
       console.error("[Firestore] subscribeToFooterConfig failed", error);

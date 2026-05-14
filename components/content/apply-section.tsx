@@ -158,6 +158,10 @@ export function ApplySection({ config }: ApplySectionProps) {
           titleLine: tr.community.titleLine,
           titleAccent: tr.community.titleAccent,
           description: tr.community.description,
+          actions: ((base.community ?? DEFAULT_APPLY_CONFIG.community).actions ?? []).map((a) => ({
+            ...a,
+            label: tr.community.buttonLabels?.[a.label] ?? a.label,
+          })),
         },
       }
     : base;
@@ -170,10 +174,15 @@ export function ApplySection({ config }: ApplySectionProps) {
   const contactRows = Array.isArray(c.contactRows) && c.contactRows.length
     ? c.contactRows
     : DEFAULT_APPLY_CONFIG.contactRows;
-  const charterLinkHref =
+  const charterLinkHrefEn =
     typeof c.charterLinkHref === "string" && c.charterLinkHref.trim().length > 0
       ? c.charterLinkHref
       : DEFAULT_APPLY_CONFIG.charterLinkHref;
+  const charterLinkHrefFr =
+    typeof c.charterLinkHrefFr === "string" && c.charterLinkHrefFr.trim().length > 0
+      ? c.charterLinkHrefFr
+      : charterLinkHrefEn;
+  const charterLinkHref = isFr ? charterLinkHrefFr : charterLinkHrefEn;
   const charterLinkText =
     typeof c.charterLinkText === "string" && c.charterLinkText.trim().length > 0
       ? c.charterLinkText

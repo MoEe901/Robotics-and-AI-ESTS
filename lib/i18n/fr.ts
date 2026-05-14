@@ -476,4 +476,62 @@ export const fr: Translations = {
       },
     ],
   },
+
+
+  cmsMap: {
+    roleType: {
+      "Executive Council": "Conseil Ex\u00e9cutif",
+      "Co-Supervisor": "Co-Encadrant",
+      "Supervisor": "Encadrant",
+      "Organization Cellule": "Cellule Organisation",
+      "Design Cellule": "Cellule Design",
+      "Media Cellule": "Cellule M\u00e9dias",
+      "Secretary Cellule": "Cellule Secr\u00e9tariat",
+      "Treasury Cellule": "Cellule Tr\u00e9sorerie",
+      "Communication Cellule": "Cellule Communication",
+      "Member": "Membre",
+      "Doctoral": "Doctorant",
+      "Professor": "Professeur",
+    },
+    topics: {
+      "STEM": "STIM",
+      "Club Opening": "Ouverture du Club",
+      "Robotics": "Robotique",
+      "AI": "IA",
+      "Artificial Intelligence": "Intelligence Artificielle",
+      "Workshop": "Atelier",
+      "Competition": "Comp\u00e9tition",
+      "Networking": "R\u00e9seautage",
+      "Technology": "Technologie",
+      "Innovation": "Innovation",
+      "Education": "\u00c9ducation",
+    },
+  },
+
+  footer: {
+    brandName: "Club Robotique & IA",
+    tagline: "Une communaut\u00e9 tech universitaire \u00e0 l'EST Safi, Maroc. Construire l'avenir gr\u00e2ce \u00e0 la robotique, l'IA et la collaboration.",
+    clubColumn: "Club",
+    infoColumn: "Infos",
+    connectColumn: "Contact",
+    socialColumn: "R\u00e9seaux",
+    clubLinks: [
+      { label: "Accueil", href: "/" },
+      { label: "\u00c9v\u00e9nements", href: "/#events" },
+      { label: "Projets", href: "/#projects" },
+      { label: "Comp\u00e9titions", href: "/#competitions" },
+    ],
+    infoLinks: [
+      { label: "Nous Conna\u00eetre", href: "/#know" },
+      { label: "Cellules", href: "/#cellules" },
+      { label: "\u00c9quipe", href: "/#team" },
+      { label: "FAQ", href: "/#faq" },
+    ],
+    connectLinks: [
+      { label: "Rejoindre", href: "/#apply" },
+      { label: "Nous Contacter", href: "/#apply" },
+    ],
+    allSystemsOperational: "Tous les Syst\u00e8mes Op\u00e9rationnels",
+    estBadge: "Fond\u00e9 2024 \u00b7 Rabat, Maroc",
+  },
 };

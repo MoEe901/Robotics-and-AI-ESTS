@@ -12,10 +12,10 @@ initializeApp({
 async function grantAdminClaim(email: string) {
   try {
     const user = await getAuth().getUserByEmail(email);
-    await getAuth().setCustomUserClaims(user.uid, { admin: true });
-    console.log(`✓ Granted admin claim to ${email} (uid: ${user.uid})`);
+    await getAuth().setCustomUserClaims(user.uid, { adminRole: "admin" });
+    console.log(`Granted adminRole claim to ${email} (uid: ${user.uid})`);
   } catch (err: unknown) {
-    console.error(`✗ Failed: ${err instanceof Error ? err.message : String(err)}`);
+    console.error(`Failed: ${err instanceof Error ? err.message : String(err)}`);
   }
 }
 

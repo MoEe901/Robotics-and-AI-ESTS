@@ -1,8 +1,8 @@
 "use client";
 
-import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
+import { collection, deleteDoc, doc, onSnapshot, orderBy, query, setDoc, Timestamp } from "firebase/firestore";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { db } from "@/lib/firebase";
 
@@ -14,15 +14,115 @@ type Row = {
   fields: Record<string, string>;
 };
 
-function toCsv(rows: Row[]): string {
-  const lines = ["id,formId,status,submittedAt,preview"]; 
-  for (const r of rows) {
-    const preview = Object.values(r.fields)[0] || "";
-    const esc = (s: string) => `"${s.replaceAll('"', '""')}"`;
-    lines.push([esc(r.id), esc(r.formId), esc(r.status), esc(r.submittedAt), esc(preview)].join(","));
-  }
-  return lines.join("\n");
+/* ── CSV helpers ──────────────────────────────────────────── */
+
+function esc(s: string) {
+  return `"${s.replace(/"/g, '""')}"`;
 }
+
+function toCsv(rows: Row[]): string {
+  /* Collect every unique field key across all rows */
+  const fieldKeysSet = new Set<string>();
+  for (const r of rows) {
+    for (const k of Object.keys(r.fields)) fieldKeysSet.add(k);
+  }
+  const fieldKeys = Array.from(fieldKeysSet);
+
+  /* Readable header labels */
+  const labelMap: Record<string, string> = {
+    firstName: "First Name",
+    lastName: "Last Name",
+    fullName: "Full Name",
+    email: "Email",
+    phone: "Phone",
+    year: "Year",
+    department: "Department",
+    message: "Message",
+  };
+
+  const headers = [
+    "Submission ID",
+    "Form",
+    "Status",
+    "Submitted At",
+    ...fieldKeys.map((k) => labelMap[k] || k.replace(/([A-Z])/g, " $1").replace(/^./, (c) => c.toUpperCase())),
+  ];
+
+  const lines: string[] = [headers.map(esc).join(",")];
+
+  for (const r of rows) {
+    const date = r.submittedAt
+      ? new Date(r.submittedAt).toLocaleString("en-GB", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : "";
+    const statusLabel = r.status === "new" ? "New" : r.status === "read" ? "Read" : "Archived";
+    const cols = [
+      esc(r.id),
+      esc(r.formId),
+      esc(statusLabel),
+      esc(date),
+      ...fieldKeys.map((k) => esc(r.fields[k] || "")),
+    ];
+    lines.push(cols.join(","));
+  }
+
+  /* Add BOM for Excel to recognize UTF-8 */
+  return "﻿" + lines.join("\r\n");
+}
+
+/** Parse a CSV string back into rows. Handles quoted fields with commas/newlines. */
+function parseCsv(text: string): string[][] {
+  const rows: string[][] = [];
+  let current: string[] = [];
+  let cell = "";
+  let inQuotes = false;
+  /* Strip BOM */
+  const s = text.startsWith("﻿") ? text.slice(1) : text;
+
+  for (let i = 0; i < s.length; i++) {
+    const ch = s[i]!;
+    if (inQuotes) {
+      if (ch === '"') {
+        if (s[i + 1] === '"') {
+          cell += '"';
+          i++;
+        } else {
+          inQuotes = false;
+        }
+      } else {
+        cell += ch;
+      }
+    } else {
+      if (ch === '"') {
+        inQuotes = true;
+      } else if (ch === ",") {
+        current.push(cell);
+        cell = "";
+      } else if (ch === "\r") {
+        /* skip */
+      } else if (ch === "\n") {
+        current.push(cell);
+        cell = "";
+        rows.push(current);
+        current = [];
+      } else {
+        cell += ch;
+      }
+    }
+  }
+  if (cell || current.length) {
+    current.push(cell);
+    rows.push(current);
+  }
+  return rows;
+}
+
+/* ── component ────────────────────────────────────────────── */
 
 export function SubmissionsAdminClient() {
   const [rows, setRows] = useState<Row[]>([]);
@@ -32,6 +132,8 @@ export function SubmissionsAdminClient() {
   const [search, setSearch] = useState("");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
+  const [restoreStatus, setRestoreStatus] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const q = query(collection(db(), "submissions"), orderBy("submittedAt", "desc"));
@@ -85,14 +187,118 @@ export function SubmissionsAdminClient() {
     [rows, statusFilter, formFilter, search, fromDate, toDate],
   );
 
-  async function exportCsv() {
+  function exportCsv() {
     const blob = new Blob([toCsv(filtered)], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `submissions-${Date.now()}.csv`;
+    const d = new Date();
+    const stamp = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    a.download = `submissions-${stamp}.csv`;
     a.click();
     URL.revokeObjectURL(url);
+  }
+
+  /* ── restore from CSV ── */
+  async function handleRestore(file: File) {
+    setRestoreStatus("Reading file...");
+    try {
+      const text = await file.text();
+      const csvRows = parseCsv(text);
+      if (csvRows.length < 2) {
+        setRestoreStatus("CSV is empty or has no data rows.");
+        return;
+      }
+
+      const headers = csvRows[0]!;
+      /* Map readable headers back to internal keys */
+      const reverseLabel: Record<string, string> = {
+        "Submission ID": "__id",
+        "Form": "__formId",
+        "Status": "__status",
+        "Submitted At": "__submittedAt",
+        "First Name": "firstName",
+        "Last Name": "lastName",
+        "Full Name": "fullName",
+        "Email": "email",
+        "Phone": "phone",
+        "Year": "year",
+        "Department": "department",
+        "Message": "message",
+      };
+
+      /* Also handle original camelCase headers from older exports */
+      const idxMap: { key: string; idx: number }[] = headers.map((h, i) => ({
+        key: reverseLabel[h.trim()] || h.trim().replace(/\s+(.)/g, (_: string, c: string) => c.toUpperCase()).replace(/^(.)/, (c: string) => c.toLowerCase()),
+        idx: i,
+      }));
+
+      const idIdx = idxMap.find((m) => m.key === "__id")?.idx;
+      const formIdx = idxMap.find((m) => m.key === "__formId")?.idx;
+      const statusIdx = idxMap.find((m) => m.key === "__status")?.idx;
+      const dateIdx = idxMap.find((m) => m.key === "__submittedAt")?.idx;
+
+      if (idIdx === undefined) {
+        setRestoreStatus("Could not find 'Submission ID' column. Make sure you're uploading a file exported from this page.");
+        return;
+      }
+
+      const existingIds = new Set(rows.map((r) => r.id));
+      let restored = 0;
+      let skipped = 0;
+
+      for (let i = 1; i < csvRows.length; i++) {
+        const cols = csvRows[i]!;
+        const docId = cols[idIdx]?.trim();
+        if (!docId) continue;
+
+        /* Skip if already exists in Firestore */
+        if (existingIds.has(docId)) {
+          skipped++;
+          continue;
+        }
+
+        const formId = formIdx !== undefined ? (cols[formIdx]?.trim() || "unknown") : "unknown";
+        const statusRaw = statusIdx !== undefined ? (cols[statusIdx]?.trim().toLowerCase() || "new") : "new";
+        const status = statusRaw === "read" || statusRaw === "archived" ? statusRaw : "new";
+        const dateStr = dateIdx !== undefined ? (cols[dateIdx]?.trim() || "") : "";
+
+        /* Parse the date back */
+        let submittedAt: Timestamp | null = null;
+        if (dateStr) {
+          const parsed = new Date(dateStr);
+          if (!isNaN(parsed.getTime())) submittedAt = Timestamp.fromDate(parsed);
+        }
+
+        /* Build fields from remaining columns */
+        const fields: Record<string, string> = {};
+        for (const m of idxMap) {
+          if (m.key.startsWith("__")) continue;
+          const val = cols[m.idx]?.trim() || "";
+          if (val) fields[m.key] = val;
+        }
+
+        await setDoc(doc(db(), "submissions", docId), {
+          formId,
+          status,
+          submittedAt: submittedAt || Timestamp.now(),
+          fields,
+          notes: "",
+          restoredFromCsv: true,
+        });
+        restored++;
+      }
+
+      setRestoreStatus(
+        restored > 0
+          ? `Restored ${restored} submission${restored > 1 ? "s" : ""}${skipped > 0 ? ` (${skipped} already existed, skipped)` : ""}.`
+          : skipped > 0
+            ? `All ${skipped} submissions already exist — nothing to restore.`
+            : "No valid rows found in CSV.",
+      );
+    } catch (e) {
+      setRestoreStatus(e instanceof Error ? e.message : "Failed to restore CSV.");
+    }
   }
 
   const inputCls =
@@ -127,12 +333,43 @@ export function SubmissionsAdminClient() {
           <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className={inputCls} />
           <button
             type="button"
-            onClick={() => void exportCsv()}
+            onClick={exportCsv}
             className="rounded-lg border border-white/25 px-4 py-2 text-sm text-white/90 hover:bg-white/10"
           >
             Export CSV
           </button>
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            className="rounded-lg border border-emerald-400/30 px-4 py-2 text-sm text-emerald-300 hover:bg-emerald-500/10"
+          >
+            Restore CSV
+          </button>
+          <input
+            ref={fileRef}
+            type="file"
+            accept=".csv"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) void handleRestore(f);
+              e.target.value = "";
+            }}
+          />
         </div>
+
+        {restoreStatus && (
+          <div className="mt-3 flex items-center gap-2 rounded-lg border border-emerald-400/20 bg-emerald-900/15 px-4 py-2.5 text-sm text-emerald-200">
+            <span className="flex-1">{restoreStatus}</span>
+            <button
+              type="button"
+              onClick={() => setRestoreStatus(null)}
+              className="text-emerald-400/60 hover:text-emerald-300"
+            >
+              ✕
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="admin-card mt-6 overflow-x-auto p-5 sm:p-6">
@@ -173,9 +410,22 @@ export function SubmissionsAdminClient() {
                     </td>
                     <td className="max-w-[260px] truncate py-3 pr-4">{preview}</td>
                     <td className="py-3 text-right">
-                      <Link href={`/admin/submissions/${r.id}`} className="text-cyan-300 hover:text-cyan-200">
-                        Open
-                      </Link>
+                      <span className="inline-flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (confirm("Delete this submission?")) {
+                              void deleteDoc(doc(db(), "submissions", r.id));
+                            }
+                          }}
+                          className="text-rose-400/70 hover:text-rose-300"
+                        >
+                          Delete
+                        </button>
+                        <Link href={`/admin/submissions/${r.id}`} className="text-cyan-300 hover:text-cyan-200">
+                          Open
+                        </Link>
+                      </span>
                     </td>
                   </tr>
                 );

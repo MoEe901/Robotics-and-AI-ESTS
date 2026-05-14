@@ -25,6 +25,8 @@ export type FirestoreTeamContact = {
  */
 export type FirestoreExpertiseEntry = {
   title: string;
+  /** Optional French translation of the expertise title. */
+  titleFr?: string;
   level: number;
 };
 
@@ -43,8 +45,11 @@ export type FirestoreTeamMember = {
   isVisible?: boolean;
   createdAt: Timestamp;
   bio?: string;
+  bioFr?: string;
   shortBio?: string;
+  shortBioFr?: string;
   fullDescription?: string;
+  fullDescriptionFr?: string;
   birthday?: string;
   contacts?: FirestoreTeamContact[];
   visibility?: Partial<TeamMemberVisibility>;
@@ -338,6 +343,8 @@ export type ApplySectionConfig = {
   departmentOptions: string[];
   charterLinkText: string;
   charterLinkHref: string;
+  /** French version of the charter download URL. Falls back to charterLinkHref when empty. */
+  charterLinkHrefFr?: string;
   submitNotePrefix: string;
   submitButtonLabel: string;
   successTitle: string;
@@ -399,6 +406,12 @@ export type FooterConfig = {
   socialHeading?: string;
   /** Toggle the bottom bar (copyright + version). Defaults to true. */
   showBottomBar?: boolean;
+  /** Brand name shown next to the logo in the footer. */
+  brandName?: string;
+  /** Small badge text below the tagline (e.g. "Est. 2024 · Rabat, Morocco"). */
+  estBadge?: string;
+  /** Tech pills shown in the bottom bar (comma-separated or array). */
+  techPills?: string[];
 };
 
 export const DEFAULT_FOOTER_COLUMNS: FooterColumn[] = [
@@ -454,6 +467,9 @@ export const DEFAULT_FOOTER_CONFIG: FooterConfig = {
   showSocialColumn: true,
   socialHeading: "Social",
   showBottomBar: true,
+  brandName: "Robotics & AI Club",
+  estBadge: "Est. 2024 · Rabat, Morocco",
+  techPills: ["React", "Next.js", "Three.js"],
 };
 
 export type HeroConfig = {

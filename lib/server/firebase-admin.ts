@@ -1,12 +1,14 @@
-import * as admin from "firebase-admin";
+import { initializeApp, cert, getApps, getApp, type App } from "firebase-admin/app";
+import { getFirestore, type Firestore } from "firebase-admin/firestore";
+import { getAuth, type Auth } from "firebase-admin/auth";
 
 /**
- * Firebase Admin for server-only usage (metadata, seed script).
+ * Firebase Admin for server-only usage (API routes, seed script).
  * Prefer `FIREBASE_SERVICE_ACCOUNT_JSON` (full JSON string) or Application Default Credentials.
  */
-export function getFirebaseAdminApp(): admin.app.App {
-  if (admin.apps.length) {
-    return admin.app();
+export function getFirebaseAdminApp(): App {
+  if (getApps().length) {
+    return getApp();
   }
   const projectId =
     process.env.FIREBASE_PROJECT_ID?.trim() ||
@@ -15,18 +17,18 @@ export function getFirebaseAdminApp(): admin.app.App {
 
   const json = process.env.FIREBASE_SERVICE_ACCOUNT_JSON?.trim();
   if (json) {
-    let cred: admin.ServiceAccount;
+    let cred: Record<string, string>;
     try {
-      cred = JSON.parse(json) as admin.ServiceAccount;
+      cred = JSON.parse(json) as Record<string, string>;
     } catch (e) {
       const detail = e instanceof Error ? e.message : String(e);
       throw new Error(
         `Firebase Admin: FIREBASE_SERVICE_ACCOUNT_JSON contains invalid JSON: ${detail}`,
       );
     }
-    return admin.initializeApp({
-      credential: admin.credential.cert(cred),
-      projectId: projectId || cred.projectId,
+    return initializeApp({
+      credential: cert(cred as Parameters<typeof cert>[0]),
+      projectId: projectId || cred.project_id,
     });
   }
 
@@ -36,10 +38,21 @@ export function getFirebaseAdminApp(): admin.app.App {
         "FIREBASE_PROJECT_ID / NEXT_PUBLIC_FIREBASE_PROJECT_ID with Application Default Credentials.",
     );
   }
-  return admin.initializeApp({ projectId });
+  return initializeApp({ projectId });
 }
 
-export function getAdminFirestore(): admin.firestore.Firestore {
-  getFirebaseAdminApp();
-  return admin.firestore();
+let _db: Firestore | undefined;
+
+export function getAdminFirestore(): Firestore {
+  if (!_db) {
+    const app = getFirebaseAdminApp();
+    _db = getFirestore(app);
+    // Use REST instead of gRPC — avoids gRPC crashes on Node v26
+    _db.settings({ preferRest: true });
+  }
+  return _db;
+}
+
+export function getAdminAuth(): Auth {
+  return getAuth(getFirebaseAdminApp());
 }

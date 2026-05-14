@@ -1,47 +1,46 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { useGsapStagger } from "@/lib/hooks/use-gsap-reveal";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 
 import type { ProcessStepsConfig } from "@/lib/firebase/types";
 import { DEFAULT_PROCESS_STEPS_CONFIG } from "@/lib/content/process-steps-defaults";
 import { resolveSectionIcon } from "@/lib/icons/section-icon-pack";
 import { useLanguage } from "@/lib/i18n/context";
+import { durS, easeLux } from "@/lib/motion";
+
+const EASE_LUX = easeLux as unknown as [number, number, number, number];
 
 const ACCENT = [
   {
     ring: "border-sky-400/40 bg-sky-500/[0.12] text-sky-400 shadow-[0_0_0_1px_rgba(56,189,248,0.12)]",
     badge: "border-sky-400/25 bg-sky-500/15 text-sky-300",
-    cardHover: "hover:border-sky-400/25",
-    glow: "from-sky-400/[0.09]",
-    visWrap: "bg-sky-500/[0.08] ring-1 ring-sky-400/20",
+    glow: "bg-sky-400/[0.06]",
+    line: "bg-sky-400",
+    node: "bg-sky-400 shadow-[0_0_18px_rgba(56,189,248,0.55)]",
   },
   {
     ring: "border-violet-400/40 bg-violet-500/[0.12] text-violet-300 shadow-[0_0_0_1px_rgba(167,139,250,0.12)]",
     badge: "border-violet-400/25 bg-violet-500/15 text-violet-200",
-    cardHover: "hover:border-violet-400/25",
-    glow: "from-violet-400/[0.09]",
-    visWrap: "bg-violet-500/[0.08] ring-1 ring-violet-400/20",
+    glow: "bg-violet-400/[0.06]",
+    line: "bg-violet-400",
+    node: "bg-violet-400 shadow-[0_0_18px_rgba(167,139,250,0.55)]",
   },
   {
     ring: "border-fuchsia-400/40 bg-fuchsia-500/[0.12] text-fuchsia-300 shadow-[0_0_0_1px_rgba(232,121,249,0.12)]",
     badge: "border-fuchsia-400/25 bg-fuchsia-500/15 text-fuchsia-200",
-    cardHover: "hover:border-fuchsia-400/25",
-    glow: "from-fuchsia-400/[0.09]",
-    visWrap: "bg-fuchsia-500/[0.08] ring-1 ring-fuchsia-400/20",
+    glow: "bg-fuchsia-400/[0.06]",
+    line: "bg-fuchsia-400",
+    node: "bg-fuchsia-400 shadow-[0_0_18px_rgba(232,121,249,0.55)]",
   },
   {
     ring: "border-amber-400/40 bg-amber-500/[0.12] text-amber-300 shadow-[0_0_0_1px_rgba(251,191,36,0.12)]",
     badge: "border-amber-400/25 bg-amber-500/15 text-amber-200",
-    cardHover: "hover:border-amber-400/25",
-    glow: "from-amber-400/[0.09]",
-    visWrap: "bg-amber-500/[0.08] ring-1 ring-amber-400/20",
+    glow: "bg-amber-400/[0.06]",
+    line: "bg-amber-400",
+    node: "bg-amber-400 shadow-[0_0_18px_rgba(251,191,36,0.55)]",
   },
 ] as const;
-
-function resolveIcon(key: string) {
-  return resolveSectionIcon(key);
-}
 
 type ProcessStepsSectionProps = {
   config: ProcessStepsConfig | null;
@@ -49,172 +48,275 @@ type ProcessStepsSectionProps = {
 
 export function ProcessStepsSection({ config }: ProcessStepsSectionProps) {
   const { t, locale } = useLanguage();
+  const reduce = useReducedMotion();
   const isFr = locale !== "en";
   const data = isFr
     ? (t.processSteps as unknown as ProcessStepsConfig)
     : (config ?? DEFAULT_PROCESS_STEPS_CONFIG);
-  const steps = data.steps.length >= 2 ? data.steps : DEFAULT_PROCESS_STEPS_CONFIG.steps;
-  const [visible, setVisible] = useState<Record<number, boolean>>({});
-  const rootRef = useRef<HTMLElement>(null);
+  const steps =
+    data.steps.length >= 2 ? data.steps : DEFAULT_PROCESS_STEPS_CONFIG.steps;
+
+  /* ── Drag-to-scroll ── */
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragState = useRef({ startX: 0, scrollLeft: 0 });
+
+  /* ── Fade edge hints ── */
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const updateEdgeHints = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 8);
+    setCanScrollRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 8);
+  }, []);
 
   useEffect(() => {
-    const els = rootRef.current?.querySelectorAll<HTMLElement>("[data-process-step]");
-    if (!els?.length) return;
+    const el = scrollRef.current;
+    if (!el) return;
+    updateEdgeHints();
+    el.addEventListener("scroll", updateEdgeHints, { passive: true });
+    const ro = new ResizeObserver(updateEdgeHints);
+    ro.observe(el);
+    return () => {
+      el.removeEventListener("scroll", updateEdgeHints);
+      ro.disconnect();
+    };
+  }, [updateEdgeHints, steps.length]);
 
-    /** Reveal any step whose top edge is within the viewport. */
-    function sweepVisible() {
-      if (!els) return;
-      els.forEach((el) => {
-        const rect = el.getBoundingClientRect();
-        if (rect.top < window.innerHeight * 0.98) {
-          const idx = Number(el.getAttribute("data-step-index"));
-          if (!Number.isNaN(idx)) setVisible((prev) => (prev[idx] ? prev : { ...prev, [idx]: true }));
-        }
-      });
-    }
+  const onPointerDown = useCallback((e: React.PointerEvent) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setIsDragging(true);
+    dragState.current = { startX: e.clientX, scrollLeft: el.scrollLeft };
+    el.setPointerCapture(e.pointerId);
+  }, []);
+
+  const onPointerMove = useCallback(
+    (e: React.PointerEvent) => {
+      if (!isDragging) return;
+      const el = scrollRef.current;
+      if (!el) return;
+      const dx = e.clientX - dragState.current.startX;
+      el.scrollLeft = dragState.current.scrollLeft - dx;
+    },
+    [isDragging],
+  );
+
+  const onPointerUp = useCallback(() => {
+    setIsDragging(false);
+  }, []);
+
+  /* ── Intersection observer stagger reveal ── */
+  const [visible, setVisible] = useState<Record<number, boolean>>({});
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const cards = el.querySelectorAll<HTMLElement>("[data-step-card]");
+    if (!cards.length) return;
 
     const obs = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (!entry.isIntersecting) return;
-          const el = entry.target as HTMLElement;
-          const idx = Number(el.getAttribute("data-step-index"));
+          const idx = Number(
+            (entry.target as HTMLElement).getAttribute("data-step-index"),
+          );
           if (Number.isNaN(idx)) return;
-          obs.unobserve(el);
+          obs.unobserve(entry.target);
           setVisible((prev) => (prev[idx] ? prev : { ...prev, [idx]: true }));
         });
       },
-      { threshold: 0.05 },
+      { root: el, threshold: 0.3 },
     );
 
-    els.forEach((el) => obs.observe(el));
+    cards.forEach((card) => obs.observe(card));
 
-    // Multi-sweep fallback: catches steps already on-screen at mount or after
-    // a late Firestore data load, regardless of scroll position.
-    const t1 = window.setTimeout(sweepVisible, 60);
-    const t2 = window.setTimeout(sweepVisible, 350);
-    const t3 = window.setTimeout(sweepVisible, 900);
-    // Hard safety net: reveal everything after 1.8 s no matter what.
-    const t4 = window.setTimeout(() => {
-      if (!els) return;
+    // Safety net: reveal everything after 2 s
+    const timer = window.setTimeout(() => {
       setVisible((prev) => {
         const next = { ...prev };
-        els.forEach((el) => {
-          const idx = Number(el.getAttribute("data-step-index"));
+        cards.forEach((card) => {
+          const idx = Number(card.getAttribute("data-step-index"));
           if (!Number.isNaN(idx)) next[idx] = true;
         });
         return next;
       });
-    }, 1800);
+    }, 2000);
 
     return () => {
       obs.disconnect();
-      window.clearTimeout(t1);
-      window.clearTimeout(t2);
-      window.clearTimeout(t3);
-      window.clearTimeout(t4);
+      window.clearTimeout(timer);
     };
   }, [steps.length]);
 
+  /* ── Render ── */
+
+  const scrollCls = [
+    "scrollbar-none flex gap-8 overflow-x-auto pb-6 pt-2 sm:gap-10",
+    "px-[max(1rem,calc((100vw-1100px)/2))]",
+    isDragging ? "cursor-grabbing select-none" : "cursor-grab",
+  ].join(" ");
+
   return (
-    <section
-      ref={rootRef}
-      id="process"
-      className="relative mx-auto w-[min(94%,1000px)] scroll-mt-28 py-2"
-    >
-      <div className="rounded-3xl border border-white/10 bg-white/[0.03] px-5 py-10 md:px-10 md:py-14">
-        <header className="mx-auto mb-14 max-w-2xl text-center md:mb-20">
-          <p className="mb-4 inline-flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.22em] text-white/50">
-            <span className="size-1.5 rounded-full bg-sky-400 shadow-[0_0_12px_rgba(56,189,248,0.6)] motion-safe:animate-pulse" />
-            {data.eyebrow}
-          </p>
-          <h2 className="font-semibold tracking-tight text-white text-[clamp(2.25rem,6vw,4.5rem)] leading-[0.98]">
-            {data.titleLine}
-            <span className="bg-gradient-to-br from-sky-400 via-violet-400 to-fuchsia-400 bg-clip-text text-transparent">
-              {data.titleAccent}
-            </span>
-          </h2>
-        </header>
+    <section id="process" className="relative scroll-mt-28 py-2">
+      {/* Atmospheric glow */}
+      <div
+        className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 size-[600px] rounded-full bg-violet-600/[0.04] blur-[120px]"
+        aria-hidden="true"
+      />
 
-        <div className="relative">
-          {/* center rail — desktop */}
+      <header className="mx-auto mb-12 max-w-2xl px-4 text-center md:mb-16">
+        <span className="eyebrow-pill mb-4">
+          {"// "}
+          {data.eyebrow}
+        </span>
+        <h2 className="font-heading typo-section-heading font-extrabold tracking-tight text-white">
+          {data.titleLine}
+          <span className="hero-title-grad">{data.titleAccent}</span>
+        </h2>
+      </header>
+
+      {/* Horizontal scrollable timeline */}
+      <div className="relative">
+        {/* Fade edge hints */}
+        {canScrollLeft && (
           <div
-            className="pointer-events-none absolute left-1/2 top-0 hidden h-full w-px -translate-x-1/2 bg-gradient-to-b from-transparent via-white/[0.12] to-transparent md:block"
-            aria-hidden
+            className="pointer-events-none absolute left-0 top-0 z-10 h-full w-16 bg-gradient-to-r from-[var(--background)] to-transparent sm:w-24"
+            aria-hidden="true"
           />
-          {/* mobile rail */}
+        )}
+        {canScrollRight && (
           <div
-            className="pointer-events-none absolute left-6 top-0 h-full w-px bg-gradient-to-b from-transparent via-white/[0.12] to-transparent md:hidden"
-            aria-hidden
+            className="pointer-events-none absolute right-0 top-0 z-10 h-full w-16 bg-gradient-to-l from-[var(--background)] to-transparent sm:w-24"
+            aria-hidden="true"
           />
+        )}
 
-          <div className="flex flex-col">
-            {steps.map((step, i) => {
-              const even = i % 2 === 1;
-              const accent = ACCENT[i % ACCENT.length]!;
-              const Icon = resolveIcon(step.iconKey);
-              const show = visible[i] ?? false;
-              return (
-                <div
-                  key={`${step.badge}-${i}`}
-                  data-process-step
-                  data-step-index={i}
-                  className={`group grid grid-cols-[48px_1fr] items-start gap-x-4 gap-y-1 py-10 transition-all duration-700 ease-out md:grid-cols-[1fr_80px_1fr] md:items-center md:gap-0 md:py-12 ${
-                    show ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
-                  }`}
-                >
-                  {/* timeline node — col 1 on mobile, center on md */}
-                  <div className="relative z-[1] flex flex-col items-center gap-2 md:col-start-2 md:row-start-1">
-                    <div
-                      className={`flex size-[52px] shrink-0 items-center justify-center rounded-full border bg-[#0e0e14] transition-[transform,box-shadow] duration-[var(--motion-dur-normal)] ease-[var(--motion-ease-spring)] group-hover:scale-110 group-hover:shadow-[0_0_24px_var(--step-glow)] ${accent.ring}`}
-                    >
-                      <Icon className="size-[22px]" strokeWidth={1.6} aria-hidden />
-                    </div>
-                    <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-white/40">
-                      {String(i + 1).padStart(2, "0")}
-                    </span>
-                  </div>
-
-                  {/* copy card */}
-                  <div
-                    className={`relative rounded-2xl border border-white/10 bg-[#0e0e14]/90 p-6 shadow-inner md:row-start-1 md:p-8 ${
-                      even ? "md:col-start-3" : "md:col-start-1"
-                    } ${accent.cardHover} transition-[transform,border-color,box-shadow] duration-[var(--motion-dur-normal)] ease-[var(--motion-ease-lux)] group-hover:-translate-y-1`}
-                  >
-                    <div
-                      className={`pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br ${accent.glow} to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100`}
-                    />
-                    <span
-                      className={`relative z-[1] mb-3 inline-block rounded-full border px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.18em] ${accent.badge}`}
-                    >
-                      {step.badge}
-                    </span>
-                    <h3 className="relative z-[1] text-lg font-medium tracking-tight text-white md:text-xl">
-                      {step.title}
-                    </h3>
-                    <p className="relative z-[1] mt-2 text-sm font-light leading-relaxed text-white/60">
-                      {step.description}
-                    </p>
-                  </div>
-
-                  {/* large icon — desktop */}
-                  <div
-                    className={`relative hidden items-center justify-center py-2 md:flex md:row-start-1 ${
-                      even ? "md:col-start-1" : "md:col-start-3"
-                    }`}
-                  >
-                    <div
-                      className={`relative flex size-[140px] items-center justify-center rounded-full transition-transform duration-500 ease-out group-hover:scale-[1.04] group-hover:rotate-[3deg] ${accent.visWrap}`}
-                    >
-                      <Icon className="relative z-[1] size-[72px]" strokeWidth={1.2} aria-hidden />
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+        <div
+          ref={scrollRef}
+          className={scrollCls}
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          onPointerCancel={onPointerUp}
+        >
+          {steps.map((step, i) => (
+            <StepCard
+              key={`${step.badge}-${i}`}
+              step={step}
+              index={i}
+              total={steps.length}
+              accent={ACCENT[i % ACCENT.length] as (typeof ACCENT)[number]}
+              show={visible[i] ?? false}
+              reduce={reduce}
+            />
+          ))}
         </div>
       </div>
     </section>
+  );
+}
+
+/* ── Step card (extracted to simplify JSX nesting) ── */
+
+type StepCardProps = {
+  step: ProcessStepsConfig["steps"][number];
+  index: number;
+  total: number;
+  accent: (typeof ACCENT)[number];
+  show: boolean;
+  reduce: boolean | null;
+};
+
+function StepCard({ step, index, total, accent, show, reduce }: StepCardProps) {
+  const Icon = useMemo(() => resolveSectionIcon(step.iconKey), [step.iconKey]);
+  const isLast = index === total - 1;
+  const i = index;
+
+  const nodeInitial = reduce ? {} : { scale: 0.5, opacity: 0 };
+  const nodeAnimate = show
+    ? { scale: 1, opacity: 1 }
+    : reduce
+      ? {}
+      : { scale: 0.5, opacity: 0 };
+
+  const contentInitial = reduce ? {} : { opacity: 0, y: 20 };
+  const contentAnimate = show
+    ? { opacity: 1, y: 0 }
+    : reduce
+      ? {}
+      : { opacity: 0, y: 20 };
+
+  return (
+    <div
+      data-step-card
+      data-step-index={i}
+      className="group flex shrink-0 flex-col items-center"
+      style={{ width: "clamp(280px, 30vw, 360px)" }}
+    >
+      {/* Timeline rail */}
+      <div className="relative mb-8 flex w-full items-center">
+        {/* Connecting line (left half) */}
+        {i > 0 && (
+          <div className="absolute right-1/2 top-1/2 h-px w-[calc(50%+1.5rem)] -translate-y-1/2 bg-gradient-to-r from-white/[0.06] to-white/[0.12] sm:w-[calc(50%+2rem)]" />
+        )}
+        {/* Connecting line (right half) */}
+        {!isLast && (
+          <div className="absolute left-1/2 top-1/2 h-px w-[calc(50%+1.5rem)] -translate-y-1/2 bg-gradient-to-r from-white/[0.12] to-white/[0.06] sm:w-[calc(50%+2rem)]" />
+        )}
+
+        {/* Node */}
+        <div className="relative mx-auto">
+          <motion.div
+            className={`flex size-16 items-center justify-center rounded-full border bg-[#0e0e14] transition-[transform,box-shadow] duration-[var(--motion-dur-normal)] ease-[var(--motion-ease-spring)] group-hover:scale-110 ${accent.ring}`}
+            initial={nodeInitial}
+            animate={nodeAnimate}
+            transition={{
+              duration: durS.slow,
+              ease: EASE_LUX,
+              delay: i * 0.08,
+            }}
+          >
+            {/* eslint-disable-next-line react-hooks/static-components -- dynamic icon from CMS key */}
+            <Icon className="size-7" strokeWidth={1.5} aria-hidden={true} />
+          </motion.div>
+          {/* Glow dot behind node */}
+          <div
+            className={`pointer-events-none absolute inset-0 -z-10 scale-150 rounded-full blur-xl ${accent.glow} opacity-0 transition-opacity duration-500 group-hover:opacity-100`}
+            aria-hidden="true"
+          />
+        </div>
+      </div>
+
+      {/* Card content */}
+      <motion.div
+        className="flex flex-1 flex-col items-center px-2 text-center"
+        initial={contentInitial}
+        animate={contentAnimate}
+        transition={{
+          duration: durS.slow,
+          ease: EASE_LUX,
+          delay: i * 0.08 + 0.12,
+        }}
+      >
+        <span className="font-jetbrains mb-2.5 text-[11px] font-medium uppercase tracking-[0.2em] text-slate-500">
+          {String(i + 1).padStart(2, "0")}
+        </span>
+        <span
+          className={`mb-4 inline-block rounded-full border px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] ${accent.badge}`}
+        >
+          {step.badge}
+        </span>
+        <h3 className="font-syne mb-3 text-lg font-bold tracking-tight text-white md:text-xl">
+          {step.title}
+        </h3>
+        <p className="text-[0.88rem] font-light leading-[1.8] text-slate-400/80">
+          {step.description}
+        </p>
+      </motion.div>
+    </div>
   );
 }

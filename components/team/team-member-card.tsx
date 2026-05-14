@@ -8,6 +8,7 @@ import { formatRoleTitles } from "@/lib/team/format-roles";
 import { memberImageSrc } from "@/lib/team/image-url";
 import { TAXONOMY_NOT_SET, taxonomyDisplay } from "@/lib/team/taxonomy";
 import { useSpotlight } from "@/lib/hooks/use-spotlight";
+import { useLanguage, translateCms } from "@/lib/i18n/context";
 import { cn } from "@/lib/utils";
 
 export type MemberCardCategory =
@@ -72,6 +73,7 @@ type TeamMemberCardProps = {
 };
 
 export function TeamMemberCard({ member, view = "grid" }: TeamMemberCardProps) {
+  const { t } = useLanguage();
   const href = member.slug?.current ? `/team/${member.slug.current}` : undefined;
   const src = memberImageSrc(member);
   const roleLine = formatRoleTitles(member.roles);
@@ -82,10 +84,10 @@ export function TeamMemberCard({ member, view = "grid" }: TeamMemberCardProps) {
       ? departmentDisplay
       : schoolStatusDisplay !== TAXONOMY_NOT_SET
         ? schoolStatusDisplay
-        : member.roleType ?? "Member";
+        : member.roleType ? translateCms(t, "roleType", member.roleType) : "Member";
   const cardBio = member.shortBio ?? member.bio;
   const cat = memberCardCategory(member);
-  const badgeText = member.roleType?.trim() || deptLabel;
+  const badgeText = member.roleType?.trim() ? translateCms(t, "roleType", member.roleType!) : deptLabel;
 
   const { ref, handlers } = useSpotlight<HTMLElement>();
 
@@ -160,7 +162,7 @@ export function TeamMemberCard({ member, view = "grid" }: TeamMemberCardProps) {
             )}
           >
             <span className="h-px w-3 bg-current opacity-40" aria-hidden />
-            {roleLine}
+            {roleLine.split(" · ").map(s => translateCms(t, "roleType", s)).join(" · ")}
           </p>
           {view === "list" ? (
             <span className="mt-1 inline-block rounded-full bg-white/[0.05] px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#6b6a80]">

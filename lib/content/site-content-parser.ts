@@ -898,6 +898,17 @@ export function parseFooterDoc(raw: Record<string, unknown>): FooterConfig {
     showSocialColumn: raw.showSocialColumn !== false,
     socialHeading,
     showBottomBar: raw.showBottomBar !== false,
+    brandName:
+      typeof raw.brandName === "string" && raw.brandName.trim()
+        ? raw.brandName.trim()
+        : DEFAULT_FOOTER_CONFIG.brandName,
+    estBadge:
+      typeof raw.estBadge === "string" && raw.estBadge.trim()
+        ? raw.estBadge.trim()
+        : DEFAULT_FOOTER_CONFIG.estBadge,
+    techPills: Array.isArray(raw.techPills)
+      ? (raw.techPills as unknown[]).filter((x): x is string => typeof x === "string" && x.trim().length > 0).map((s) => s.trim())
+      : DEFAULT_FOOTER_CONFIG.techPills,
   };
 }
 

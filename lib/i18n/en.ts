@@ -450,4 +450,37 @@ export const en: Translations = {
       },
     ],
   },
+
+
+  cmsMap: {
+    roleType: {},
+    topics: {},
+  },
+
+  footer: {
+    brandName: "Robotics & AI Club",
+    tagline: "A university tech community at EST Safi, Morocco. Building the future through robotics, AI, and collaboration.",
+    clubColumn: "Club",
+    infoColumn: "Info",
+    connectColumn: "Connect",
+    socialColumn: "Social",
+    clubLinks: [
+      { label: "Home", href: "/" },
+      { label: "Events", href: "/#events" },
+      { label: "Projects", href: "/#projects" },
+      { label: "Competitions", href: "/#competitions" },
+    ],
+    infoLinks: [
+      { label: "Know Us", href: "/#know" },
+      { label: "Cellules", href: "/#cellules" },
+      { label: "Team", href: "/#team" },
+      { label: "FAQ", href: "/#faq" },
+    ],
+    connectLinks: [
+      { label: "Apply Now", href: "/#apply" },
+      { label: "Contact Us", href: "/#apply" },
+    ],
+    allSystemsOperational: "All Systems Operational",
+    estBadge: "Est. 2024 \u00b7 Rabat, Morocco",
+  },
 };

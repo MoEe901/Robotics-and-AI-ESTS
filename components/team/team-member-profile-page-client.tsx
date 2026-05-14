@@ -40,6 +40,18 @@ export function TeamMemberProfilePageClient({ slug }: TeamMemberProfilePageClien
   const member: TeamMemberProfile | undefined = useTeamStore((s) => s.profilesBySlug[slug]);
   const awaitingLive = !member && !subscriptionSettled;
 
+  // Update browser tab title with locale-aware text
+  // Use setTimeout to override Next.js server metadata after React reconciliation
+  const { locale } = useLanguage();
+  useEffect(() => {
+    if (!member) return;
+    const suffix = locale === "fr" ? "Club Robotique & IA" : "Robotics & AI Club";
+    const title = `${member.name} | ${suffix}`;
+    document.title = title;
+    const t = setTimeout(() => { document.title = title; }, 100);
+    return () => clearTimeout(t);
+  }, [member, locale]);
+
   if (!clientMounted) {
     return <div className="min-h-[50vh]" suppressHydrationWarning aria-hidden />;
   }

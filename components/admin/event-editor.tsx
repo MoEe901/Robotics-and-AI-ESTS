@@ -365,7 +365,7 @@ export function EventEditor({ eventId }: Props) {
           </p>
           <ul className="mt-4 space-y-2">
             {topics.map((t, i) => (
-              <li key={i} className="flex gap-2">
+              <li key={`topic-${i}`} className="flex gap-2">
                 <input
                   value={t}
                   onChange={(e) => {
@@ -401,7 +401,7 @@ export function EventEditor({ eventId }: Props) {
           <p className="mt-1 text-xs text-white/45">Paste direct HTTPS links. Use visibility toggle per file.</p>
           <ul className="mt-4 space-y-3">
             {attachments.map((row, i) => (
-              <li key={i} className="flex flex-col gap-2 rounded-xl border border-white/10 bg-white/[0.03] p-3 sm:flex-row sm:items-end">
+              <li key={`${row.label}-${row.url}-${i}`} className="flex flex-col gap-2 rounded-xl border border-white/10 bg-white/[0.03] p-3 sm:flex-row sm:items-end">
                 <label className="block min-w-0 flex-1 text-xs"><span className="text-white/60">Label</span><input value={row.label} onChange={(e)=>{const next=[...attachments]; next[i]={...next[i], label:e.target.value}; setAttachments(next);}} className="mt-1 w-full rounded-lg border border-white/12 bg-black/30 px-2 py-1.5 text-sm text-white"/></label>
                 <label className="block min-w-0 flex-[2] text-xs"><span className="text-white/60">File URL</span><input value={row.url} onChange={(e)=>{const next=[...attachments]; next[i]={...next[i], url:e.target.value}; setAttachments(next);}} className="mt-1 w-full rounded-lg border border-white/12 bg-black/30 px-2 py-1.5 font-mono text-xs text-white"/></label>
                 <label className="inline-flex items-center gap-2 text-xs text-white/70"><input type="checkbox" className="size-4 rounded border-white/20 bg-black/40" checked={row.visible !== false} onChange={(e)=>{const next=[...attachments]; next[i]={...next[i], visible:e.target.checked}; setAttachments(next);}}/>Visible</label>
@@ -417,7 +417,7 @@ export function EventEditor({ eventId }: Props) {
           <p className="mt-1 text-xs text-white/45">Paste image URL, direct video URL, or YouTube link. Captions optional.</p>
           <ul className="mt-4 space-y-3">
             {gallery.map((row, i) => (
-              <li key={i} className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
+              <li key={`${row.url}-${row.kind}-${i}`} className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
                   <label className="block min-w-0 flex-1 text-xs"><span className="text-white/60">Media URL</span><input value={row.url} onChange={(e)=>{const next=[...gallery]; next[i]={...next[i], url:e.target.value}; setGallery(next);}} className="mt-1 w-full rounded-lg border border-white/12 bg-black/30 px-2 py-1.5 font-mono text-xs text-white"/></label>
                   <label className="block text-xs sm:w-32"><span className="text-white/60">Type</span><select value={row.kind} onChange={(e)=>{const next=[...gallery]; next[i]={...next[i], kind:e.target.value === "video" ? "video" : "image"}; setGallery(next);}} className="mt-1 w-full rounded-lg border border-white/12 bg-black/30 px-2 py-1.5 text-sm text-white"><option value="image">Image</option><option value="video">Video</option></select></label>

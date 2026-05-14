@@ -3,7 +3,7 @@
 import { Bebas_Neue, DM_Sans } from "next/font/google";
 import { Frown, LayoutGrid, List, Search } from "lucide-react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import type { TeamMemberListItem } from "@/lib/team/types";
 import {
@@ -12,7 +12,7 @@ import {
   teamListingHref,
 } from "@/lib/team/academic-year";
 import { formatRoleTitles } from "@/lib/team/format-roles";
-import { useLanguage } from "@/lib/i18n/context";
+import { useLanguage, translateCms } from "@/lib/i18n/context";
 import { cn } from "@/lib/utils";
 
 import { TeamMemberCard } from "./team-member-card";
@@ -81,10 +81,21 @@ export function TeamDirectory({
   initialRoleFilter = "All",
   loading = false,
 }: TeamDirectoryProps) {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   const [search, setSearch] = useState("");
   const [view, setView] = useState<"grid" | "list">("grid");
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+
+  // Update browser tab title with locale-aware text
+  // Use setTimeout to override Next.js server metadata after React reconciliation
+  useEffect(() => {
+    const suffix = locale === "fr" ? "Club Robotique & IA" : "Robotics & AI Club";
+    const label = locale === "fr" ? "Équipe" : "Team";
+    const title = `${label} | ${suffix}`;
+    document.title = title;
+    const t = setTimeout(() => { document.title = title; }, 100);
+    return () => clearTimeout(t);
+  }, [locale]);
 
   const roleFilters = useMemo(() => {
     const s = new Set<string>();
@@ -325,7 +336,7 @@ export function TeamDirectory({
                       : "border-white/[0.07] bg-white/[0.03] text-[#6b6a80] hover:border-white/[0.13] hover:bg-white/[0.05] hover:text-[#f0eff5]",
                   )}
                 >
-                  {role}
+                  {role === "All" ? (locale === "fr" ? "Tous" : "All") : translateCms(t, "roleType", role)}
                   <span
                     className={cn(
                       "rounded-full px-1.5 py-0.5 text-[10px] tabular-nums",

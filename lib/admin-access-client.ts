@@ -11,7 +11,7 @@ export type ProvisionedAdminRole =
 
 export type AdminSessionInfo = {
   ok: true;
-  role: ProvisionedAdminRole | null;
+  role: ProvisionedAdminRole;
 };
 
 export type AdminSessionDenied = {

@@ -29,7 +29,7 @@ import {
 } from "@/lib/events/event-page-accent";
 import { eventLocationHref, formatEventDate, youtubeEmbedSrc } from "@/lib/events/public";
 import { parseWebsiteCtaHex } from "@/lib/events/website-cta-color";
-import { useLanguage } from "@/lib/i18n/context";
+import { useLanguage, translateCms } from "@/lib/i18n/context";
 import { cn } from "@/lib/utils";
 
 const FALLBACK = "/fallback.jpg";
@@ -132,6 +132,17 @@ export function EventDocumentaryPageClient({ pathSegment }: Props) {
     );
     return () => unsub();
   }, [pathSegment]);
+
+  // Update browser tab title with locale-aware text
+  // Use setTimeout to override Next.js server metadata after React reconciliation
+  useEffect(() => {
+    if (event === undefined || event === null) return;
+    const suffix = isFr ? "Club Robotique & IA" : "Robotics & AI Club";
+    const title = `${event.title} | ${suffix}`;
+    document.title = title;
+    const t = setTimeout(() => { document.title = title; }, 100);
+    return () => clearTimeout(t);
+  }, [event, isFr]);
 
   useEffect(() => {
     const id = window.setInterval(() => setNowMs(Date.now()), 1000);
@@ -967,7 +978,7 @@ export function EventDocumentaryPageClient({ pathSegment }: Props) {
                     key={`${ti}-${tag}`}
                     className="cursor-default rounded-full border border-[var(--border)] bg-white/[0.03] px-3 py-1 text-[11px] text-[var(--muted)] transition hover:border-[var(--ev-accent-border)] hover:text-[var(--ev-accent)]"
                   >
-                    {tag}
+                    {translateCms(t, "topics", tag)}
                   </span>
                 ))}
               </div>

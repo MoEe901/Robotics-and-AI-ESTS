@@ -8,14 +8,38 @@ import {
   Camera,
   ChevronRight,
   Code2,
+  ExternalLink,
+  FileText,
+  Gamepad2,
+  Globe,
+  Hash,
+  Headphones,
+  Heart,
   Link2,
   Mail,
   MapPin,
   MessageCircle,
+  MessageSquare,
+  Monitor,
+  Music,
+  Newspaper,
+  Palette,
+  PenTool,
   Phone,
+  Play,
+  Podcast,
+  Radio,
+  Rss,
+  Send,
   Share2,
+  ShoppingBag,
   Sparkles,
+  Star,
+  Trophy,
+  Tv,
   User,
+  Video,
+  Zap,
 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
@@ -32,7 +56,7 @@ import { teamListingHref } from "@/lib/team/academic-year";
 import { formatBirthdayDisplay } from "@/lib/team/birthday";
 import { memberImageSrc } from "@/lib/team/image-url";
 import { taxonomyDisplay } from "@/lib/team/taxonomy";
-import { useLanguage } from "@/lib/i18n/context";
+import { useLanguage, translateCms } from "@/lib/i18n/context";
 
 const FALLBACK_MEMBER_IMAGE = "/fallback.jpg";
 
@@ -51,10 +75,19 @@ const fontSans = DM_Sans({
 function contactHref(type: string, value: string) {
   const v = value.trim();
   if (type === "Email") return `mailto:${v}`;
-  if (type === "Phone") return `tel:${v.replace(/\s/g, "")}`;
+  if (type === "Phone" || type === "Viber") return `tel:${v.replace(/\s/g, "")}`;
   if (type === "WhatsApp") {
     const digits = v.replace(/\D/g, "");
     return digits ? `https://wa.me/${digits}` : v;
+  }
+  if (type === "Telegram") {
+    if (v.startsWith("http")) return v;
+    const username = v.replace(/^@/, "");
+    return `https://t.me/${username}`;
+  }
+  if (type === "Discord") {
+    if (v.startsWith("http")) return v;
+    return `https://discord.gg/${v}`;
   }
   if (v.startsWith("http")) return v;
   return `https://${v}`;
@@ -62,39 +95,291 @@ function contactHref(type: string, value: string) {
 
 function ContactRowIcon({ type }: { type: string }) {
   const cn = "size-3.5";
+  const sw = 1.8;
   switch (type) {
-    case "LinkedIn":
-    case "GitHub":
-      return <Code2 className={cn} strokeWidth={1.8} />;
+    // --- Direct ---
     case "Email":
-      return <Mail className={cn} strokeWidth={1.8} />;
+      return <Mail className={cn} strokeWidth={sw} />;
     case "Phone":
+      return <Phone className={cn} strokeWidth={sw} />;
+    // --- Messaging ---
     case "WhatsApp":
-      return <Phone className={cn} strokeWidth={1.8} />;
+      return <MessageCircle className={cn} strokeWidth={sw} />;
+    case "Telegram":
+      return <Send className={cn} strokeWidth={sw} />;
+    case "Signal":
+      return <Radio className={cn} strokeWidth={sw} />;
+    case "Messenger":
+      return <MessageSquare className={cn} strokeWidth={sw} />;
+    case "Viber":
+      return <Phone className={cn} strokeWidth={sw} />;
+    case "WeChat":
+      return <MessageCircle className={cn} strokeWidth={sw} />;
+    case "Line":
+      return <MessageSquare className={cn} strokeWidth={sw} />;
+    case "iMessage":
+      return <MessageCircle className={cn} strokeWidth={sw} />;
+    // --- Social ---
     case "Instagram":
-      return <Camera className={cn} strokeWidth={1.8} />;
+      return <Camera className={cn} strokeWidth={sw} />;
     case "Snapchat":
-      return <Sparkles className={cn} strokeWidth={1.8} />;
+      return <Sparkles className={cn} strokeWidth={sw} />;
+    case "Facebook":
+      return <User className={cn} strokeWidth={sw} />;
+    case "Twitter":
+    case "X":
+      return <Hash className={cn} strokeWidth={sw} />;
+    case "TikTok":
+      return <Music className={cn} strokeWidth={sw} />;
+    case "Reddit":
+      return <MessageCircle className={cn} strokeWidth={sw} />;
+    case "Threads":
+      return <Hash className={cn} strokeWidth={sw} />;
+    case "Mastodon":
+      return <Globe className={cn} strokeWidth={sw} />;
+    case "Bluesky":
+      return <Globe className={cn} strokeWidth={sw} />;
+    case "Pinterest":
+      return <Heart className={cn} strokeWidth={sw} />;
+    case "Tumblr":
+      return <PenTool className={cn} strokeWidth={sw} />;
+    // --- Professional ---
+    case "LinkedIn":
+      return <User className={cn} strokeWidth={sw} />;
+    case "GitHub":
+      return <Code2 className={cn} strokeWidth={sw} />;
+    case "GitLab":
+      return <Code2 className={cn} strokeWidth={sw} />;
+    case "Bitbucket":
+      return <Code2 className={cn} strokeWidth={sw} />;
+    case "Stack Overflow":
+      return <Zap className={cn} strokeWidth={sw} />;
+    case "Codepen":
+      return <PenTool className={cn} strokeWidth={sw} />;
+    case "Dev.to":
+      return <FileText className={cn} strokeWidth={sw} />;
+    case "Hashnode":
+      return <Hash className={cn} strokeWidth={sw} />;
+    case "HackerRank":
+      return <Trophy className={cn} strokeWidth={sw} />;
+    case "LeetCode":
+      return <Code2 className={cn} strokeWidth={sw} />;
+    case "Kaggle":
+      return <Monitor className={cn} strokeWidth={sw} />;
+    case "Hugging Face":
+      return <Sparkles className={cn} strokeWidth={sw} />;
+    case "Behance":
+      return <Palette className={cn} strokeWidth={sw} />;
+    case "Dribbble":
+      return <Palette className={cn} strokeWidth={sw} />;
+    case "Figma":
+      return <PenTool className={cn} strokeWidth={sw} />;
+    case "Notion":
+      return <FileText className={cn} strokeWidth={sw} />;
+    case "Medium":
+      return <BookOpen className={cn} strokeWidth={sw} />;
+    case "Substack":
+      return <Newspaper className={cn} strokeWidth={sw} />;
+    // --- Media & Content ---
+    case "YouTube":
+      return <Play className={cn} strokeWidth={sw} />;
+    case "Twitch":
+      return <Tv className={cn} strokeWidth={sw} />;
+    case "Spotify":
+      return <Music className={cn} strokeWidth={sw} />;
+    case "SoundCloud":
+      return <Headphones className={cn} strokeWidth={sw} />;
+    case "Apple Music":
+      return <Music className={cn} strokeWidth={sw} />;
+    case "Podcast":
+      return <Podcast className={cn} strokeWidth={sw} />;
+    case "Vimeo":
+      return <Video className={cn} strokeWidth={sw} />;
+    // --- Gaming ---
     case "Discord":
-      return <MessageCircle className={cn} strokeWidth={1.8} />;
+      return <Gamepad2 className={cn} strokeWidth={sw} />;
+    case "Steam":
+      return <Gamepad2 className={cn} strokeWidth={sw} />;
+    case "Xbox":
+      return <Gamepad2 className={cn} strokeWidth={sw} />;
+    case "PlayStation":
+      return <Gamepad2 className={cn} strokeWidth={sw} />;
+    case "Epic Games":
+      return <Gamepad2 className={cn} strokeWidth={sw} />;
+    // --- Academic ---
+    case "Google Scholar":
+      return <BookOpen className={cn} strokeWidth={sw} />;
+    case "ResearchGate":
+      return <FileText className={cn} strokeWidth={sw} />;
+    case "ORCID":
+      return <User className={cn} strokeWidth={sw} />;
+    case "Academia.edu":
+      return <BookOpen className={cn} strokeWidth={sw} />;
+    // --- Other ---
+    case "Website":
+    case "Portfolio":
+    case "Blog":
+      return <Globe className={cn} strokeWidth={sw} />;
+    case "RSS":
+      return <Rss className={cn} strokeWidth={sw} />;
+    case "Calendly":
+      return <Calendar className={cn} strokeWidth={sw} />;
+    case "PayPal":
+    case "Venmo":
+    case "Ko-fi":
+    case "Buy Me a Coffee":
+    case "Patreon":
+      return <Star className={cn} strokeWidth={sw} />;
+    case "App Store":
+    case "Play Store":
+      return <ShoppingBag className={cn} strokeWidth={sw} />;
+    case "Linktree":
+      return <ExternalLink className={cn} strokeWidth={sw} />;
     default:
-      return <Link2 className={cn} strokeWidth={1.8} />;
+      return <Link2 className={cn} strokeWidth={sw} />;
   }
 }
 
 function socialIconWrapClass(type: string): string {
   switch (type) {
-    case "LinkedIn":
-    case "GitHub":
-      return "bg-sky-500/10 text-sky-400";
-    case "Instagram":
-      return "bg-fuchsia-500/10 text-fuchsia-300";
-    case "WhatsApp":
-      return "bg-emerald-500/10 text-emerald-300";
+    // Direct
     case "Email":
       return "bg-sky-500/10 text-sky-400";
     case "Phone":
       return "bg-violet-500/10 text-violet-300";
+    // Messaging
+    case "WhatsApp":
+      return "bg-emerald-500/10 text-emerald-300";
+    case "Telegram":
+      return "bg-sky-500/10 text-sky-400";
+    case "Signal":
+      return "bg-blue-500/10 text-blue-400";
+    case "Messenger":
+      return "bg-blue-500/10 text-blue-400";
+    case "Viber":
+      return "bg-purple-500/10 text-purple-400";
+    case "WeChat":
+      return "bg-green-500/10 text-green-400";
+    case "Line":
+      return "bg-green-500/10 text-green-400";
+    case "iMessage":
+      return "bg-blue-500/10 text-blue-400";
+    // Social
+    case "Instagram":
+      return "bg-fuchsia-500/10 text-fuchsia-300";
+    case "Snapchat":
+      return "bg-yellow-500/10 text-yellow-300";
+    case "Facebook":
+      return "bg-blue-500/10 text-blue-400";
+    case "Twitter":
+    case "X":
+      return "bg-slate-500/10 text-slate-300";
+    case "TikTok":
+      return "bg-pink-500/10 text-pink-300";
+    case "Reddit":
+      return "bg-orange-500/10 text-orange-400";
+    case "Threads":
+      return "bg-slate-500/10 text-slate-300";
+    case "Mastodon":
+      return "bg-indigo-500/10 text-indigo-400";
+    case "Bluesky":
+      return "bg-sky-500/10 text-sky-400";
+    case "Pinterest":
+      return "bg-red-500/10 text-red-400";
+    case "Tumblr":
+      return "bg-indigo-500/10 text-indigo-300";
+    // Professional
+    case "LinkedIn":
+      return "bg-sky-500/10 text-sky-400";
+    case "GitHub":
+      return "bg-slate-500/10 text-slate-300";
+    case "GitLab":
+      return "bg-orange-500/10 text-orange-400";
+    case "Bitbucket":
+      return "bg-blue-500/10 text-blue-400";
+    case "Stack Overflow":
+      return "bg-orange-500/10 text-orange-400";
+    case "Codepen":
+      return "bg-slate-500/10 text-slate-300";
+    case "Dev.to":
+      return "bg-slate-500/10 text-slate-300";
+    case "Hashnode":
+      return "bg-blue-500/10 text-blue-400";
+    case "HackerRank":
+      return "bg-green-500/10 text-green-400";
+    case "LeetCode":
+      return "bg-amber-500/10 text-amber-400";
+    case "Kaggle":
+      return "bg-cyan-500/10 text-cyan-400";
+    case "Hugging Face":
+      return "bg-yellow-500/10 text-yellow-300";
+    case "Behance":
+      return "bg-blue-500/10 text-blue-400";
+    case "Dribbble":
+      return "bg-pink-500/10 text-pink-400";
+    case "Figma":
+      return "bg-violet-500/10 text-violet-400";
+    case "Notion":
+      return "bg-slate-500/10 text-slate-300";
+    case "Medium":
+      return "bg-slate-500/10 text-slate-300";
+    case "Substack":
+      return "bg-orange-500/10 text-orange-400";
+    // Media & Content
+    case "YouTube":
+      return "bg-red-500/10 text-red-400";
+    case "Twitch":
+      return "bg-purple-500/10 text-purple-400";
+    case "Spotify":
+      return "bg-green-500/10 text-green-400";
+    case "SoundCloud":
+      return "bg-orange-500/10 text-orange-400";
+    case "Apple Music":
+      return "bg-pink-500/10 text-pink-400";
+    case "Podcast":
+      return "bg-violet-500/10 text-violet-400";
+    case "Vimeo":
+      return "bg-cyan-500/10 text-cyan-400";
+    // Gaming
+    case "Discord":
+      return "bg-indigo-500/10 text-indigo-400";
+    case "Steam":
+      return "bg-slate-500/10 text-slate-300";
+    case "Xbox":
+      return "bg-green-500/10 text-green-400";
+    case "PlayStation":
+      return "bg-blue-500/10 text-blue-400";
+    case "Epic Games":
+      return "bg-slate-500/10 text-slate-300";
+    // Academic
+    case "Google Scholar":
+      return "bg-blue-500/10 text-blue-400";
+    case "ResearchGate":
+      return "bg-teal-500/10 text-teal-400";
+    case "ORCID":
+      return "bg-green-500/10 text-green-400";
+    case "Academia.edu":
+      return "bg-blue-500/10 text-blue-400";
+    // Other
+    case "Website":
+    case "Portfolio":
+    case "Blog":
+      return "bg-cyan-500/10 text-cyan-400";
+    case "RSS":
+      return "bg-orange-500/10 text-orange-400";
+    case "Calendly":
+      return "bg-blue-500/10 text-blue-400";
+    case "PayPal":
+    case "Venmo":
+    case "Ko-fi":
+    case "Buy Me a Coffee":
+    case "Patreon":
+      return "bg-amber-500/10 text-amber-400";
+    case "App Store":
+    case "Play Store":
+      return "bg-blue-500/10 text-blue-400";
+    case "Linktree":
+      return "bg-green-500/10 text-green-400";
     default:
       return "bg-violet-500/10 text-violet-300";
   }
@@ -111,7 +396,8 @@ type MemberProfileProps = {
 };
 
 export function MemberProfile({ member }: MemberProfileProps) {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
+  const isFr = locale !== "en";
   const [heroFallback, setHeroFallback] = useState(false);
   const [avatarFallback, setAvatarFallback] = useState(false);
 
@@ -128,10 +414,13 @@ export function MemberProfile({ member }: MemberProfileProps) {
   const departmentLabel = taxonomyDisplay(member.department ?? "", "");
   const schoolStatusLabel = taxonomyDisplay(member.schoolStatus ?? "", "");
   const showBirthday = member.visibility?.showBirthday && member.birthday;
-  const showFullDescription = member.visibility?.showFullDescription !== false && member.fullDescription;
+  const localizedFullDesc = isFr
+    ? (member.fullDescriptionFr?.trim() || member.fullDescription?.trim() || "")
+    : (member.fullDescription?.trim() || "");
+  const showFullDescription = member.visibility?.showFullDescription !== false && localizedFullDesc;
 
-  const bioText = member.bio?.trim();
-  const shortBioText = member.shortBio?.trim();
+  const bioText = (isFr ? (member.bioFr?.trim() || member.bio?.trim()) : member.bio?.trim()) ?? undefined;
+  const shortBioText = (isFr ? (member.shortBioFr?.trim() || member.shortBio?.trim()) : member.shortBio?.trim()) ?? undefined;
   const sameIntro = Boolean(bioText && shortBioText && bioText === shortBioText);
   const tagline =
     shortBioText && bioText && shortBioText !== bioText ? shortBioText : null;
@@ -173,7 +462,9 @@ export function MemberProfile({ member }: MemberProfileProps) {
 
   const adminExpertise = (member.expertise ?? [])
     .map((e) => ({
-      title: typeof e?.title === "string" ? e.title.trim() : "",
+      title: isFr && typeof e?.titleFr === "string" && e.titleFr.trim()
+        ? e.titleFr.trim()
+        : typeof e?.title === "string" ? e.title.trim() : "",
       pct: Math.max(0, Math.min(100, Math.round(Number(e?.level) || 0))),
     }))
     .filter((e) => e.title.length > 0)
@@ -192,11 +483,11 @@ export function MemberProfile({ member }: MemberProfileProps) {
   const interestTags = [
     ...new Set(
       [
-        member.roleType,
-        schoolStatusLabel,
+        member.roleType ? translateCms(t, "roleType", member.roleType) : "",
+        schoolStatusLabel ? translateCms(t, "roleType", schoolStatusLabel) : "",
         departmentLabel,
         member.academicYear,
-        ...roleTitles,
+        ...roleTitles.map((rt) => translateCms(t, "roleType", rt)),
       ]
         .map((s) => (typeof s === "string" ? s.trim() : ""))
         .filter(Boolean),
@@ -323,7 +614,7 @@ export function MemberProfile({ member }: MemberProfileProps) {
           <div className="hidden min-w-0 items-center gap-2 text-xs text-[#f0eff5]/80 sm:flex">
             <span>{t.sections.teamTitle}</span>
             <ChevronRight className="size-3 shrink-0 text-[#f0eff5]/55" strokeWidth={2} />
-            <span className="max-w-[140px] truncate">{member.roleType || member.academicYear || t.memberProfilePage.clubMemberFallback}</span>
+            <span className="max-w-[140px] truncate">{member.roleType ? translateCms(t, "roleType", member.roleType) : (member.academicYear || t.memberProfilePage.clubMemberFallback)}</span>
             <ChevronRight className="size-3 shrink-0 text-[#f0eff5]/55" strokeWidth={2} />
             <span className="max-w-[180px] truncate font-medium text-white">{member.name}</span>
           </div>
@@ -362,17 +653,17 @@ export function MemberProfile({ member }: MemberProfileProps) {
           <div className="mb-3 flex flex-wrap justify-center gap-2 sm:justify-start">
             {member.roleType ? (
               <span className="rounded-full border border-sky-400/30 bg-sky-500/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-sky-400">
-                {member.roleType}
+                {translateCms(t, "roleType", member.roleType)}
               </span>
             ) : null}
             {roleTitles[0] ? (
               <span className="rounded-full border border-violet-400/30 bg-violet-500/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-violet-300">
-                {roleTitles[0]}
+                {translateCms(t, "roleType", roleTitles[0])}
               </span>
             ) : null}
             {schoolStatusLabel ? (
               <span className="rounded-full border border-white/[0.13] bg-white/[0.05] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#6b6a80]">
-                {schoolStatusLabel}
+                {translateCms(t, "roleType", schoolStatusLabel)}
               </span>
             ) : null}
           </div>
@@ -383,7 +674,7 @@ export function MemberProfile({ member }: MemberProfileProps) {
           </h1>
           <p className="member-profile-hero-subtitle flex items-center justify-center gap-2 text-sm font-light text-[#6b6a80] sm:justify-start">
             <span className="h-px w-4 bg-sky-400" aria-hidden />
-            {roleLine}
+            {roleLine.split(" · ").map(s => translateCms(t, "roleType", s)).join(" · ")}
           </p>
           {tagline ? (
             <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-[#f0eff5]/70 sm:mx-0">{tagline}</p>
@@ -463,7 +754,7 @@ export function MemberProfile({ member }: MemberProfileProps) {
             </section>
           ) : null}
 
-          {showFullDescription && member.fullDescription?.trim() ? (
+          {showFullDescription && localizedFullDesc ? (
             <section>
               <p className="mb-5 flex items-center gap-3 text-[9px] font-semibold uppercase tracking-[0.26em] text-[#6b6a80]">
                 <span className="h-px w-[18px] shrink-0 bg-sky-400" />
@@ -471,7 +762,7 @@ export function MemberProfile({ member }: MemberProfileProps) {
                 <span className="h-px min-w-[2rem] flex-1 bg-white/[0.07]" />
               </p>
               <div className="space-y-3.5 text-[14.5px] font-light leading-[1.85] text-[#f0eff5]/[0.68]">
-                <p className="whitespace-pre-wrap">{member.fullDescription.trim()}</p>
+                <p className="whitespace-pre-wrap">{localizedFullDesc}</p>
               </div>
             </section>
           ) : null}
@@ -575,7 +866,7 @@ export function MemberProfile({ member }: MemberProfileProps) {
                 <div className="min-w-0">
                   <p className="mb-0.5 text-[10px] text-[#6b6a80]">{t.memberProfilePage.school}</p>
                   <p className="text-[13px] leading-snug text-[#f0eff5]">
-                    {schoolStatusLabel || t.memberProfilePage.schoolFallback}
+                    {schoolStatusLabel ? translateCms(t, "roleType", schoolStatusLabel) : t.memberProfilePage.schoolFallback}
                   </p>
                 </div>
               </div>

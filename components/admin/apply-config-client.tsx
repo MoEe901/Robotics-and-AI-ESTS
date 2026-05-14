@@ -125,6 +125,7 @@ export function ApplyConfigClient() {
   );
   const [charterLinkText, setCharterLinkText] = useState(DEFAULT_APPLY_CONFIG.charterLinkText);
   const [charterLinkHref, setCharterLinkHref] = useState(DEFAULT_APPLY_CONFIG.charterLinkHref);
+  const [charterLinkHrefFr, setCharterLinkHrefFr] = useState("");
   const [submitNotePrefix, setSubmitNotePrefix] = useState(DEFAULT_APPLY_CONFIG.submitNotePrefix);
   const [submitButtonLabel, setSubmitButtonLabel] = useState(DEFAULT_APPLY_CONFIG.submitButtonLabel);
   const [successTitle, setSuccessTitle] = useState(DEFAULT_APPLY_CONFIG.successTitle);
@@ -173,6 +174,7 @@ export function ApplyConfigClient() {
           setDeptLines(merged.departmentOptions.join("\n"));
           setCharterLinkText(merged.charterLinkText);
           setCharterLinkHref(merged.charterLinkHref);
+          setCharterLinkHrefFr(merged.charterLinkHrefFr ?? "");
           setSubmitNotePrefix(merged.submitNotePrefix);
           setSubmitButtonLabel(merged.submitButtonLabel);
           setSuccessTitle(merged.successTitle);
@@ -290,6 +292,7 @@ export function ApplyConfigClient() {
           {
             charterText: safeTrim(charterLinkText) || DEFAULT_APPLY_CONFIG.charterLinkText,
             charterUrl: safeTrim(charterLinkHref) || DEFAULT_APPLY_CONFIG.charterLinkHref,
+            charterUrlFr: safeTrim(charterLinkHrefFr) || "",
             submitNotePrefix: safeTrim(submitNotePrefix) || DEFAULT_APPLY_CONFIG.submitNotePrefix,
             submitLabel: safeTrim(submitButtonLabel) || DEFAULT_APPLY_CONFIG.submitButtonLabel,
             successTitle: safeTrim(successTitle) || DEFAULT_APPLY_CONFIG.successTitle,
@@ -516,7 +519,7 @@ export function ApplyConfigClient() {
           <div className="space-y-3">
             {contactRows.map((row, idx) => (
               <div
-                key={idx}
+                key={`${row.label}-${row.iconKey}-${idx}`}
                 className="flex flex-col gap-2 rounded-xl border border-white/10 bg-black/20 p-3 md:flex-row md:flex-wrap md:items-end"
               >
                 <input
@@ -738,11 +741,20 @@ export function ApplyConfigClient() {
               />
             </label>
             <label className="block text-sm">
-              <span className="text-white/70">Charter URL (use /path for internal)</span>
+              <span className="text-white/70">Charter URL (English)</span>
               <input
                 value={charterLinkHref}
                 onChange={(e) => setCharterLinkHref(e.target.value)}
                 className="mt-1 w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-white outline-none focus:border-white/35"
+              />
+            </label>
+            <label className="block text-sm">
+              <span className="text-blue-300/80">Charter URL (French)</span>
+              <input
+                value={charterLinkHrefFr}
+                onChange={(e) => setCharterLinkHrefFr(e.target.value)}
+                placeholder="Leave empty to use the English URL"
+                className="mt-1 w-full rounded-lg border border-blue-500/25 bg-blue-950/20 px-3 py-2 text-white placeholder:text-white/30 outline-none focus:border-blue-400/40"
               />
             </label>
           </div>

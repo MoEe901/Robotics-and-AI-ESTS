@@ -110,7 +110,8 @@ service cloud.firestore {
     }
 
     match /siteConfig/{docId} {
-      allow read: if true;
+      // Block client-side reads of emailSettings (contains passwords) — accessed via Admin SDK only
+      allow read: if docId != 'emailSettings';
       allow create, update, delete: if canWriteSiteConfig(docId);
     }
 
@@ -151,23 +152,24 @@ service cloud.firestore {
     }
 
     match /submissions/{docId} {
-      allow create: if request.resource.data.status == "new"
-        && request.resource.data.formId is string
-        && request.resource.data.userAgent is string
-        && request.resource.data.fields is map
-        && request.resource.data.fields.size() > 0
-        && request.resource.data.fields.size() < 50
-        && request.resource.data.keys().hasOnly([
-          "formId",
-          "fields",
-          "submittedAt",
-          "userAgent",
-          "status",
-          "readAt",
-          "notes",
-          "notificationSent",
-          "notificationError",
-        ]);
+      allow create: if canModerateSubmissions()
+        || (request.resource.data.status == "new"
+          && request.resource.data.formId is string
+          && request.resource.data.userAgent is string
+          && request.resource.data.fields is map
+          && request.resource.data.fields.size() > 0
+          && request.resource.data.fields.size() < 50
+          && request.resource.data.keys().hasOnly([
+            "formId",
+            "fields",
+            "submittedAt",
+            "userAgent",
+            "status",
+            "readAt",
+            "notes",
+            "notificationSent",
+            "notificationError",
+          ]));
       allow read: if canReadSubmissions();
       allow update, delete: if canModerateSubmissions();
     }

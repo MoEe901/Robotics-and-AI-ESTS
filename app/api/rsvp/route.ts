@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { addDoc, collection, getDocs, limit, query, serverTimestamp, where } from "firebase/firestore";
 import { z } from "zod";
 
 import { db, isFirebaseConfigured } from "@/lib/firebase";
@@ -34,10 +34,27 @@ export async function POST(request: Request) {
     );
   }
 
+  const normalizedEmail = parsed.data.email.trim().toLowerCase();
+
   try {
+    const existing = await getDocs(
+      query(
+        collection(db(), "rsvps"),
+        where("email", "==", normalizedEmail),
+        where("eventId", "==", parsed.data.eventId),
+        limit(1),
+      ),
+    );
+    if (!existing.empty) {
+      return NextResponse.json(
+        { error: "You have already RSVP'd for this event." },
+        { status: 409 },
+      );
+    }
+
     const ref = await addDoc(collection(db(), "rsvps"), {
       fullName: parsed.data.fullName,
-      email: parsed.data.email,
+      email: normalizedEmail,
       eventId: parsed.data.eventId,
       createdAt: serverTimestamp(),
     });

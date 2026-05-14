@@ -22,7 +22,7 @@ export function Navbar() {
   const { t, locale } = useLanguage();
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [activeHref, setActiveHref] = useState<string | null>(null);
+  
   const indicatorRef = useRef<HTMLSpanElement>(null);
   const navRef = useRef<HTMLElement>(null);
 
@@ -40,21 +40,19 @@ export function Navbar() {
   /** Move the sliding indicator to whichever link is hovered. */
   function handleLinkEnter(e: React.PointerEvent<HTMLAnchorElement>) {
     const link = e.currentTarget;
-    const nav = navRef.current;
+    const navEl = navRef.current;
     const indicator = indicatorRef.current;
-    if (!nav || !indicator) return;
-    const navRect = nav.getBoundingClientRect();
+    if (!navEl || !indicator) return;
+    const navRect = navEl.getBoundingClientRect();
     const linkRect = link.getBoundingClientRect();
     indicator.style.width  = `${linkRect.width}px`;
     indicator.style.left   = `${linkRect.left - navRect.left}px`;
     indicator.style.opacity = "1";
-    setActiveHref(link.getAttribute("href") ?? null);
   }
 
   function handleNavLeave() {
     const indicator = indicatorRef.current;
     if (indicator) indicator.style.opacity = "0";
-    setActiveHref(null);
   }
 
   const navLinks = nav.links.filter((item) => item.isVisible && item.href !== "/#apply");
