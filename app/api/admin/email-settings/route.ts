@@ -89,105 +89,112 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
-  const auth = getAdminAuth();
-  const db = getAdminFirestore();
-
-  let callerUid: string;
   try {
-    const decoded = await auth.verifyIdToken(authHeader.slice(7));
-    callerUid = decoded.uid;
-  } catch {
-    return NextResponse.json({ error: "Invalid token." }, { status: 401 });
-  }
+    const auth = getAdminAuth();
+    const db = getAdminFirestore();
 
-  const callerSnap = await db.collection("adminUsers").doc(callerUid).get();
-  const callerData = callerSnap.data();
-  if (!callerSnap.exists || callerData?.active === false || callerData?.role !== "admin") {
-    return NextResponse.json({ error: "Forbidden." }, { status: 403 });
-  }
-
-  let body: Record<string, unknown>;
-  try {
-    body = (await request.json()) as Record<string, unknown>;
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON." }, { status: 400 });
-  }
-
-  const ref = db.doc(DOC_PATH);
-  const existing = await ref.get();
-  const current = existing.exists ? (existing.data() as Record<string, unknown>) : {};
-
-  // Handle "activate-preset" action
-  if (body.action === "activate-preset" && typeof body.presetIndex === "number") {
-    const presets = Array.isArray(current.presets) ? current.presets : [];
-    const preset = presets[body.presetIndex] as Record<string, unknown> | undefined;
-    if (!preset) {
-      return NextResponse.json({ error: "Preset not found." }, { status: 404 });
+    let callerUid: string;
+    try {
+      const decoded = await auth.verifyIdToken(authHeader.slice(7));
+      callerUid = decoded.uid;
+    } catch {
+      return NextResponse.json({ error: "Invalid token." }, { status: 401 });
     }
-    await ref.set(
-      {
-        activeEmail: preset.email,
-        activePassword: preset.password,
-        senderName: preset.label || current.senderName || "Robotics & AI Club",
-      },
-      { merge: true },
-    );
-    return NextResponse.json({ ok: true, message: "Preset activated." });
-  }
 
-  // Handle "delete preset" action
-  if (typeof body.deletePresetIndex === "number") {
-    const presets = Array.isArray(current.presets) ? [...current.presets] : [];
-    if (body.deletePresetIndex >= 0 && body.deletePresetIndex < presets.length) {
-      presets.splice(body.deletePresetIndex, 1);
-      await ref.set({ presets }, { merge: true });
-      return NextResponse.json({ ok: true, message: "Preset removed." });
+    const callerSnap = await db.collection("adminUsers").doc(callerUid).get();
+    const callerData = callerSnap.data();
+    if (!callerSnap.exists || callerData?.active === false || callerData?.role !== "admin") {
+      return NextResponse.json({ error: "Forbidden." }, { status: 403 });
     }
-    return NextResponse.json({ error: "Invalid preset index." }, { status: 400 });
-  }
 
-  // Build update
-  const update: Record<string, unknown> = {};
+    let body: Record<string, unknown>;
+    try {
+      body = (await request.json()) as Record<string, unknown>;
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON." }, { status: 400 });
+    }
 
-  if (typeof body.enabled === "boolean") update.enabled = body.enabled;
-  if (typeof body.activeEmail === "string") update.activeEmail = body.activeEmail.trim();
-  if (typeof body.activePassword === "string") update.activePassword = body.activePassword.trim();
-  if (typeof body.senderName === "string") update.senderName = body.senderName.trim();
+    const ref = db.doc(DOC_PATH);
+    const existing = await ref.get();
+    const current = existing.exists ? (existing.data() as Record<string, unknown>) : {};
 
-  // Save presets (full array replacement)
-  if (Array.isArray(body.presets)) {
-    update.presets = body.presets
-      .slice(0, 10)
-      .map((p: Record<string, unknown>) => ({
-        email: typeof p.email === "string" ? p.email.trim() : "",
-        password: typeof p.password === "string" ? p.password.trim() : "",
-        label: typeof p.label === "string" ? p.label.trim() : "",
-      }))
-      .filter((p: { email: string }) => p.email.length > 0);
-  }
-
-  // Save current active into presets if "saveToPresets" flag
-  if (body.saveToPresets === true) {
-    const email = (update.activeEmail as string) || (current.activeEmail as string) || "";
-    const password = (update.activePassword as string) || (current.activePassword as string) || "";
-    const label = (update.senderName as string) || (current.senderName as string) || "";
-    if (email && password) {
-      const existingPresets = Array.isArray(current.presets) ? [...current.presets] : [];
-      // Don't duplicate
-      const alreadyExists = existingPresets.some(
-        (p: Record<string, unknown>) => p.email === email,
+    // Handle "activate-preset" action
+    if (body.action === "activate-preset" && typeof body.presetIndex === "number") {
+      const presets = Array.isArray(current.presets) ? current.presets : [];
+      const preset = presets[body.presetIndex] as Record<string, unknown> | undefined;
+      if (!preset) {
+        return NextResponse.json({ error: "Preset not found." }, { status: 404 });
+      }
+      await ref.set(
+        {
+          activeEmail: preset.email,
+          activePassword: preset.password,
+          senderName: preset.label || current.senderName || "Robotics & AI Club",
+        },
+        { merge: true },
       );
-      if (!alreadyExists) {
-        existingPresets.push({ email, password, label });
-        update.presets = existingPresets.slice(0, 10);
+      return NextResponse.json({ ok: true, message: "Preset activated." });
+    }
+
+    // Handle "delete preset" action
+    if (typeof body.deletePresetIndex === "number") {
+      const presets = Array.isArray(current.presets) ? [...current.presets] : [];
+      if (body.deletePresetIndex >= 0 && body.deletePresetIndex < presets.length) {
+        presets.splice(body.deletePresetIndex, 1);
+        await ref.set({ presets }, { merge: true });
+        return NextResponse.json({ ok: true, message: "Preset removed." });
+      }
+      return NextResponse.json({ error: "Invalid preset index." }, { status: 400 });
+    }
+
+    // Build update
+    const update: Record<string, unknown> = {};
+
+    if (typeof body.enabled === "boolean") update.enabled = body.enabled;
+    if (typeof body.activeEmail === "string") update.activeEmail = body.activeEmail.trim();
+    if (typeof body.activePassword === "string") update.activePassword = body.activePassword.trim();
+    if (typeof body.senderName === "string") update.senderName = body.senderName.trim();
+
+    // Save presets (full array replacement)
+    if (Array.isArray(body.presets)) {
+      update.presets = body.presets
+        .slice(0, 10)
+        .map((p: Record<string, unknown>) => ({
+          email: typeof p.email === "string" ? p.email.trim() : "",
+          password: typeof p.password === "string" ? p.password.trim() : "",
+          label: typeof p.label === "string" ? p.label.trim() : "",
+        }))
+        .filter((p: { email: string }) => p.email.length > 0);
+    }
+
+    // Save current active into presets if "saveToPresets" flag
+    if (body.saveToPresets === true) {
+      const email = (update.activeEmail as string) || (current.activeEmail as string) || "";
+      const password = (update.activePassword as string) || (current.activePassword as string) || "";
+      const label = (update.senderName as string) || (current.senderName as string) || "";
+      if (email && password) {
+        const existingPresets = Array.isArray(current.presets) ? [...current.presets] : [];
+        const alreadyExists = existingPresets.some(
+          (p: Record<string, unknown>) => p.email === email,
+        );
+        if (!alreadyExists) {
+          existingPresets.push({ email, password, label });
+          update.presets = existingPresets.slice(0, 10);
+        }
       }
     }
-  }
 
-  if (Object.keys(update).length === 0) {
-    return NextResponse.json({ ok: true, message: "Nothing to update." });
-  }
+    if (Object.keys(update).length === 0) {
+      return NextResponse.json({ ok: true, message: "Nothing to update." });
+    }
 
-  await ref.set(update, { merge: true });
-  return NextResponse.json({ ok: true, message: "Email settings saved." });
+    await ref.set(update, { merge: true });
+    return NextResponse.json({ ok: true, message: "Email settings saved." });
+  } catch (err) {
+    console.error("[email-settings POST]", err);
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : "Internal server error." },
+      { status: 500 },
+    );
+  }
 }
