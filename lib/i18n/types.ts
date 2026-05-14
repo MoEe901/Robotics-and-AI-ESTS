@@ -323,8 +323,3 @@ export type Translations = {
 };
 
 export type Locale = "en" | "fr";
-;
-  };
-};
-
-export type Locale = "en" | "fr";
