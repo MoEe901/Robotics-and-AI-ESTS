@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
-import { Bebas_Neue, Inter, JetBrains_Mono, Space_Grotesk, Syne } from "next/font/google";
+import { Bebas_Neue, Instrument_Serif, Inter, JetBrains_Mono, Space_Grotesk, Syne } from "next/font/google";
 
 import { FirestoreDebugRawTeamMembers } from "@/components/firebase/firestore-debug-raw";
 import { StartupLoader } from "@/components/layout/startup-loader";
 import { ScrollProgress } from "@/components/layout/scroll-progress";
 import { ThemeRoot } from "@/components/layout/theme-root";
+import { DesignRoot } from "@/components/layout/design-root";
 import { LanguageProvider } from "@/lib/i18n/context";
 import { TypographyProvider } from "@/components/providers/typography-provider";
 
@@ -39,6 +40,14 @@ const jetbrainsMono = JetBrains_Mono({
   weight: ["400", "500"],
 });
 
+const instrumentSerif = Instrument_Serif({
+  variable: "--font-instrument-serif",
+  subsets: ["latin"],
+  weight: "400",
+  style: ["normal", "italic"],
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: "Robotics & AI Club",
   description:
@@ -55,19 +64,21 @@ export default function RootLayout({
       lang="en"
       data-theme="dark"
       suppressHydrationWarning
-      className={`${inter.variable} ${spaceGrotesk.variable} ${syne.variable} ${jetbrainsMono.variable} ${bebasNeue.variable} relative h-full scroll-smooth antialiased`}
+      className={`${inter.variable} ${spaceGrotesk.variable} ${syne.variable} ${jetbrainsMono.variable} ${bebasNeue.variable} ${instrumentSerif.variable} relative h-full scroll-smooth antialiased`}
     >
       <body className="relative min-h-full flex flex-col">
         <ThemeRoot>
-          <LanguageProvider>
-            <TypographyProvider>
-            <ScrollProgress />
-            <StartupLoader>
-              {process.env.NODE_ENV === "development" ? <FirestoreDebugRawTeamMembers /> : null}
-              <div className="relative min-h-0 flex-1">{children}</div>
-            </StartupLoader>
-            </TypographyProvider>
-          </LanguageProvider>
+          <DesignRoot>
+            <LanguageProvider>
+              <TypographyProvider>
+              <ScrollProgress />
+              <StartupLoader>
+                {process.env.NODE_ENV === "development" ? <FirestoreDebugRawTeamMembers /> : null}
+                <div className="relative min-h-0 flex-1">{children}</div>
+              </StartupLoader>
+              </TypographyProvider>
+            </LanguageProvider>
+          </DesignRoot>
         </ThemeRoot>
       </body>
     </html>

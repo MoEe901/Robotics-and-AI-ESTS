@@ -16,6 +16,7 @@ import {
   LogOut,
   Menu,
   Moon,
+  Palette,
   PanelBottom,
   SlidersHorizontal,
   Sparkles,
@@ -79,6 +80,7 @@ export const ADMIN_NAV_ITEMS: readonly AdminNavItem[] = [
   { href: "/admin/footer-config", label: "Footer", icon: PanelBottom },
   { href: "/admin/typography", label: "Typography", icon: Type },
   { href: "/admin/layout", label: "Layout", icon: LayoutTemplate },
+  { href: "/admin/design", label: "Site design", icon: Palette },
 ] as const;
 
 // Items that can never be hidden (otherwise an admin can lock themselves
